@@ -102,64 +102,65 @@
 <body>
 
   <div class="form-container">
-    <h2>📦 Product Master Registration</h2>[cite: 5]
+    <h2>📦 Product Master Registration</h2>
     <form id="productForm" onsubmit="handleFormSubmit(event)">
       
       <div class="form-group">
-        <label for="product_category">Product Category</label>[cite: 5]
-        <input type="text" id="product_category" name="product_category" list="catList" placeholder="e.g. Mobile, Ref, LED" required oninput="checkCategory(this.value)" onkeydown="handleEnter(event, 'company_name')">[cite: 5]
-        <datalist id="catList"></datalist>[cite: 5]
+        <label for="product_category">Product Category</label>
+        <input type="text" id="product_category" name="product_category" list="catList" placeholder="e.g. Mobile, Ref, LED" required oninput="checkCategory(this.value)" onkeydown="handleEnter(event, 'company_name')">
+        <datalist id="catList"></datalist>
       </div>
 
       <div class="form-group">
-        <label for="company_name">Company Name / Brand</label>[cite: 5]
-        <input type="text" id="company_name" name="company_name" list="companyList" placeholder="e.g. Samsung, Apple, Dawlance" required onkeydown="handleEnter(event, 'model')">[cite: 5]
-        <datalist id="companyList"></datalist>[cite: 5]
+        <label for="company_name">Company Name / Brand</label>
+        <input type="text" id="company_name" name="company_name" list="companyList" placeholder="e.g. Samsung, Apple, Dawlance" required onkeydown="handleEnter(event, 'model')">
+        <datalist id="companyList"></datalist>
       </div>
 
       <div class="form-group">
-        <label for="model">Model</label>[cite: 5]
-        <input type="text" id="model" name="model" list="modelList" placeholder="e.g. Galaxy S23, 9170 WB LVS" required onkeydown="handleModelEnter(event)">[cite: 5]
-        <datalist id="modelList"></datalist>[cite: 5]
+        <label for="model">Model</label>
+        <input type="text" id="model" name="model" list="modelList" placeholder="e.g. Galaxy S23, 9170 WB LVS" required onkeydown="handleModelEnter(event)">
+        <datalist id="modelList"></datalist>
       </div>
 
       <!-- Color field -->
       <div class="form-group">
-        <label for="color">Color</label>[cite: 5]
-        <input type="text" id="color" name="color" list="colorList" placeholder="e.g. Black, Blue, Silver" onkeydown="handleColorEnter(event)">[cite: 5]
-        <datalist id="colorList"></datalist>[cite: 5]
+        <label for="color">Color</label>
+        <input type="text" id="color" name="color" list="colorList" placeholder="e.g. Black, Blue, Silver" onkeydown="handleColorEnter(event)">
+        <datalist id="colorList"></datalist>
       </div>
 
       <!-- Dynamic Mobile Extra Fields (RAM & ROM) -->
       <div id="mobileExtraSection" class="mobile-fields">
-        <label style="color: #0d9488; margin-bottom: 8px;">📱 Mobile Specifications</label>[cite: 5]
+        <label style="color: #0d9488; margin-bottom: 8px;">📱 Mobile Specifications</label>
         <div class="row-fields">
           <div style="flex: 1;">
-            <label for="ram">RAM</label>[cite: 5]
-            <input type="text" id="ram" name="ram" list="ramList" placeholder="e.g. 8GB, 12GB" onkeydown="handleEnter(event, 'memory')">[cite: 5]
-            <datalist id="ramList"></datalist>[cite: 5]
+            <label for="ram">RAM</label>
+            <input type="text" id="ram" name="ram" list="ramList" placeholder="e.g. 8GB, 12GB" onkeydown="handleEnter(event, 'memory')">
+            <datalist id="ramList"></datalist>
           </div>
           <div style="flex: 1;">
-            <label for="memory">Memory (ROM)</label>[cite: 5]
-            <input type="text" id="memory" name="memory" list="romList" placeholder="e.g. 128GB, 256GB" onkeydown="handleEnter(event, 'remarks')">[cite: 5]
-            <datalist id="romList"></datalist>[cite: 5]
+            <label for="memory">Memory (ROM)</label>
+            <input type="text" id="memory" name="memory" list="romList" placeholder="e.g. 128GB, 256GB" onkeydown="handleEnter(event, 'remarks')">
+            <datalist id="romList"></datalist>
           </div>
         </div>
       </div>
 
       <!-- Remarks field -->
       <div class="form-group">
-        <label for="remarks">Remarks</label>[cite: 5]
-        <textarea id="remarks" name="remarks" placeholder="Optional notes or specifications..."></textarea>[cite: 5]
+        <label for="remarks">Remarks</label>
+        <textarea id="remarks" name="remarks" placeholder="Optional notes or specifications..."></textarea>
       </div>
 
-      <button type="submit" class="btn-submit" id="submitBtn">Save Product</button>[cite: 5]
+      <button type="submit" class="btn-submit" id="submitBtn">Save Product</button>
       
-      <div id="statusMsg"></div>[cite: 5]
+      <div id="statusMsg"></div>
     </form>
   </div>
 
   <script>
+    // Google Apps Script Web App URL integrated
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
 
     window.onload = function() {
@@ -178,9 +179,7 @@
           populateDatalist('ramList', data.rams);
           populateDatalist('romList', data.roms);
         })
-        .catch(err => {
-          console.error("Error loading dropdown data:", err);
-        });
+        .catch(err => console.error("Error loading dropdown data:", err));
     }
 
     function populateDatalist(listId, items) {
@@ -296,7 +295,7 @@
         btn.innerText = "Save Product";
         statusMsg.style.display = "block";
         
-        if (response && response.success) {
+        if (response.success) {
           statusMsg.className = "success";
           statusMsg.innerText = response.message + " (ID: " + response.product_id + ")";
           document.getElementById('productForm').reset();
@@ -304,7 +303,7 @@
           loadDropdownSuggestions();
         } else {
           statusMsg.className = "error";
-          statusMsg.innerText = "Error: " + (response ? response.error : "Unknown error");
+          statusMsg.innerText = "Error: " + response.error;
         }
       })
       .catch(err => {
