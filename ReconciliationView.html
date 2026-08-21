@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <title>Reconciliation View</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f9; margin: 0; padding: 10px; color: #333; }
+    .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #1b5e20; margin-bottom: 15px; font-size: 18px; }
+    .action-bar { display: flex; justify-content: flex-end; margin-bottom: 15px; }
+    button { background-color: #1b5e20; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    button:hover { background-color: #144316; }
+    .table-container { max-height: 480px; overflow-y: auto; border: 1px solid #bbb; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 6px 8px; border: 1px solid #bbb; text-align: left; }
+    th { background-color: #1b5e20; color: white; position: sticky; top: 0; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Bank & Account Reconciliation View</h2>
+    <div class="action-bar">
+      <button onclick="fetchReconciliationData()"><i class="fa fa-sync"></i> Refresh Data</button>
+    </div>
+    <div class="table-container">
+      <table id="reconTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Account Code</th>
+            <th>Account Title</th>
+            <th>Book Balance</th>
+            <th>Bank Balance</th>
+            <th>Difference</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="reconBody">
+          <tr><td colspan="7" style="text-align: center; color: #777;">Loading reconciliation records...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
+
+    window.onload = function() {
+      fetchReconciliationData();
+    };
+
+    function fetchReconciliationData() {
+      let tbody = document.getElementById('reconBody');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">Fetching reconciliation data...</td></tr>`;
+
+      fetch(`${SCRIPT_URL}?action=getReconciliationData`)
+        .then(res => res.json())
+        .then(response => {
+          if (response && response.success) {
+            renderReconTable(response.data);
+          } else {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Error loading reconciliation data.</td></tr>`;
+          }
+        })
+        .catch(err => {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Network Error: ${err.message}</td></tr>`;
+        });
+    }
+
+    function renderReconTable(data) {
+      let tbody = document.getElementById('reconBody');
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #777;">No reconciliation records found.</td></tr>`;
+        return;
+      }
+
+      let html = "";
+      data.forEach(row => {
+        let diff = Number(row.bookBalance || 0) - Number(row.bankBalance || 0);
+        let statusColor = diff === 0 ? 'green' : 'red';
+        let statusText = diff === 0 ? 'Matched' : 'Unmatched';
+
+        html += `<tr>
+          <td>${row.date || ''}</td>
+          <td>${row.accCode || ''}</td>
+          <td>${row.accTitle || ''}</td>
+          <td>${Number(row.bookBalance || 0).toLocaleString()}</td>
+          <td>${Number(row.bankBalance || 0).toLocaleString()}</td>
+          <td>${diff.toLocaleString()}</td>
+          <td style="color: ${statusColor}; font-weight: bold;">${statusText}</td>
+        </tr>`;
+      });
+      tbody.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

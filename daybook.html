@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: Arial, sans-serif; margin: 15px; color: #333; }
+      .filter-container { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+      
+      .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        position: relative;
+      }
+      table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+      
+      th { 
+        background-color: #f4f4f4; 
+        position: sticky; 
+        top: 0; 
+        z-index: 10; 
+        box-shadow: inset 0 -1px 0 #ddd;
+      }
+      
+      .text-right { text-align: right; }
+      .opening-row { background-color: #fafafa; font-weight: bold; font-style: italic; }
+
+      #loadingOverlay {
+        display: none;
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 100;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+
+    <h3>Daily Day Book Report</h3>[cite: 6]
+
+    <div class="filter-container">
+      <label>From: <input type="date" id="startDate"></label>[cite: 6]
+      <label>To: <input type="date" id="endDate"></label>[cite: 6]
+      <button onclick="onFilterClick()">Filter</button>[cite: 6]
+      <button onclick="resetFilters()" style="background: #f0f0f0; border: 1px solid #ccc; cursor: pointer;">Reset</button>[cite: 6]
+    </div>
+
+    <div class="table-container">
+      <div id="loadingOverlay">
+        <div class="spinner"></div>[cite: 6]
+        <div style="margin-top: 5px; font-size: 12px; font-weight: bold;">Processing...</div>[cite: 6]
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>[cite: 6]
+            <th>Voucher</th>[cite: 6]
+            <th>Type</th>[cite: 6]
+            <th>Acc No</th>[cite: 6]
+            <th>Title</th>[cite: 6]
+            <th>Particulars</th>[cite: 6]
+            <th class="text-right">Debit</th>[cite: 6]
+            <th class="text-right">Credit</th>[cite: 6]
+            <th class="text-right">Balance</th>[cite: 6]
+          </tr>
+        </thead>
+        <tbody id="dayBookTableBody">
+          <tr><td colspan="9" style="text-align:center;">Loading data...</td></tr>[cite: 6]
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 15px; font-weight: bold; text-align: right;">
+      Closing Balance: <span id="closingBalanceDisplay">0</span>[cite: 6]
+    </div>
+
+    <script>
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
+      let allEntries = [];
+
+      document.addEventListener("DOMContentLoaded", function() {
+        showLoader(true);
+        
+        fetch(`${SCRIPT_URL}?action=getDayBookData`)
+          .then(res => res.json())
+          .then(response => {
+            showLoader(false);
+            if (response && response.success) {
+              allEntries = response.entries;
+              
+              if (allEntries.length > 0) {
+                let lastItem = allEntries[allEntries.length - 1];
+                let parts = lastItem.date.split("-");
+                let lastDateStr = parts[2] + "-" + parts[1] + "-" + parts[0];
+                
+                document.getElementById("startDate").value = lastDateStr;
+                document.getElementById("endDate").value = lastDateStr;
+              }
+              
+              applyFilterAndRender();
+            } else {
+              alert(response ? response.message : "Unknown error");
+            }
+          })
+          .catch(err => {
+            showLoader(false);
+            alert("Server Error: " + err.message);
+          });
+      });
+
+      function showLoader(show) {
+        document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";[cite: 6]
+      }
+
+      function onFilterClick() {
+        showLoader(true);
+        setTimeout(function() {
+          applyFilterAndRender();
+          showLoader(false);
+        }, 150);
+      }
+
+      function applyFilterAndRender() {
+        const startVal = document.getElementById("startDate").value;
+        const endVal = document.getElementById("endDate").value;
+
+        let openingBalance = 0;
+        let cumulativeBalanceBeforeStart = 0;
+
+        if (startVal) {
+          allEntries.forEach(function(item) {
+            let parts = item.date.split("-");
+            let itemDateStr = parts[2] + "-" + parts[1] + "-" + parts[0];
+            if (itemDateStr < startVal) {
+              cumulativeBalanceBeforeStart += (item.debit - item.credit);
+            }
+          });
+          openingBalance = cumulativeBalanceBeforeStart;
+        }
+
+        let filtered = allEntries.filter(function(item) {
+          let parts = item.date.split("-");
+          let itemDateStr = parts[2] + "-" + parts[1] + "-" + parts[0];
+
+          if (startVal && itemDateStr < startVal) return false;
+          if (endVal && itemDateStr > endVal) return false;
+          return true;
+        });
+
+        let runningBalance = openingBalance;
+        let adjustedEntries = filtered.map(function(item) {
+          runningBalance += (item.debit - item.credit);
+          return {
+            date: item.date,
+            voucherNo: item.voucherNo,
+            type: item.type,
+            accNo: item.accNo,
+            accTitle: item.accTitle,
+            particulars: item.particulars,
+            debit: item.debit,
+            credit: item.credit,
+            balance: runningBalance
+          };
+        });
+
+        renderDayBookTable(adjustedEntries, openingBalance, runningBalance);
+      }
+
+      function renderDayBookTable(entries, openingBalance, closingBalance) {
+        const tbody = document.getElementById("dayBookTableBody");
+        tbody.innerHTML = "";
+        
+        const startVal = document.getElementById("startDate").value;
+        if (startVal) {
+          let openingTr = document.createElement("tr");
+          openingTr.className = "opening-row";
+          openingTr.innerHTML = `
+            <td>-</td>
+            <td>-</td>
+            <td>OPENING</td>
+            <td>-</td>
+            <td>Opening Balance</td>
+            <td>B/F from previous period</td>
+            <td class="text-right">-</td>
+            <td class="text-right">-</td>
+            <td class="text-right">${openingBalance.toLocaleString()}</td>
+          `;
+          tbody.appendChild(openingTr);
+        }
+
+        if (entries.length === 0 && !startVal) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No records found</td></tr>`;
+          document.getElementById("closingBalanceDisplay").textContent = "0";
+          return;
+        }
+
+        entries.forEach(function(row) {
+          let tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.date}</td>
+            <td>${row.voucherNo}</td>
+            <td>${row.type}</td>
+            <td>${row.accNo}</td>
+            <td>${row.accTitle}</td>
+            <td>${row.particulars}</td>
+            <td class="text-right">${row.debit > 0 ? row.debit.toLocaleString() : "-"}</td>
+            <td class="text-right">${row.credit > 0 ? row.credit.toLocaleString() : "-"}</td>
+            <td class="text-right" style="font-weight:bold;">${row.balance.toLocaleString()}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("closingBalanceDisplay").textContent = closingBalance.toLocaleString();
+      }
+
+      function resetFilters() {
+        showLoader(true);
+        if (allEntries.length > 0) {
+          let lastItem = allEntries[allEntries.length - 1];
+          let parts = lastItem.date.split("-");
+          let lastDateStr = parts[2] + "-" + parts[1] + "-" + parts[0];
+          document.getElementById("startDate").value = lastDateStr;
+          document.getElementById("endDate").value = lastDateStr;
+        } else {
+          document.getElementById("startDate").value = "";
+          document.getElementById("endDate").value = "";
+        }
+        setTimeout(function() {
+          applyFilterAndRender();
+          showLoader(false);
+        }, 150);
+      }
+    </script>
+  </body>
+</html>

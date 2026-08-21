@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <title>Vendor Ledger View</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f9; margin: 0; padding: 10px; color: #333; }
+    .container { max-width: 1100px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #1b5e20; margin-bottom: 15px; font-size: 18px; }
+    .search-box { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
+    input[type="text"] { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; width: 250px; }
+    button { background-color: #1b5e20; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    button:hover { background-color: #144316; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+    th, td { padding: 8px 10px; border: 1px solid #bbb; text-align: left; }
+    th { background-color: #1b5e20; color: white; position: sticky; top: 0; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Vendor Ledger View</h2>
+    <div class="search-box">
+      <input type="text" id="vendorAccInput" placeholder="Enter Vendor Account No..." />
+      <button onclick="fetchVendorLedger()">Search Ledger</button>
+    </div>
+    <div id="vendorLedgerContainer">
+      <table id="vendorLedgerTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Particulars</th>
+            <th>Debit</th>
+            <th>Credit</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody id="vendorLedgerBody">
+          <tr><td colspan="5" style="text-align: center; color: #777;">Please enter a vendor account number and search.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
+
+    function fetchVendorLedger() {
+      let accNo = document.getElementById('vendorAccInput').value.trim();
+      let tbody = document.getElementById('vendorLedgerBody');
+
+      if (!accNo) {
+        alert("Please enter vendor account number.");
+        return;
+      }
+
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Loading vendor ledger...</td></tr>`;
+
+      fetch(`${SCRIPT_URL}?action=getVendorLedgerDetails&payMode=${encodeURIComponent(accNo)}`)
+        .then(res => res.json())
+        .then(response => {
+          if (response && response.success) {
+            renderVendorLedger(response.data);
+          } else {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Error loading vendor ledger.</td></tr>`;
+          }
+        })
+        .catch(err => {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Network Error: ${err.message}</td></tr>`;
+        });
+    }
+
+    function renderVendorLedger(data) {
+      let tbody = document.getElementById('vendorLedgerBody');
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #777;">No records found for this vendor.</td></tr>`;
+        return;
+      }
+
+      let html = "";
+      data.forEach(row => {
+        html += `<tr>
+          <td>${row.date || ''}</td>
+          <td>${row.particulars || ''}</td>
+          <td>${Number(row.debit || 0).toLocaleString()}</td>
+          <td>${Number(row.credit || 0).toLocaleString()}</td>
+          <td>${Number(row.balance || 0).toLocaleString()}</td>
+        </tr>`;
+      });
+      tbody.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 5px;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 10px 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #1b5e20;
+      margin: 0 0 8px 0;
+      font-size: 18px;
+    }
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 2fr 1.5fr auto;
+      gap: 6px;
+      align-items: end;
+      margin-bottom: 8px;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .input-group label {
+      font-size: 11px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 2px;
+    }
+    input[type="text"], input[type="date"] {
+      padding: 5px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+      width: 100%;
+      box-sizing: border-box;
+      height: 32px;
+    }
+    .button-group {
+      display: flex;
+      gap: 5px;
+    }
+    button {
+      background-color: #1b5e20;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    button:hover {
+      background-color: #144316;
+    }
+    button.secondary {
+      background-color: #37474f;
+    }
+    button.secondary:hover {
+      background-color: #263238;
+    }
+    
+    /* Top Summary Sub-Box with Checkboxes */
+    .top-summary-box {
+      display: flex;
+      justify-content: space-around;
+      background: #f1f8e9;
+      border: 1px solid #c8e6c9;
+      padding: 6px 10px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-weight: bold;
+      font-size: 13px;
+      color: #1b5e20;
+    }
+    .top-summary-box label {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .top-summary-box input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      accent-color: #1b5e20;
+    }
+
+    /* Loading Spinner Styling */
+    #loadingContainer {
+      display: none;
+      text-align: center;
+      margin: 15px 0;
+    }
+    .spinner {
+      width: 30px;
+      height: 30px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #1b5e20;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 5px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #loadingMsg {
+      color: #1b5e20;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .table-container {
+      max-height: 420px;
+      overflow-y: auto;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      margin-top: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    th, td {
+      padding: 6px 10px;
+      border: 1px solid #bbb !important; /* Proper Grid/Box lines */
+    }
+    .sticky-header {
+      background-color: #1b5e20 !important;
+      color: white !important;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    .summary-box {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-weight: bold;
+      font-size: 13px;
+      background: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      padding: 8px 12px;
+      border-radius: 4px;
+      color: #1b5e20;
+    }
+    
+    @media print {
+      @page {
+        size: A4;
+        margin: 8mm;
+      }
+      body {
+        background-color: #fff;
+        padding: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      button, .filters-grid, .top-summary-box, #loadingContainer { 
+        display: none !important; 
+      }
+      .container { 
+        max-width: 100%; 
+        box-shadow: none; 
+        padding: 0; 
+        margin: 0;
+      }
+      .table-container { 
+        max-height: none; 
+        overflow: visible; 
+        border: 1px solid #000 !important; 
+      }
+      table {
+        font-size: 12px;
+        width: 100%;
+      }
+      .sticky-header {
+        background-color: #1b5e20 !important;
+        color: white !important;
+        border: 1px solid #000 !important;
+      }
+      td {
+        border: 1px solid #000 !important;
+      }
+      .summary-box {
+        background: #e8f5e9 !important;
+        border: 1px solid #000 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Al-Meezan Electronics - Daily Recovery Report</h2>
+    
+    <div class="filters-grid">
+      <div class="input-group">
+        <label>FROM DATE</label>
+        <input type="date" id="fromDate">
+      </div>
+      <div class="input-group">
+        <label>TO DATE</label>
+        <input type="date" id="toDate">
+      </div>
+      <div class="input-group">
+        <label>SEARCH ACCOUNT / NAME</label>
+        <input type="text" id="searchAccInput" placeholder="Acc No or Customer Name...">
+      </div>
+      <div class="input-group">
+        <label>RECEIPT NO</label>
+        <input type="text" id="searchReceiptInput" placeholder="Receipt No...">
+      </div>
+      <div class="button-group">
+        <button onclick="fetchAndFilterData()" title="Search"><i class="fa fa-search"></i></button>
+        <button class="secondary" onclick="resetFilters()" title="Reset"><i class="fa fa-redo"></i></button>
+        <button class="secondary" onclick="printReport()" title="Print"><i class="fa fa-print"></i></button>
+        <button onclick="openReceiptForm()" title="New Receipt"><i class="fa fa-plus"></i></button>
+      </div>
+    </div>
+
+    <!-- Top Summary Sub-Box with Checkboxes -->
+    <div class="top-summary-box">
+      <label>
+        <input type="checkbox" id="chkCash" checked onchange="applySearchFilter()"> 
+        <span id="cashTotalText">Cash Total (Daybook): Rs. 0 (0)</span>
+      </label>
+      <label>
+        <input type="checkbox" id="chkBank" checked onchange="applySearchFilter()"> 
+        <span id="bankTotalText">Bank Total: Rs. 0 (0)</span>
+      </label>
+    </div>
+
+    <div id="loadingContainer">
+      <div class="spinner"></div>
+      <div id="loadingMsg">Fetching records... Please wait.</div>
+    </div>
+
+    <div class="table-container">
+      <table id="reportTable">
+        <tbody id="tableBody">
+          <tr class="sticky-header">
+            <td>Date</td>
+            <td>Rct #</td>
+            <td>Acc No</td>
+            <td>Customer Title</td>
+            <td>Payment Mode / Head</td>
+            <td>Amount</td>
+          </tr>
+          <tr>
+            <td colspan="6" style="text-align: center; color: #777;">Please select filters and click search.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="summary-box">
+      <span id="totalRecords">Total Records: 0</span>
+      <span id="totalAmount">Total Recovered Amount: Rs. 0</span>
+    </div>
+  </div>
+
+  <script>
+    let globalData = null;
+
+    // Google Apps Script Web App URL integrated
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
+
+    function fetchAndFilterData() {
+      if (globalData !== null) {
+        applySearchFilter();
+        return;
+      }
+
+      document.getElementById('loadingContainer').style.display = 'block';
+      document.getElementById('loadingMsg').innerText = "Fetching records... Please wait.";
+
+      fetch(`${SCRIPT_URL}?action=getAllReceiptsForReport`)
+        .then(res => res.json())
+        .then(response => {
+          document.getElementById('loadingContainer').style.display = 'none';
+          if (response && response.success) {
+            globalData = response.data;
+            applySearchFilter();
+          } else {
+            alert("Error: " + (response ? response.error : "Unknown error"));
+          }
+        })
+        .catch(err => {
+          document.getElementById('loadingContainer').style.display = 'none';
+          alert("Fetch Failure: " + err.message);
+        });
+    }
+
+    function applySearchFilter() {
+      if (!globalData) return;
+
+      let fromDate = document.getElementById('fromDate').value;
+      let toDate = document.getElementById('toDate').value;
+      let accQuery = document.getElementById('searchAccInput').value.toLowerCase().trim();
+      let receiptQuery = document.getElementById('searchReceiptInput').value.toLowerCase().trim();
+      
+      let showCash = document.getElementById('chkCash').checked;
+      let showBank = document.getElementById('chkBank').checked;
+
+      if (fromDate && !toDate) {
+        toDate = fromDate;
+      }
+
+      let fTime = fromDate ? new Date(fromDate).setHours(0,0,0,0) : null;
+      let tTime = toDate ? new Date(toDate).setHours(23,59,59,999) : null;
+      
+      let filtered = globalData.filter(row => {
+        if (fTime && row.dateObj && row.dateObj < fTime) return false;
+        if (tTime && row.dateObj && row.dateObj > tTime) return false;
+
+        if (row.isCash && !showCash) return false;
+        if (!row.isCash && !showBank) return false;
+
+        let acc = String(row.accountNo || '').toLowerCase();
+        let title = String(row.accountTitle || '').toLowerCase();
+        let rct = String(row.receiptNo || '').toLowerCase();
+        
+        let matchesAcc = true;
+        if (accQuery) {
+          matchesAcc = acc.includes(accQuery) || title.includes(accQuery);
+        }
+
+        let matchesReceipt = true;
+        if (receiptQuery) {
+          matchesReceipt = rct.includes(receiptQuery);
+        }
+
+        return matchesAcc && matchesReceipt;
+      });
+      
+      renderTableRows(filtered);
+    }
+
+    function renderTableRows(data) {
+      let tbody = document.getElementById('tableBody');
+      
+      let cashTotal = 0;
+      let bankTotal = 0;
+      
+      let cashReceiptsSet = new Set();
+      let bankReceiptsSet = new Set();
+
+      if (globalData) {
+        let fromDate = document.getElementById('fromDate').value;
+        let toDate = document.getElementById('toDate').value;
+        let accQuery = document.getElementById('searchAccInput').value.toLowerCase().trim();
+        let receiptQuery = document.getElementById('searchReceiptInput').value.toLowerCase().trim();
+
+        if (fromDate && !toDate) {
+          toDate = fromDate;
+        }
+
+        let fTime = fromDate ? new Date(fromDate).setHours(0,0,0,0) : null;
+        let tTime = toDate ? new Date(toDate).setHours(23,59,59,999) : null;
+
+        globalData.forEach(row => {
+          if (fTime && row.dateObj && row.dateObj < fTime) return;
+          if (tTime && row.dateObj && row.dateObj > tTime) return;
+
+          let acc = String(row.accountNo || '').toLowerCase();
+          let title = String(row.accountTitle || '').toLowerCase();
+          let rct = String(row.receiptNo || '').toLowerCase();
+          
+          if (accQuery && !acc.includes(accQuery) && !title.includes(accQuery)) return;
+          if (receiptQuery && !rct.includes(receiptQuery)) return;
+
+          let amt = Number(row.amount) || 0;
+
+          if (row.isCash) {
+            cashTotal += amt;
+            if (row.receiptNo) cashReceiptsSet.add(String(row.receiptNo).trim());
+          } else {
+            bankTotal += amt;
+            if (row.receiptNo) bankReceiptsSet.add(String(row.receiptNo).trim());
+          }
+        });
+      }
+
+      document.getElementById('cashTotalText').innerText = `Cash Total (Daybook): Rs. ${cashTotal.toLocaleString()} (${cashReceiptsSet.size})`;
+      document.getElementById('bankTotalText').innerText = `Bank Total: Rs. ${bankTotal.toLocaleString()} (${bankReceiptsSet.size})`;
+
+      let html = `<tr class="sticky-header">
+        <td>Date</td>
+        <td>Rct #</td>
+        <td>Acc No</td>
+        <td>Customer Title</td>
+        <td>Payment Mode / Head</td>
+        <td>Amount</td>
+      </tr>`;
+
+      if (!data || data.length === 0) {
+        html += `<tr><td colspan="6" style="text-align: center; color: #777;">No records found.</td></tr>`;
+        tbody.innerHTML = html;
+        document.getElementById('totalRecords').innerText = "Total Records: 0";
+        document.getElementById('totalAmount').innerText = "Total Recovered Amount: Rs. 0";
+        return;
+      }
+
+      let uniqueFilteredReceipts = new Set();
+      let totalAmt = 0;
+
+      data.forEach(row => {
+        let amt = Number(row.amount) || 0;
+        totalAmt += amt;
+        if (row.receiptNo) {
+          uniqueFilteredReceipts.add(String(row.receiptNo).trim());
+        }
+
+        html += `<tr>
+          <td>${row.dateStr || ''}</td>
+          <td>${row.receiptNo || ''}</td>
+          <td>${row.accountNo || ''}</td>
+          <td>${row.accountTitle || ''}</td>
+          <td>${row.paymentHead || ''}</td>
+          <td>${amt.toLocaleString()}</td>
+        </tr>`;
+      });
+
+      tbody.innerHTML = html;
+      document.getElementById('totalRecords').innerText = "Total Records: " + uniqueFilteredReceipts.size;
+      document.getElementById('totalAmount').innerText = "Total Recovered Amount: Rs. " + totalAmt.toLocaleString();
+    }
+  
+    document.addEventListener('DOMContentLoaded', () => {
+      ['searchAccInput', 'searchReceiptInput', 'fromDate', 'toDate'].forEach(id => {
+        let el = document.getElementById(id);
+        if(el) {
+          el.addEventListener('keypress', e => {
+            if(e.key === 'Enter') fetchAndFilterData();
+          });
+        }
+      });
+    });
+
+    function resetFilters() {
+      document.getElementById('fromDate').value = '';
+      document.getElementById('toDate').value = '';
+      document.getElementById('searchAccInput').value = '';
+      document.getElementById('searchReceiptInput').value = '';
+      document.getElementById('chkCash').checked = true;
+      document.getElementById('chkBank').checked = true;
+      if (globalData) renderTableRows(globalData);
+    }
+
+    function printReport() {
+      setTimeout(() => {
+        window.print();
+      }, 200);
+    }
+
+    function openReceiptForm() {
+      window.open(SCRIPT_URL + '?page=ReceiptForm', '_blank');
+    }
+  </script>
+</body>
+</html>

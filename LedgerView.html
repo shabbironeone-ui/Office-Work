@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <title>Customer Ledger View</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 8px auto; max-width: 1100px; background-color: #f4f6f9; color: #222; font-size: 11px; }
+    
+    .top-header-container { display: flex; justify-content: space-between; align-items: center; margin: 0 0 8px 0; }
+    h2 { color: #1a73e8; margin: 0; font-size: 16px; }
+    
+    .ledger-header-card { background: #fff; padding: 10px 14px; border-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .ledger-info div { margin-bottom: 3px; font-size: 11.5px; }
+    .ledger-info span { font-weight: bold; color: #111; }
+
+    .summary-box { background: #f8f9fa; border: 1px solid #e1e4e8; padding: 6px 12px; border-radius: 4px; min-width: 210px; font-size: 11px; line-height: 1.4; }
+    .summary-box div { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .summary-box span { font-weight: bold; color: #1a73e8; }
+
+    .btn { padding: 5px 12px; background: #34a853; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; }
+    .btn:hover { background: #2b8743; }
+
+    .table-container { 
+      max-height: 500px; 
+      overflow-y: auto; 
+      overflow-x: auto; 
+      background: #fff; 
+      border-radius: 5px; 
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08); 
+    }
+    
+    table { width: 100%; border-collapse: collapse; background: #fff; font-size: 11px; }
+    th, td { border: 1px solid #e1e4e8; padding: 5px 8px; text-align: left; }
+    th { background-color: #1a73e8; color: white; position: sticky; top: 0; z-index: 10; white-space: nowrap; font-size: 11px; }
+    
+    tr:nth-child(even) { background-color: #fafbfc; }
+    .number { text-align: right; white-space: nowrap; }
+    
+    .col-date { width: 85px; white-space: nowrap; }
+    .col-voucher { width: 85px; white-space: nowrap; }
+    .col-type { width: 75px; white-space: nowrap; }
+    .col-amount { width: 95px; }
+
+    .loading { text-align: center; font-size: 13px; padding: 20px; color: #666; background: #fff; border-radius: 5px; }
+    .footer-total { font-weight: bold; background-color: #e8f0fe !important; position: sticky; bottom: 0; z-index: 5; }
+
+    @media print {
+      .btn { display: none; }
+      body { background-color: #fff; margin: 0; max-width: 100%; }
+      .table-container { max-height: none; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-header-container">
+    <h2>Customer Account Ledger</h2>
+    <button class="btn" onclick="window.print()">Print Ledger</button>
+  </div>
+
+  <div class="ledger-header-card">
+    <div class="ledger-info" id="customerInfo">
+      <div>Account No: <span id="lblAccNo">-</span></div>
+      <div>Account Title: <span id="lblAccTitle">-</span></div>
+      <div>Approved By: <span id="lblApprovedBy">-</span> | CRO: <span id="lblCro">-</span></div>
+      <div>Mobile: <span id="lblMobile">-</span></div>
+    </div>
+    
+    <div class="summary-box">
+      <div>Total Amount: <span id="lblTotalAmount">-</span></div>
+      <div>No of Month: <span id="lblTotalMonth">-</span></div>
+      <div>Per Month Inst: <span id="lblPerMonthInst">-</span></div>
+      <div>Starting Month: <span id="lblStartMonth">-</span></div>
+      <div>Ending Month: <span id="lblEndMonth">-</span></div>
+    </div>
+  </div>
+
+  <div id="loading" class="loading">Loading customer ledger details... Please wait.</div>
+
+  <div class="table-container">
+    <table id="ledgerTable" style="display: none;">
+      <thead>
+        <tr>
+          <th class="col-date">Date</th>
+          <th class="col-voucher">Voucher No</th>
+          <th class="col-type">Type</th>
+          <th>Particulars / Description</th>
+          <th class="number col-amount">Debit (In)</th>
+          <th class="number col-amount">Credit (Out)</th>
+          <th class="number col-amount">Balance</th>
+        </tr>
+      </thead>
+      <tbody id="ledgerTableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    let urlParams = new URLSearchParams(window.location.search);
+    let accNo = urlParams.get('accNo') || urlParams.get('acc') || "";
+    
+    if (!accNo || accNo === "") {
+      try {
+        let tAcc = "<?= accNo ?>";
+        if (tAcc && !tAcc.includes("?=")) {
+          accNo = tAcc.trim();
+        }
+      } catch(e) {}
+    }
+
+    window.onload = function() {
+      if (!accNo || accNo === "" || accNo.includes("?")) {
+        document.getElementById('loading').innerHTML = '<span style="color:red;">Error: Account Number not detected for Ledger View!</span>';
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          document.getElementById('loading').style.display = 'none';
+          if (!result || !result.success) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading').innerHTML = '<span style="color:red;">Error: ' + (result ? result.message : 'Data not found') + '</span>';
+            return;
+          }
+          renderLedger(result);
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('loading').style.display = 'block';
+          document.getElementById('loading').innerHTML = '<span style="color:red;">Connection Error: ' + err.message + '</span>';
+        })
+        .getCustomerLedgerData(accNo);
+    };
+
+    function formatMonthYear(dateStr) {
+      if (!dateStr || dateStr === '-') return '-';
+      let parts = dateStr.split('-');
+      if (parts.length === 3) {
+        let monthIdx = parseInt(parts[1], 10) - 1;
+        let year = parts[2].slice(-2);
+        const monthsNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        if (monthIdx >= 0 && monthIdx < 12) {
+          return monthsNames[monthIdx] + '-' + year;
+        }
+      }
+      return dateStr;
+    }
+
+    function calculateEndingMonth(startEntryDate, totalMonths) {
+      if (!startEntryDate || startEntryDate === '-' || !totalMonths || totalMonths <= 0) return '-';
+      let parts = startEntryDate.split('-');
+      if (parts.length === 3) {
+        let day = parseInt(parts[0], 10);
+        let month = parseInt(parts[1], 10) - 1; 
+        let year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000; 
+
+        let totalMonthsToAdd = parseInt(totalMonths, 10) - 1;
+        let targetDate = new Date(year, month + totalMonthsToAdd, 1);
+
+        let finalMonthIdx = targetDate.getMonth();
+        let finalYear = String(targetDate.getFullYear()).slice(-2);
+
+        const monthsNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        return monthsNames[finalMonthIdx] + '-' + finalYear;
+      }
+      return '-';
+    }
+
+    function renderLedger(data) {
+      document.getElementById('lblAccNo').textContent = data.accNo || '';
+      document.getElementById('lblAccTitle').textContent = data.accTitle || '';
+      document.getElementById('lblApprovedBy').textContent = data.approvedBy || data.salesman || 'N/A';
+      document.getElementById('lblCro').textContent = data.cro || data.subSalesman || 'N/A';
+      document.getElementById('lblMobile').textContent = data.mobile || 'N/A';
+
+      let entries = data.entries || [];
+      let startRaw = '-';
+      let totalAmount = 0;
+
+      if (entries.length > 0) {
+        startRaw = entries[0].date || '-';
+        entries.forEach(function(e) {
+          if (e.type === 'SALE') {
+            totalAmount += parseFloat(e.debit) || 0;
+          }
+        });
+      }
+
+      let totalMonthsVal = data.totalMonths ? parseInt(data.totalMonths, 10) : 0;
+
+      document.getElementById('lblTotalAmount').textContent = totalAmount ? totalAmount.toLocaleString() : '0';
+      document.getElementById('lblTotalMonth').textContent = totalMonthsVal ? totalMonthsVal : '0';
+      document.getElementById('lblPerMonthInst').textContent = data.perMonthInst ? parseFloat(data.perMonthInst).toLocaleString() : '0';
+      document.getElementById('lblStartMonth').textContent = formatMonthYear(startRaw);
+      document.getElementById('lblEndMonth').textContent = calculateEndingMonth(startRaw, totalMonthsVal);
+
+      let table = document.getElementById('ledgerTable');
+      let tbody = document.getElementById('ledgerTableBody');
+      tbody.innerHTML = '';
+      table.style.display = 'table';
+
+      if (entries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 15px;">No transaction records found for this account.</td></tr>';
+        return;
+      }
+
+      let totalDebit = 0;
+      let totalCredit = 0;
+
+      entries.forEach(function(entry) {
+        totalDebit += parseFloat(entry.debit) || 0;
+        totalCredit += parseFloat(entry.credit) || 0;
+
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="col-date">${entry.date || ''}</td>
+          <td class="col-voucher"><b>${entry.receiptNo || entry.voucherNo || ''}</b></td>
+          <td class="col-type"><b>${entry.type || ''}</b></td>
+          <td>${entry.particulars || ''}</td>
+          <td class="number col-amount">${entry.debit ? parseFloat(entry.debit).toLocaleString() : ''}</td>
+          <td class="number col-amount">${entry.credit ? parseFloat(entry.credit).toLocaleString() : ''}</td>
+          <td class="number col-amount"><b>${entry.balance !== undefined ? parseFloat(entry.balance).toLocaleString() : ''}</b></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      let totalTr = document.createElement('tr');
+      totalTr.className = 'footer-total';
+      totalTr.innerHTML = `
+        <td colspan="4" style="text-align:right;">TOTAL / CLOSING BALANCE:</td>
+        <td class="number col-amount">${totalDebit.toLocaleString()}</td>
+        <td class="number col-amount">${totalCredit.toLocaleString()}</td>
+        <td class="number col-amount">${data.closingBalance !== undefined ? parseFloat(data.closingBalance).toLocaleString() : ''}</td>
+      `;
+      tbody.appendChild(totalTr);
+    }
+  </script>
+</body>
+</html>

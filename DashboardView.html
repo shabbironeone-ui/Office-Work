@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #3b82f6; }
+    .card.success { border-left-color: #10b981; }
+    .card.warning { border-left-color: #f59e0b; }
+    .card.danger { border-left-color: #ef4444; }
+    .card-title { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 8px; }
+    .card-value { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .table-box { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    h3 { margin-top: 0; font-size: 16px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f8fafc; font-weight: 600; color: #475569; }
+    .number { text-align: right; }
+    .loading { text-align: center; padding: 40px; font-weight: bold; color: #64748b; }
+  </style>
+</head>
+<body>
+
+  <div id="loading" class="loading">Loading Real-Time Executive Metrics...</div>
+  
+  <div id="dashboardContent" style="display:none;">
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Total Sales Volume</div>
+        <div class="card-value" id="mSalesVol">Rs 0</div>
+      </div>
+      <div class="card success">
+        <div class="card-title">Total Collections</div>
+        <div class="card-value" id="mCollections">Rs 0</div>
+      </div>
+      <div class="card warning">
+        <div class="card-title">Outstanding Receivable</div>
+        <div class="card-value" id="mReceivable">Rs 0</div>
+      </div>
+      <div class="card danger">
+        <div class="card-title">Net Cash Balance</div>
+        <div class="card-value" id="mNetCash">Rs 0</div>
+      </div>
+    </div>
+
+    <div class="table-box">
+      <h3>Detailed Breakdown & Performance Metrics</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Performance Metric Indicator</th>
+            <th class="number">Recorded Value / Amount</th>
+          </tr>
+        </thead>
+        <tbody id="breakdownTableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    window.onload = function() {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          document.getElementById('loading').style.display = 'none';
+          if(res.success) {
+            let m = res.metrics;
+            document.getElementById('dashboardContent').style.display = 'block';
+            
+            document.getElementById('mSalesVol').textContent = "Rs " + m.totalSalesAmount.toLocaleString();
+            document.getElementById('mCollections').textContent = "Rs " + m.totalCollections.toLocaleString();
+            document.getElementById('mReceivable').textContent = "Rs " + m.totalReceivable.toLocaleString();
+            document.getElementById('mNetCash').textContent = "Rs " + m.netCashBalance.toLocaleString();
+
+            let rows = [
+              ["Total Sales Contracts", m.totalSalesCount.toLocaleString()],
+              ["Total Active Customers", m.totalActiveCustomers.toLocaleString()],
+              ["Cash Collections (Receipts)", "Rs " + m.cashCollections.toLocaleString()],
+              ["Bank / Cheque Collections", "Rs " + m.bankCollections.toLocaleString()],
+              ["Processing Fee Total (PROS)", "Rs " + m.processingFeeTotal.toLocaleString()],
+              ["Advance Total (ADV)", "Rs " + m.advanceTotal.toLocaleString()],
+              ["Total Expense Outflows", "Rs " + m.totalExpenses.toLocaleString()],
+              ["Total Receipt Entries Count", m.totalReceiptCount.toLocaleString()]
+            ];
+
+            let tbody = document.getElementById('breakdownTableBody');
+            tbody.innerHTML = '';
+            rows.forEach(r => {
+              tbody.innerHTML += `<tr><td>${r[0]}</td><td class="number"><b>${r[1]}</b></td></tr>`;
+            });
+          } else {
+            alert("Error loading metrics: " + res.error);
+          }
+        })
+        .getDashboardMetrics();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <title>Stock Ledger Report</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f9; margin: 0; padding: 10px; color: #333; }
+    .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #1b5e20; margin-bottom: 15px; font-size: 18px; }
+    .filter-section { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; justify-content: center; }
+    input[type="text"] { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; width: 250px; }
+    button { background-color: #1b5e20; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    button:hover { background-color: #144316; }
+    .table-container { max-height: 480px; overflow-y: auto; border: 1px solid #bbb; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 6px 8px; border: 1px solid #bbb; text-align: left; }
+    th { background-color: #1b5e20; color: white; position: sticky; top: 0; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Stock Ledger Report</h2>
+    <div class="filter-section">
+      <input type="text" id="itemCodeInput" placeholder="Enter Item Code / Product Name..." />
+      <button onclick="fetchStockLedger()">Search Stock Ledger</button>
+    </div>
+    <div class="table-container">
+      <table id="stockTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Voucher No</th>
+            <th>Particulars</th>
+            <th>In Qty</th>
+            <th>Out Qty</th>
+            <th>Balance Qty</th>
+          </tr>
+        </thead>
+        <tbody id="stockBody">
+          <tr><td colspan="6" style="text-align: center; color: #777;">Please enter an item code and search.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
+
+    function fetchStockLedger() {
+      let itemCode = document.getElementById('itemCodeInput').value.trim();
+      let tbody = document.getElementById('stockBody');
+
+      if (!itemCode) {
+        alert("Please enter an item code or product name.");
+        return;
+      }
+
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Loading stock ledger records...</td></tr>`;
+
+      fetch(`${SCRIPT_URL}?action=getStockLedgerData&itemCode=${encodeURIComponent(itemCode)}`)
+        .then(res => res.json())
+        .then(response => {
+          if (response && response.success) {
+            renderStockTable(response.data);
+          } else {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Error loading stock data.</td></tr>`;
+          }
+        })
+        .catch(err => {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Network Error: ${err.message}</td></tr>`;
+        });
+    }
+
+    function renderStockTable(data) {
+      let tbody = document.getElementById('stockBody');
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #777;">No records found for this item.</td></tr>`;
+        return;
+      }
+
+      let html = "";
+      data.forEach(row => {
+        html += `<tr>
+          <td>${row.date || ''}</td>
+          <td>${row.voucherNo || ''}</td>
+          <td>${row.particulars || ''}</td>
+          <td>${Number(row.inQty || 0).toLocaleString()}</td>
+          <td>${Number(row.outQty || 0).toLocaleString()}</td>
+          <td>${Number(row.balanceQty || 0).toLocaleString()}</td>
+        </tr>`;
+      });
+      tbody.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 5px;
+      color: #333;
+    }
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+      background: #fff;
+      padding: 10px 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+    }
+    h2 {
+      text-align: center;
+      color: #1b5e20;
+      margin: 0 0 8px 0;
+      font-size: 18px;
+    }
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1.1fr 2fr 1.5fr 1.5fr auto;
+      gap: 6px;
+      align-items: end;
+      margin-bottom: 8px;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .input-group label {
+      font-size: 11px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 2px;
+    }
+    input[type="text"], input[type="date"], select {
+      padding: 4px 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 12px;
+      width: 100%;
+      box-sizing: border-box;
+      height: 32px;
+    }
+    .button-group {
+      display: flex;
+      gap: 4px;
+    }
+    button {
+      background-color: #1b5e20;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    button:hover {
+      background-color: #144316;
+    }
+    button.secondary {
+      background-color: #37474f;
+    }
+    button.secondary:hover {
+      background-color: #263238;
+    }
+
+    #loadingContainer {
+      display: none;
+      text-align: center;
+      margin: 15px 0;
+    }
+    .spinner {
+      width: 30px;
+      height: 30px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #1b5e20;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 5px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #loadingMsg {
+      color: #1b5e20;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .table-container {
+      max-height: 430px;
+      overflow-y: auto;
+      overflow-x: auto;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      margin-top: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      table-layout: fixed;
+    }
+    
+    th, td {
+      padding: 1px 2px;
+      border: 1px solid #bbb !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 10pt; 
+      font-weight: normal; 
+      line-height: 1.1;
+    }
+
+    th {
+      font-weight: bold !important;
+    }
+    
+    /* Fixed Column Widths (Total 17 columns) */
+    th.col-1, td.col-1 { width: 44px; }   /* Account No */
+    th.col-2, td.col-2 { width: 95px; }   /* Accunt Title */
+    th.col-3, td.col-3 { width: 68px; }   /* Approved By */
+    th.col-4, td.col-4 { width: 36px; }   /* CRO */
+    th.col-5, td.col-5 { width: 78px; }   /* Mobile NO */
+    th.col-6, td.col-6 { width: 46px; }   /* M Inst */
+    th.col-7, td.col-7 { width: 65px; }   /* Remarks */
+    th.col-8, td.col-8 { width: 40px; }   /* Product */
+    th.col-9, td.col-9 { width: 30px; }   /* Plan(M) */
+    th.col-10, td.col-10 { width: 56px; } /* Total Sale */
+    th.col-11, td.col-11 { width: 56px; } /* Total Paid */
+    th.col-12, td.col-12 { width: 52px; } /* T Balance */
+    th.col-13, td.col-13 { width: 55px; } /* Delivery Date */
+    th.col-14, td.col-14 { width: 38px; } /* M-3 */
+    th.col-15, td.col-15 { width: 38px; } /* M-2 */
+    th.col-16, td.col-16 { width: 38px; } /* M-1 */
+    th.col-17, td.col-17 { width: 44px; } /* CMD */
+
+    .sticky-header {
+      background-color: #1b5e20 !important;
+      color: white !important;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      font-weight: bold;
+      text-align: center;
+      font-size: 10pt;
+      letter-spacing: 0.3px;
+    }
+    .sticky-header th {
+      padding: 3px 1px;
+    }
+    .filter-header-row {
+      background-color: #f1f8e9 !important;
+      position: sticky;
+      top: 23px;
+      z-index: 2;
+    }
+    .filter-header-row th {
+      padding: 1px 1px;
+      background-color: #f1f8e9;
+    }
+    .filter-cell-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 1px;
+    }
+    .col-filter {
+      width: 100%;
+      padding: 1px 1px;
+      font-size: 8px;
+      border: 1px solid #c8e6c9;
+      border-radius: 3px;
+      box-sizing: border-box;
+      height: 18px;
+      background: #fff;
+    }
+    .col-filter:focus {
+      border-color: #1b5e20;
+      outline: none;
+    }
+    .excel-filter-btn {
+      background: #e8f5e9;
+      border: 1px solid #81c784;
+      color: #1b5e20;
+      cursor: pointer;
+      font-size: 7px;
+      padding: 0 1px;
+      height: 18px;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .excel-filter-btn:hover {
+      background: #c8e6c9;
+    }
+
+    .excel-popup {
+      display: none;
+      position: absolute;
+      background: #fff;
+      border: 1px solid #aaa;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      padding: 8px;
+      z-index: 100;
+      width: 260px;
+      border-radius: 4px;
+      font-size: 11px;
+      text-align: left;
+      color: #333;
+    }
+    .excel-popup.active {
+      display: block;
+    }
+    .excel-popup input[type="text"], .excel-popup select {
+      width: 100%;
+      margin-bottom: 6px;
+      height: 26px;
+      font-size: 11px;
+      box-sizing: border-box;
+      padding: 2px 6px;
+    }
+    .excel-checkbox-list {
+      max-height: 160px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 4px;
+      margin-bottom: 6px;
+      background: #fafafa;
+    }
+    .excel-checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 0;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .excel-checkbox-item input {
+      cursor: pointer;
+    }
+
+    .excel-popup-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .excel-popup-buttons button {
+      flex: 1;
+      height: 26px;
+      font-size: 11px;
+      padding: 2px;
+      justify-content: center;
+    }
+
+    /* Ledger Modal Styles */
+    .ledger-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .ledger-modal-content {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 15px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 700px;
+      border-radius: 6px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .ledger-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #1b5e20;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .ledger-header h3 {
+      margin: 0;
+      color: #1b5e20;
+      font-size: 16px;
+    }
+    .close-ledger {
+      color: #aaa;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close-ledger:hover {
+      color: #000;
+    }
+    .ledger-table-container {
+      overflow-y: auto;
+      max-height: 60vh;
+    }
+    .ledger-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .ledger-table th, .ledger-table td {
+      border: 1px solid #ddd;
+      padding: 5px;
+      text-align: left;
+    }
+    .ledger-table th {
+      background-color: #1b5e20;
+      color: white;
+    }
+    .account-link {
+      color: #0d47a1;
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .account-link:hover {
+      color: #1565c0;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    .summary-box {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-weight: bold;
+      font-size: 11px;
+      background: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      padding: 6px 10px;
+      border-radius: 4px;
+      color: #1b5e20;
+    }
+    
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 5mm;
+      }
+      body {
+        background-color: #fff;
+        padding: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      button, .filters-grid, .filter-header-row, #loadingContainer, .excel-popup, .ledger-modal { 
+        display: none !important; 
+      }
+      .container { 
+        max-width: 100%; 
+        box-shadow: none; 
+        padding: 0; 
+        margin: 0;
+      }
+      .table-container { 
+        max-height: none; 
+        overflow: visible; 
+        border: 1px solid #000 !important; 
+      }
+      table {
+        width: 100% !important;
+      }
+      th {
+        background-color: #1b5e20 !important;
+        color: white !important;
+        font-size: 10pt !important;
+        font-weight: bold !important;
+        padding: 2px 2px !important;
+        border: 1px solid #000 !important;
+        -webkit-print-color-adjust: exact;
+      }
+      td {
+        border: 1px solid #000 !important;
+        padding: 1px 2px !important;
+        font-size: 10pt !important;
+        font-weight: normal !important;
+        line-height: 1.1 !important;
+      }
+      .sticky-header {
+        position: static !important;
+      }
+      .summary-box {
+        background: #e8f5e9 !important;
+        border: 1px solid #000 !important;
+        font-size: 10px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Al-Meezan Electronics - Customer Aging Report</h2>
+    
+    <div class="filters-grid">
+      <div class="input-group">
+        <label>START DATE</label>
+        <input type="date" id="startDateInput">
+      </div>
+      <div class="input-group">
+        <label>END DATE</label>
+        <input type="date" id="endDateInput">
+      </div>
+      <div class="input-group">
+        <label>SEARCH ACCOUNT / NAME</label>
+        <input type="text" id="searchAccInput" placeholder="Acc No or Name...">
+      </div>
+      <div class="input-group">
+        <label>MOBILE NO</label>
+        <input type="text" id="searchMobileInput" placeholder="Mobile No...">
+      </div>
+      <div class="input-group">
+        <label>START FROM ACCT</label>
+        <input type="text" id="startFromAcctInput" placeholder="From Acct No...">
+      </div>
+      <div class="button-group">
+        <button onclick="fetchAndFilterData()" title="Search"><i class="fa fa-search"></i></button>
+        <button class="secondary" onclick="resetFilters()" title="Reset"><i class="fa fa-redo"></i></button>
+        <button class="secondary" onclick="printReport()" title="Print"><i class="fa fa-print"></i></button>
+      </div>
+    </div>
+
+    <div id="loadingContainer">
+      <div class="spinner"></div>
+      <div id="loadingMsg">Fetching aging records... Please wait.</div>
+    </div>
+
+    <div class="table-container">
+      <table id="reportTable">
+        <thead>
+          <tr class="sticky-header" id="mainHeaderRow">
+            <th class="col-1">Account No</th>
+            <th class="col-2">Accunt Title</th>
+            <th class="col-3">Approved By</th>
+            <th class="col-4">CRO</th>
+            <th class="col-5">Mobile NO</th>
+            <th class="col-6">M Inst</th>
+            <th class="col-7">Remarks</th>
+            <th class="col-8">Product</th>
+            <th class="col-9">Plan(M)</th>
+            <th class="col-10">Total Sale</th>
+            <th class="col-11">Total Paid</th>
+            <th class="col-12">T Balance</th>
+            <th class="col-13">Delivery Date</th>
+            <th class="col-14" id="thM3">M-3</th>
+            <th class="col-15" id="thM2">M-2</th>
+            <th class="col-16" id="thM1">M-1</th>
+            <th class="col-17">CMD</th>
+          </tr>
+          <tr class="filter-header-row">
+            <th class="col-1"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="accNo" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'accNo')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-2"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="accTitle" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'accTitle')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-3"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="approvedBy" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'approvedBy')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-4"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="cro" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'cro')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-5"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="mobile" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'mobile')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-6"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="monthlyInst" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'monthlyInst', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-7"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="remarks" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'remarks')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-8"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="product" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'product')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-9"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="plan" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'plan')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-10"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="totalSales" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'totalSales', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-11"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="totalReceived" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'totalReceived', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-12"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="balance" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'balance', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-13"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="deliveryDate" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'deliveryDate')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-14"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m3Received" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'm3Received', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-15"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m2Received" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'm2Received', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-16"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m1Received" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'm1Received', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-17"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="cmd" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'cmd', true)"><i class="fa fa-filter"></i></button></div></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="17" style="text-align: center; color: #777; padding: 15px; font-weight: normal;">Please click search to load aging report.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="summary-box">
+      <span id="totalRecords">Total Accounts: 0</span>
+      <span id="totalBalance">Total Balance: Rs. 0</span>
+    </div>
+  </div>
+
+  <!-- Excel Filter Popup Box -->
+  <div id="excelPopupBox" class="excel-popup">
+    <div id="numericFilterSection" style="display:none;">
+      <label style="font-size:10px; font-weight:bold; color:#555; display:block; margin-bottom:2px;">Condition:</label>
+      <select id="numCondition" style="margin-bottom:4px;">
+        <option value="eq">Equals (=)</option>
+        <option value="gt">Greater Than (&gt;)</option>
+        <option value="gte">Greater Than or Equal (&gt;=)</option>
+        <option value="lt">Less Than (&lt;)</option>
+        <option value="lte">Less Than or Equal (&lt;=)</option>
+        <option value="between">Between</option>
+      </select>
+      <input type="text" id="numVal1" placeholder="Value..." style="margin-bottom:4px;">
+      <input type="text" id="numVal2" placeholder="And Value (for Between)..." style="display:none; margin-bottom:4px;">
+    </div>
+
+    <div id="universalFilterSection">
+      <input type="text" id="popupSearchInput" placeholder="Search (All)..." oninput="filterPopupCheckboxes()">
+      <div class="excel-checkbox-item" style="border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 3px; font-weight: bold;">
+        <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAllCheckboxes(this)">
+        <label for="selectAllCheckbox" style="cursor: pointer; margin:0;">(Select All)</label>
+      </div>
+      <div id="popupCheckboxList" class="excel-checkbox-list"></div>
+    </div>
+
+    <div class="excel-popup-buttons" style="margin-top:4px;">
+      <button onclick="applyExcelPopupFilter()">Apply</button>
+      <button class="secondary" onclick="clearExcelPopupFilter()">Clear</button>
+    </div>
+  </div>
+
+  <!-- Ledger Modal HTML -->
+  <div id="ledgerModal" class="ledger-modal">
+    <div class="ledger-modal-content">
+      <div class="ledger-header">
+        <h3 id="ledgerModalTitle">Account Ledger</h3>
+        <span class="close-ledger" onclick="closeLedgerModal()">&times;</span>
+      </div>
+      <div class="ledger-table-container">
+        <table class="ledger-table" id="ledgerTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Particulars</th>
+              <th style="text-align:right;">Debit</th>
+              <th style="text-align:right;">Credit</th>
+              <th style="text-align:right;">Balance</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerTableBody">
+            <!-- Dynamic Ledger Rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let globalResponse = null;
+    let activePopupCol = null;
+    let activePopupInput = null;
+    let activeIsNumeric = false;
+    let isDateCol = false;
+    let popupAllUniqueValues = [];
+
+    // Permanent Web App URL configured here
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
+
+    function formatDateDDMMYY(dateString) {
+      if (!dateString) return '';
+      let d = new Date(dateString);
+      if (isNaN(d.getTime())) {
+        return String(dateString);
+      }
+      let day = String(d.getDate()).padStart(2, '0');
+      let month = String(d.getMonth() + 1).padStart(2, '0');
+      let year = String(d.getFullYear()).slice(-2);
+      return `${day}-${month}-${year}`;
+    }
+
+    function fetchAndFilterData() {
+      if (globalResponse !== null) {
+        applySearchFilter();
+        return;
+      }
+
+      document.getElementById('loadingContainer').style.display = 'block';
+      document.getElementById('loadingMsg').innerText = "Fetching aging records... Please wait.";
+
+      fetch(WEB_APP_URL + "?action=getAgingReportData")
+        .then(response => response.json())
+        .then(res => {
+          document.getElementById('loadingContainer').style.display = 'none';
+          if (res && res.data) {
+            globalResponse = res;
+            applySearchFilter();
+          } else {
+            alert("Error loading data from sheet.");
+          }
+        })
+        .catch(err => {
+          document.getElementById('loadingContainer').style.display = 'none';
+          alert("Fetch Failure: " + err.message);
+        });
+    }
+
+    function getColumnValue(row, colName, monthHeaders) {
+      if(colName === 'cmd') {
+        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
+        let cmdVal = 0;
+        let inst = Number(row.monthlyInst) || 0;
+        if (row.deliveryDate) {
+          let deliveryDate = new Date(row.deliveryDate);
+          if (!isNaN(deliveryDate.getTime())) {
+            let expiryDate = new Date(deliveryDate);
+            expiryDate.setMonth(expiryDate.getMonth() + planMonths);
+            let currentDate = new Date(); 
+            if (currentDate > expiryDate) {
+              cmdVal = Number(row.balance) || 0;
+            } else {
+              let yearsDiff = currentDate.getFullYear() - deliveryDate.getFullYear();
+              let monthsDiff = currentDate.getMonth() - deliveryDate.getMonth();
+              let totalMonthsPassed = (yearsDiff * 12) + monthsDiff;
+              if (currentDate.getDate() >= deliveryDate.getDate()) totalMonthsPassed += 1;
+              let maxExpectedInstallments = Math.min(totalMonthsPassed, planMonths);
+              let totalExpectedDue = maxExpectedInstallments * inst;
+              let effectiveReceived = Number(row.totalReceived || 0) - (Number(row.advance) || 0);
+              if (effectiveReceived < 0) effectiveReceived = 0;
+              cmdVal = totalExpectedDue - effectiveReceived;
+            }
+          } else {
+            cmdVal = inst;
+          }
+        } else {
+          cmdVal = inst;
+        }
+        return cmdVal;
+      } else if(colName === 'plan') {
+        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
+        return planMonths ? planMonths + "M" : String(row.plan || '');
+      } else if(colName === 'deliveryDate') {
+        return formatDateDDMMYY(row[colName]);
+      } else {
+        return row[colName] !== undefined && row[colName] !== null ? row[colName] : '';
+      }
+    }
+
+    function toggleExcelPopup(event, colName, isNumeric = false) {
+      event.stopPropagation();
+      if (!globalResponse || !globalResponse.data) {
+        alert("Please load the report first by searching!");
+        return;
+      }
+
+      let popup = document.getElementById('excelPopupBox');
+      let btn = event.currentTarget;
+      let input = btn.previousElementSibling;
+
+      activePopupCol = colName;
+      activePopupInput = input;
+      activeIsNumeric = isNumeric;
+      isDateCol = (colName === 'deliveryDate');
+
+      let rect = btn.getBoundingClientRect();
+      popup.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+      popup.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 270) + 'px';
+
+      let numSec = document.getElementById('numericFilterSection');
+      let univSec = document.getElementById('universalFilterSection');
+
+      if (isNumeric) {
+        numSec.style.display = 'block';
+        univSec.style.display = 'none';
+        popup.style.width = '220px';
+      } else {
+        numSec.style.display = 'none';
+        univSec.style.display = 'block';
+        popup.style.width = '270px';
+
+        univSec.innerHTML = `
+          <input type="text" id="popupSearchInput" placeholder="Search (All)..." oninput="filterPopupCheckboxes()">
+          <div class="excel-checkbox-item" style="border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 3px; font-weight: bold;">
+            <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAllCheckboxes(this)">
+            <label for="selectAllCheckbox" style="cursor: pointer; margin:0;">(Select All)</label>
+          </div>
+          <div id="popupCheckboxList" class="excel-checkbox-list"></div>
+        `;
+
+        let listContainer = document.getElementById('popupCheckboxList');
+        let currentFilterVal = input.value.trim();
+
+        let valSet = new Set();
+        globalResponse.data.forEach(row => {
+          let val = String(getColumnValue(row, colName, globalResponse.monthHeaders)).trim();
+          if (val !== "") valSet.add(val);
+        });
+
+        popupAllUniqueValues = Array.from(valSet).sort();
+        let selectedSet = new Set();
+        if (currentFilterVal === "") {
+          popupAllUniqueValues.forEach(v => selectedSet.add(v));
+        } else {
+          currentFilterVal.split('|').forEach(v => selectedSet.add(v.trim()));
+        }
+
+        let html = "";
+        popupAllUniqueValues.forEach((val, idx) => {
+          let isChecked = selectedSet.has(val) ? "checked" : "";
+          html += `<div class="excel-checkbox-item" style="margin:0;">
+            <input type="checkbox" id="chk_${idx}" value="${val}" ${isChecked} class="popup-item-chk val-chk" onchange="updateMasterSelectAllState()">
+            <label for="chk_${idx}" style="cursor:pointer; width:100%; overflow:hidden; text-overflow:ellipsis;" title="${val}">${val}</label>
+          </div>`;
+        });
+
+        listContainer.innerHTML = html;
+        document.getElementById('popupSearchInput').value = "";
+        updateMasterSelectAllState();
+      }
+
+      popup.classList.add('active');
+    }
+
+    function updateMasterSelectAllState() {
+      let visibleItems = Array.from(document.querySelectorAll('.excel-checkbox-item')).filter(item => {
+        let label = item.querySelector('label');
+        return label && label.getAttribute('for') !== 'selectAllCheckbox' && item.style.display !== 'none';
+      });
+      let checkedVisibleItems = visibleItems.filter(item => {
+        let chk = item.querySelector('.popup-item-chk');
+        return chk && chk.checked;
+      });
+      let master = document.getElementById('selectAllCheckbox');
+      if (master) {
+        master.checked = (visibleItems.length > 0 && checkedVisibleItems.length === visibleItems.length);
+      }
+    }
+
+    function filterPopupCheckboxes() {
+      let query = document.getElementById('popupSearchInput').value.toLowerCase().trim();
+      let items = document.querySelectorAll('.excel-checkbox-item');
+      
+      items.forEach(item => {
+        let label = item.querySelector('label');
+        if(label && label.getAttribute('for') !== 'selectAllCheckbox') {
+          let text = label.innerText.toLowerCase();
+          let isMatch = text.includes(query);
+          item.style.display = isMatch ? "flex" : "none";
+          
+          let chk = item.querySelector('.popup-item-chk');
+          if (chk) {
+            if (query !== "") {
+              chk.checked = isMatch;
+            }
+          }
+        }
+      });
+      updateMasterSelectAllState();
+    }
+
+    function toggleSelectAllCheckboxes(master) {
+      let visibleItems = document.querySelectorAll('.excel-checkbox-item');
+      visibleItems.forEach(item => {
+        let label = item.querySelector('label');
+        if (label && label.getAttribute('for') !== 'selectAllCheckbox' && item.style.display !== 'none') {
+          let chk = item.querySelector('.popup-item-chk');
+          if (chk) chk.checked = master.checked;
+        }
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      let popup = document.getElementById('excelPopupBox');
+      if (!popup.contains(e.target) && !e.target.closest('.excel-filter-btn')) {
+        popup.classList.remove('active');
+      }
+    });
+
+    function applyExcelPopupFilter() {
+      if (!activePopupInput) return;
+
+      if (activeIsNumeric) {
+        let cond = document.getElementById('numCondition').value;
+        let v1 = document.getElementById('numVal1').value.trim();
+        let v2 = document.getElementById('numVal2').value.trim();
+        if (v1 === '') activePopupInput.value = '';
+        else if (cond === 'eq') activePopupInput.value = v1;
+        else if (cond === 'gt') activePopupInput.value = '>' + v1;
+        else if (cond === 'gte') activePopupInput.value = '>=' + v1;
+        else if (cond === 'lt') activePopupInput.value = '<' + v1;
+        else if (cond === 'lte') activePopupInput.value = '<=' + v1;
+        else if (cond === 'between') activePopupInput.value = 'BETWEEN' + v1 + 'AND' + v2;
+      } else {
+        let selectedValues = [];
+        let leafCheckboxes = document.querySelectorAll('.val-chk');
+        leafCheckboxes.forEach(chk => {
+          let itemDiv = chk.closest('.excel-checkbox-item');
+          if (chk.checked && itemDiv && itemDiv.style.display !== 'none') {
+            selectedValues.push(chk.value);
+          }
+        });
+
+        let selectedSet = new Set(selectedValues);
+        let allSelected = popupAllUniqueValues.every(v => selectedSet.has(v));
+
+        if (allSelected || selectedValues.length === 0) {
+          activePopupInput.value = "";
+        } else {
+          activePopupInput.value = selectedValues.join('|');
+        }
+      }
+
+      document.getElementById('excelPopupBox').classList.remove('active');
+      applySearchFilter();
+    }
+
+    function clearExcelPopupFilter() {
+      if (activePopupInput) {
+        activePopupInput.value = "";
+      }
+      document.getElementById('excelPopupBox').classList.remove('active');
+      applySearchFilter();
+    }
+
+    function applySearchFilter() {
+      if (!globalResponse || !globalResponse.data) return;
+
+      let startDate = document.getElementById('startDateInput').value;
+      let endDate = document.getElementById('endDateInput').value;
+      let accQuery = document.getElementById('searchAccInput').value.toLowerCase().trim();
+      let mobileQuery = document.getElementById('searchMobileInput').value.toLowerCase().trim();
+      let startFromAcctQuery = document.getElementById('startFromAcctInput').value.toLowerCase().trim();
+      
+      let colFilters = [];
+      document.querySelectorAll('.col-filter').forEach(input => {
+        let val = input.value.trim();
+        if(val !== "") {
+          colFilters.push({ 
+            col: input.getAttribute('data-col'), 
+            rawVal: val,
+            isNumeric: input.classList.contains('numeric-filter')
+          });
+        }
+      });
+
+      let filtered = globalResponse.data.filter(row => {
+        if (startDate || endDate) {
+          let dDateStr = row.deliveryDate ? String(row.deliveryDate).trim() : '';
+          if (!dDateStr) return false;
+          let dDate = new Date(dDateStr);
+          if (isNaN(dDate.getTime())) return false;
+          
+          if (startDate) {
+            let sDate = new Date(startDate);
+            if (!isNaN(sDate.getTime()) && dDate < sDate) return false;
+          }
+          if (endDate) {
+            let eDate = new Date(endDate);
+            if (!isNaN(eDate.getTime()) && dDate > eDate) return false;
+          }
+        }
+
+        let acc = String(row.accNo || '').toLowerCase();
+        let title = String(row.accTitle || '').toLowerCase();
+        let mob = String(row.mobile || '').toLowerCase();
+        
+        let matchesAcc = true;
+        if (accQuery) {
+          matchesAcc = acc.includes(accQuery) || title.includes(accQuery);
+        }
+
+        let matchesMobile = true;
+        if (mobileQuery) {
+          matchesMobile = mob.includes(mobileQuery);
+        }
+
+        let matchesStartFromAcct = true;
+        if (startFromAcctQuery) {
+          let currentAccNum = parseFloat(row.accNo) || 0;
+          let filterAccNum = parseFloat(startFromAcctQuery) || 0;
+          if (currentAccNum < filterAccNum) {
+            return false;
+          }
+        }
+
+        if (!matchesAcc || !matchesMobile || !matchesStartFromAcct) return false;
+
+        for(let f of colFilters) {
+          let rowValNum = Number(getColumnValue(row, f.col, globalResponse.monthHeaders)) || 0;
+          let rowValStr = String(getColumnValue(row, f.col, globalResponse.monthHeaders)).trim();
+
+          if (f.isNumeric) {
+            let filterStr = f.rawVal;
+            if (filterStr.startsWith('>=')) {
+              let target = Number(filterStr.replace('>=', '')) || 0;
+              if (!(rowValNum >= target)) return false;
+            } else if (filterStr.startsWith('>')) {
+              let target = Number(filterStr.replace('>', '')) || 0;
+              if (!(rowValNum > target)) return false;
+            } else if (filterStr.startsWith('<=')) {
+              let target = Number(filterStr.replace('<=', '')) || 0;
+              if (!(rowValNum <= target)) return false;
+            } else if (filterStr.startsWith('<')) {
+              let target = Number(filterStr.replace('<', '')) || 0;
+              if (!(rowValNum < target)) return false;
+            } else if (filterStr.startsWith('BETWEEN')) {
+              let parts = filterStr.replace('BETWEEN', '').split('AND');
+              let min = Number(parts[0]) || 0;
+              let max = Number(parts[1]) || 0;
+              if (!(rowValNum >= min && rowValNum <= max)) return false;
+            } else {
+              let target = Number(filterStr) || 0;
+              if (rowValNum !== target) return false;
+            }
+          } else {
+            let allowedVals = new Set(f.rawVal.split('|').map(v => v.trim()));
+            if (!allowedVals.has(rowValStr)) {
+              return false;
+            }
+          }
+        }
+
+        return true;
+      });
+      
+      renderTableRows(filtered, globalResponse.monthHeaders);
+    }
+
+    function renderTableRows(data, monthHeaders) {
+      let tbody = document.getElementById('tableBody');
+      let m3Label = monthHeaders ? monthHeaders.m3 : 'M-3';
+      let m2Label = monthHeaders ? monthHeaders.m2 : 'M-2';
+      let m1Label = monthHeaders ? monthHeaders.m1 : 'M-1';
+
+      document.getElementById('thM3').innerText = m3Label;
+      document.getElementById('thM2').innerText = m2Label;
+      document.getElementById('thM1').innerText = m1Label;
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="17" style="text-align: center; color: #777; padding: 10px;">No records found.</td></tr>`;
+        document.getElementById('totalRecords').innerText = "Total Accounts: 0";
+        document.getElementById('totalBalance').innerText = "Total Balance: Rs. 0";
+        return;
+      }
+
+      let html = "";
+      let totalBalSum = 0;
+
+      data.forEach(row => {
+        let tBal = Number(row.balance) || 0;
+        totalBalSum += tBal;
+
+        let m3 = Number(row.m3Received) || 0;
+        let m2 = Number(row.m2Received) || 0;
+        let m1 = Number(row.m1Received) || 0;
+        let inst = Number(row.monthlyInst) || 0;
+        let saleAdvance = Number(row.advance) || 0;
+
+        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
+        let shortPlanStr = planMonths ? planMonths + "M" : (row.plan || '');
+        let formattedDate = formatDateDDMMYY(row.deliveryDate);
+        let cmd = 0;
+
+        if (row.deliveryDate) {
+          let deliveryDate = new Date(row.deliveryDate);
+          if (!isNaN(deliveryDate.getTime())) {
+            let expiryDate = new Date(deliveryDate);
+            expiryDate.setMonth(expiryDate.getMonth() + planMonths);
+            
+            let currentDate = new Date(); 
+            
+            if (currentDate > expiryDate) {
+              cmd = tBal;
+            } else {
+              let yearsDiff = currentDate.getFullYear() - deliveryDate.getFullYear();
+              let monthsDiff = currentDate.getMonth() - deliveryDate.getMonth();
+              let totalMonthsPassed = (yearsDiff * 12) + monthsDiff;
+              
+              if (currentDate.getDate() >= deliveryDate.getDate()) {
+                totalMonthsPassed += 1;
+              }
+              
+              let maxExpectedInstallments = Math.min(totalMonthsPassed, planMonths);
+              let totalExpectedDue = maxExpectedInstallments * inst;
+              
+              let effectiveReceived = Number(row.totalReceived || 0) - saleAdvance;
+              if (effectiveReceived < 0) effectiveReceived = 0;
+
+              let overallPending = totalExpectedDue - effectiveReceived;
+              cmd = overallPending;
+            }
+          } else {
+            cmd = inst;
+          }
+        } else {
+          cmd = inst;
+        }
+
+        let cmdStyle = cmd < 0 ? "text-align: right; background-color: #e3f2fd; color: #0d47a1;" : "text-align: right; background-color: #ffebee;";
+
+        html += `<tr>
+          <td class="col-1" title="${row.accNo || ''}">
+            <span class="account-link" onclick="openLedgerNewTab('${row.accNo}')">${row.accNo || ''}</span>
+          </td>
+          <td class="col-2" title="${row.accTitle || ''}">${row.accTitle || ''}</td>
+          <td class="col-3" title="${row.approvedBy || ''}">${row.approvedBy || ''}</td>
+          <td class="col-4" title="${row.cro || ''}">${row.cro || ''}</td>
+          <td class="col-5" title="${row.mobile || ''}">${row.mobile || ''}</td>
+          <td class="col-6" style="text-align: right;" title="${inst.toLocaleString()}">${inst.toLocaleString()}</td>
+          <td class="col-7" title="${row.remarks || ''}">${row.remarks || ''}</td>
+          <td class="col-8" title="${row.product || ''}">${row.product || ''}</td>
+          <td class="col-9" title="${row.plan || ''}">${shortPlanStr}</td>
+          <td class="col-10" style="text-align: right;" title="${Number(row.totalSales || 0).toLocaleString()}">${Number(row.totalSales || 0).toLocaleString()}</td>
+          <td class="col-11" style="text-align: right;" title="${Number(row.totalReceived || 0).toLocaleString()}">${Number(row.totalReceived || 0).toLocaleString()}</td>
+          <td class="col-12" style="text-align: right; color: #b71c1c;" title="${tBal.toLocaleString()}">${tBal.toLocaleString()}</td>
+          <td class="col-13" title="${formattedDate}">${formattedDate}</td>
+          <td class="col-14" style="text-align: right;" title="${m3.toLocaleString()}">${m3.toLocaleString()}</td>
+          <td class="col-15" style="text-align: right;" title="${m2.toLocaleString()}">${m2.toLocaleString()}</td>
+          <td class="col-16" style="text-align: right;" title="${m1.toLocaleString()}">${m1.toLocaleString()}</td>
+          <td class="col-17" style="${cmdStyle}" title="${cmd.toLocaleString()}">${cmd.toLocaleString()}</td>
+        </tr>`;
+      });
+
+      tbody.innerHTML = html;
+      document.getElementById('totalRecords').innerText = "Total Accounts: " + data.length;
+      document.getElementById('totalBalance').innerText = "Total Balance: Rs. " + totalBalSum.toLocaleString();
+    }
+
+    function openLedgerNewTab(accNo) {
+      if (!accNo) {
+        alert('Account number is missing!');
+        return;
+      }
+
+      let directUrl = WEB_APP_URL + "?page=LedgerView&accNo=" + encodeURIComponent(accNo);
+      let a = document.createElement('a');
+      a.href = directUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function closeLedgerModal() {
+      document.getElementById('ledgerModal').style.display = 'none';
+    }
+
+    window.addEventListener('click', function(event) {
+      let modal = document.getElementById('ledgerModal');
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+  
+    document.addEventListener('DOMContentLoaded', () => {
+      ['startDateInput', 'endDateInput', 'searchAccInput', 'searchMobileInput', 'startFromAcctInput'].forEach(id => {
+        let el = document.getElementById(id);
+        if(el) {
+          el.addEventListener('keypress', e => {
+            if(e.key === 'Enter') fetchAndFilterData();
+          });
+        }
+      });
+    });
+
+    function resetFilters() {
+      document.getElementById('startDateInput').value = '';
+      document.getElementById('endDateInput').value = '';
+      document.getElementById('searchAccInput').value = '';
+      document.getElementById('searchMobileInput').value = '';
+      document.getElementById('startFromAcctInput').value = '';
+      document.querySelectorAll('.col-filter').forEach(input => {
+        input.value = '';
+      });
+      if (globalResponse && globalResponse.data) {
+        renderTableRows(globalResponse.data, globalResponse.monthHeaders);
+      }
+    }
+
+    function printReport() {
+      window.print();
+    }
+  </script>
+</body>
+</html>
