@@ -212,12 +212,25 @@
     }
     .success { background-color: #d1fae5; color: #065f46; }
     .error { background-color: #fee2e2; color: #b91c1c; }
-  </style>
+  
+    .config-box { background: #fff3cd; border: 1px solid #ffe69c; padding: 10px 14px; border-radius: 6px; margin-bottom: 10px; font-size: 12px; display: none; }
+    .config-box.show { display: block; }
+    .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
+    .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .change-url-link { text-align: right; font-size: 10px; color: #64748b; margin-bottom: 4px; cursor: pointer; text-decoration: underline; }
+</style>
 </head>
 <body>
+  <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
+  <div id="configBox" class="config-box">
+    <b>Setup:</b> Apna Apps Script Deployment URL neeche daal kar Save karein.
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+    <button onclick="saveScriptUrl()">Save URL</button>
+  </div>
+
 
   <div class="form-container">
-    <h2>🛒 Purchase & Stock Entry Form</h2>[cite: 4]
+    <h2>🛒 Purchase & Stock Entry Form</h2>
     
     <div class="row">
       <div class="col">
@@ -236,7 +249,7 @@
       </div>
     </div>
 
-    <h3>Items List</h3>[cite: 4]
+    <h3>Items List</h3>
     <div style="overflow-x: auto;">
       <table>
         <thead>
@@ -271,7 +284,7 @@
     <button type="button" class="btn btn-add" onclick="addRow()">+ Add Item Row</button>
     <br><br>
 
-    <button type="button" class="btn btn-submit" id="submitBtn" onclick="submitPurchase()">Save Purchase & Update Stock</button>[cite: 4]
+    <button type="button" class="btn btn-submit" id="submitBtn" onclick="submitPurchase()">Save Purchase & Update Stock</button>
     
     <div id="statusMsg"></div>
 
@@ -398,7 +411,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
+    let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
 
     var activeRowForModal = null;
     var allPurchasedProducts = [];
@@ -415,9 +428,9 @@
     };
 
     function loadVendors() {
-      fetch(`${SCRIPT_URL}?action=getVendorsFromSettings`)
-        .then(res => res.json())
-        .then(res => {
+      fetch(SCRIPT_URL + "?action=getVendorsFromSettings")
+        .then(r => r.json())
+        .then(function(res) {
           var select = document.getElementById('vendor');
           select.innerHTML = '<option value="">Select Vendor</option>';
           if (res.success && res.vendors.length > 0) {
@@ -430,16 +443,13 @@
           } else {
             select.innerHTML = '<option value="">No vendors found in Column J</option>';
           }
-        })
-        .catch(err => {
-          console.error("Error loading vendors:", err);
         });
     }
 
     function loadSavedEntries() {
-      fetch(`${SCRIPT_URL}?action=getRecentPurchases`)
-        .then(res => res.json())
-        .then(res => {
+      fetch(SCRIPT_URL + "?action=getRecentPurchases")
+        .then(r => r.json())
+        .then(function(res) {
           if (res.success && res.purchases) {
             allSavedPurchases = res.purchases || [];
             filterSavedEntries();
@@ -447,10 +457,6 @@
             var tbody = document.getElementById('savedEntriesTableBody');
             tbody.innerHTML = '<tr><td colspan="11" style="text-align: center;">No saved purchase entries found.</td></tr>';
           }
-        })
-        .catch(err => {
-          var tbody = document.getElementById('savedEntriesTableBody');
-          tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: red;">Error loading entries: ' + err.message + '</td></tr>';
         });
     }
 
@@ -635,49 +641,38 @@
       document.body.classList.add('loading');
       btn.disabled = true;
 
-      fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "updatePurchaseEntry", data: updatedData })
-      })
-      .then(res => res.json())
-      .then(res => {
-        isSavingInline = false;
-        document.body.classList.remove('loading');
-        if (res && res.success) {
-          loadSavedEntries();
-        } else {
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "updatePurchaseEntry", data: updatedData }) })
+        .then(r => r.json())
+        .then(function(res) {
           isSavingInline = false;
+          document.body.classList.remove('loading');
+          if (res && res.success) {
+            loadSavedEntries();
+          } else {
+            isSavingInline = false;
+            btn.disabled = false;
+            alert("Error updating entry: " + (res ? res.error : "Unknown error"));
+          }
+        })
+        .catch(function(err) {
+          isSavingInline = false;
+          document.body.classList.remove('loading');
           btn.disabled = false;
-          alert("Error updating entry: " + (res ? res.error : "Unknown error"));
-        }
-      })
-      .catch(err => {
-        isSavingInline = false;
-        document.body.classList.remove('loading');
-        btn.disabled = false;
-        alert("Server Error: " + err.message);
-      });
+          alert("Server Error: " + err.message);
+        });
     }
 
     function deleteSavedEntry(rowIndex) {
       if (confirm("Kya aap waqai is entry ko delete karna chahte hain?")) {
-        fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "deletePurchaseEntry", rowIndex: rowIndex })
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (res && res.success) {
-            loadSavedEntries();
-          } else {
-            alert("Error: " + (res ? res.error : "Unknown error"));
-          }
-        })
-        .catch(err => {
-          alert("Server Error: " + err.message);
-        });
+        fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "deletePurchaseEntry", data: rowIndex }) })
+        .then(r => r.json())
+        .then(function(res) {
+            if (res && res.success) {
+              loadSavedEntries();
+            } else {
+              alert("Error: " + (res ? res.error : "Unknown error"));
+            }
+          });
       }
     }
 
@@ -822,18 +817,15 @@
       if (!productId) return;
       var row = input.closest('tr');
       
-      fetch(`${SCRIPT_URL}?action=getProductDetailsById&productId=${encodeURIComponent(productId)}`)
-        .then(res => res.json())
-        .then(res => {
+      fetch(SCRIPT_URL + "?action=getProductDetailsById" + "&id=" + encodeURIComponent(productId))
+        .then(r => r.json())
+        .then(function(res) {
           if (res.success) {
             fillRowWithPurchaseData(row, res.product);
           } else {
             alert(res.error);
             input.value = "";
           }
-        })
-        .catch(err => {
-          alert("Error fetching product: " + err.message);
         });
     }
 
@@ -877,9 +869,9 @@
       var tbody = document.getElementById('modalProductTableBody');
       tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Loading products from Master...</td></tr>';
       
-      fetch(`${SCRIPT_URL}?action=getAllProductsFromMasterForSelection`)
-        .then(res => res.json())
-        .then(res => {
+      fetch(SCRIPT_URL + "?action=getAllProductsFromMasterForSelection")
+        .then(r => r.json())
+        .then(function(res) {
           if (res && res.success) {
             allPurchasedProducts = res.products || [];
             renderModalTable(allPurchasedProducts);
@@ -887,7 +879,7 @@
             tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:red;">Error loading products</td></tr>';
           }
         })
-        .catch(err => {
+        .catch(function(err) {
           tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:red;">Error: ' + err.message + '</td></tr>';
         });
     }
@@ -977,7 +969,6 @@
       var rawMemory = document.getElementById('qa_memory').value.trim().toUpperCase();
 
       var formData = {
-        action: "saveProductMaster",
         product_category: rawCategory,
         company_name: rawBrand,
         model: rawModel,
@@ -992,35 +983,28 @@
         return;
       }
 
-      fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(formData)
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          if (activeRowForModal) {
-            activeRowForModal.cells[0].querySelector('input').value = res.product_id;
-            activeRowForModal.cells[1].querySelector('input').value = formData.company_name;
-            activeRowForModal.cells[2].querySelector('input').value = formData.product_category;
-            
-            var comboModel = formData.model;
-            if (formData.ram || formData.memory) {
-              var specs = (formData.ram && formData.memory) ? (formData.ram + "/" + formData.memory) : (formData.ram || formData.memory);
-              comboModel = comboModel + " " + specs;
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveProductMaster", data: formData }) })
+        .then(r => r.json())
+        .then(function(res) {
+          if (res.success) {
+            if (activeRowForModal) {
+              activeRowForModal.cells[0].querySelector('input').value = res.product_id;
+              activeRowForModal.cells[1].querySelector('input').value = formData.company_name;
+              activeRowForModal.cells[2].querySelector('input').value = formData.product_category;
+              
+              var comboModel = formData.model;
+              if (formData.ram || formData.memory) {
+                var specs = (formData.ram && formData.memory) ? (formData.ram + "/" + formData.memory) : (formData.ram || formData.memory);
+                comboModel = comboModel + " " + specs;
+              }
+              activeRowForModal.cells[3].querySelector('input').value = comboModel;
+              activeRowForModal.cells[4].querySelector('input').value = formData.color;
+              closeQuickAddModal();
             }
-            activeRowForModal.cells[3].querySelector('input').value = comboModel;
-            activeRowForModal.cells[4].querySelector('input').value = formData.color;
-            closeQuickAddModal();
+          } else {
+            alert("Error: " + res.error);
           }
-        } else {
-          alert("Error: " + res.error);
-        }
-      })
-      .catch(err => {
-        alert("Error saving product master: " + err.message);
-      });
+        });
     }
 
     function resetForm() {
@@ -1105,7 +1089,6 @@
       if (!isValid || items.length === 0) return;
 
       var payload = {
-        action: "savePurchaseTransaction",
         purchase_date: purchaseDate,
         supplier: vendor,
         warehouse: warehouse || "MAIN WAREHOUSE",
@@ -1119,39 +1102,57 @@
       var statusMsg = document.getElementById('statusMsg');
       statusMsg.style.display = 'none';
 
-      fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      })
-      .then(res => res.json())
-      .then(res => {
-        document.body.classList.remove('loading');
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Save Purchase & Update Stock";
-        
-        if (res && res.success) {
-          statusMsg.className = "success";
-          statusMsg.innerText = res.message || "Purchase Successfully Recorded & Synced!";
-          statusMsg.style.display = 'block';
-          resetForm();
-          loadSavedEntries();
-        } else {
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "savePurchaseTransaction", data: payload }) })
+        .then(r => r.json())
+        .then(function(res) {
+          document.body.classList.remove('loading');
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Save Purchase & Update Stock";
+          
+          if (res && res.success) {
+            statusMsg.className = "success";
+            statusMsg.innerText = res.message || "Purchase Successfully Recorded & Synced!";
+            statusMsg.style.display = 'block';
+            resetForm();
+            loadSavedEntries();
+          } else {
+            statusMsg.className = "error";
+            statusMsg.innerText = "Error: " + (res ? res.error : "Unknown error occurred.");
+            statusMsg.style.display = 'block';
+          }
+        })
+        .catch(function(err) {
+          document.body.classList.remove('loading');
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Save Purchase & Update Stock";
           statusMsg.className = "error";
-          statusMsg.innerText = "Error: " + (res ? res.error : "Unknown error occurred.");
+          statusMsg.innerText = "Server Error: " + err.message;
           statusMsg.style.display = 'block';
-        }
-      })
-      .catch(err => {
-        document.body.classList.remove('loading');
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Save Purchase & Update Stock";
-        statusMsg.className = "error";
-        statusMsg.innerText = "Server Error: " + err.message;
-        statusMsg.style.display = 'block';
-      });
+        });
     }
-  </script>
+  
+    // ===== Deployment URL config (auto-added) =====
+    function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      var box = document.getElementById('configBox');
+      if (box) box.classList.add('show');
+    }
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
+    });
+</script>
 
 </body>
 </html>

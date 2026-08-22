@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
+  <meta charset="utf-8">
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
@@ -18,9 +18,21 @@
     th { background: #f8fafc; font-weight: 600; color: #475569; }
     .number { text-align: right; }
     .loading { text-align: center; padding: 40px; font-weight: bold; color: #64748b; }
+
+    .config-box { background: #fff3cd; border: 1px solid #ffe69c; padding: 10px 14px; border-radius: 6px; margin-bottom: 10px; font-size: 11px; display: none; }
+    .config-box.show { display: block; }
+    .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px; box-sizing: border-box; }
+    .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; }
   </style>
 </head>
 <body>
+
+    <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
+  <div id="configBox" class="config-box">
+    <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+    <button onclick="saveScriptUrl()">Save URL</button>
+  </div>
 
   <div id="loading" class="loading">Loading Real-Time Executive Metrics...</div>
   
@@ -60,14 +72,29 @@
   </div>
 
   <script>
-    window.onload = function() {
-      google.script.run
-        .withSuccessHandler(function(res) {
+    let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
+
+    function saveScriptUrl() {
+      const val = document.getElementById('scriptUrlInput').value.trim();
+      if (!val) { alert("URL enter karein"); return; }
+      SCRIPT_URL = val;
+      localStorage.setItem('erp_script_url', val);
+      document.getElementById('configBox').classList.remove('show');
+      loadDashboard();
+    }
+
+    function loadDashboard() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('dashboardContent').style.display = 'none';
+
+      fetch(SCRIPT_URL + "?action=getDashboardMetrics")
+        .then(res => res.json())
+        .then(res => {
           document.getElementById('loading').style.display = 'none';
-          if(res.success) {
+          if (res.success) {
             let m = res.metrics;
             document.getElementById('dashboardContent').style.display = 'block';
-            
+
             document.getElementById('mSalesVol').textContent = "Rs " + m.totalSalesAmount.toLocaleString();
             document.getElementById('mCollections').textContent = "Rs " + m.totalCollections.toLocaleString();
             document.getElementById('mReceivable').textContent = "Rs " + m.totalReceivable.toLocaleString();
@@ -93,8 +120,40 @@
             alert("Error loading metrics: " + res.error);
           }
         })
-        .getDashboardMetrics();
+        .catch(err => {
+          document.getElementById('loading').style.display = 'none';
+          alert("Server Error: " + err.message);
+        });
+    }
+
+    window.onload = function() {
+      if (!localStorage.getItem('erp_script_url')) {
+        // hardcoded default already set, config box sirf tab dikhega agar user manually change karna chahe
+      }
+      loadDashboard();
     };
-  </script>
+  
+    // ===== Deployment URL config (auto-added) =====
+    function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      var box = document.getElementById('configBox');
+      if (box) box.classList.add('show');
+    }
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
+    });
+</script>
 </body>
 </html>

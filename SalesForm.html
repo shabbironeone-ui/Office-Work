@@ -339,9 +339,22 @@
       text-transform: uppercase;
       font-size: 12px;
     }
-  </style>
+  
+    .config-box { background: #fff3cd; border: 1px solid #ffe69c; padding: 10px 14px; border-radius: 6px; margin-bottom: 10px; font-size: 12px; display: none; }
+    .config-box.show { display: block; }
+    .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
+    .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .change-url-link { text-align: right; font-size: 10px; color: #64748b; margin-bottom: 4px; cursor: pointer; text-decoration: underline; }
+</style>
 </head>
 <body>
+  <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
+  <div id="configBox" class="config-box">
+    <b>Setup:</b> Apna Apps Script Deployment URL neeche daal kar Save karein.
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+    <button onclick="saveScriptUrl()">Save URL</button>
+  </div>
+
 
 <div class="container">
   <div class="top-header-row">
@@ -528,7 +541,7 @@
 </div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
+    let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
 
   let activeRowForModal = null;
   let allMasterProducts = [];
@@ -597,9 +610,9 @@
     if (!accNo) return;
 
     showLoader(true);
-    fetch(`${SCRIPT_URL}?action=getCustomerDetailsForSales&accountNo=${encodeURIComponent(accNo)}`)
-      .then(res => res.json())
-      .then(res => {
+    fetch(SCRIPT_URL + "?action=getCustomerDetailsForSales" + "&accNo=" + encodeURIComponent(accNo))
+        .then(r => r.json())
+        .then(function(res) {
         showLoader(false);
         if (res && res.success) {
           if (res.alreadySaved) {
@@ -620,7 +633,7 @@
           document.getElementById("accountNo").focus();
         }
       })
-      .catch(err => {
+        .catch(function(err) {
         showLoader(false);
         alert("Error fetching customer details.");
       });
@@ -633,9 +646,9 @@
     document.getElementById('modalSearchInput').value = '';
     
     showLoader(true);
-    fetch(`${SCRIPT_URL}?action=getStockLedgerProductsForSales`)
-      .then(res => res.json())
-      .then(res => {
+    fetch(SCRIPT_URL + "?action=getStockLedgerProductsForSales")
+        .then(r => r.json())
+        .then(function(res) {
         showLoader(false);
         if (res.success) {
           allMasterProducts = res.products;
@@ -644,7 +657,7 @@
           alert("Could not load stock ledger products.");
         }
       })
-      .catch(err => {
+        .catch(function(err) {
         showLoader(false);
         alert("Error loading stock ledger.");
       });
@@ -662,6 +675,7 @@
       return;
     }
 
+    // Product ID ke lihaz se group kar ke latest/net balance nikalne ka logic
     let groupedProducts = {};
     products.forEach(function(p) {
       let prodIdVal = p.product_id !== undefined ? p.product_id : (p.PRODUCT_ID !== undefined ? p.PRODUCT_ID : '');
@@ -671,13 +685,15 @@
       if (p.balance !== undefined) balanceVal = Number(p.balance) || 0;
       else if (p.BALAN !== undefined) balanceVal = Number(p.BALAN) || 0;
 
+      // Agar product pehle se map mein hai, toh uska balance update kar lein (ya jo bhi latest row ho)
+      // Kyunki backend se data chronological aata hai, aakhri row ka balance ya net balance yahan reflect hoga
       groupedProducts[prodIdVal] = {
         product_id: prodIdVal,
         companyName: p.companyName !== undefined ? p.companyName : (p.COMPANY_NAME !== undefined ? p.COMPANY_NAME : ''),
         productCategory: p.productCategory !== undefined ? p.productCategory : (p.PRODUCT_CATEGORY !== undefined ? p.PRODUCT_CATEGORY : ''),
         model: p.model !== undefined ? p.model : (p.MODEL !== undefined ? p.MODEL : ''),
         color: p.color !== undefined ? p.color : (p.Color !== undefined ? p.Color : ''),
-        balance: balanceVal
+        balance: balanceVal // Ya agar sari entries ka net balance chahiye toh yahan += kar sakte hain, lekin ledger mein BALAN column already current running balance hota hai toh aakhri entry wala balance uthay ga.
       };
     });
 
@@ -800,6 +816,7 @@
     let data = collectFormData();
     if (!data) return;
 
+    // Save button ko disable aur cursor ko wait (loading wheel) banana
     let saveBtn = document.getElementById('actionMainBtn');
     saveBtn.disabled = true;
     saveBtn.style.opacity = '0.5';
@@ -807,42 +824,35 @@
     document.body.style.cursor = 'wait';
 
     showLoader(true);
+    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveSalesEntry", data: data }) })
+        .then(r => r.json())
+        .then(function(res) {
+        // Button aur cursor ko wapas normal karna
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = '1';
+        saveBtn.style.cursor = 'pointer';
+        document.body.style.cursor = 'default';
+        showLoader(false);
 
-    const payload = {
-      action: "saveSalesEntry",
-      ...data
-    };
+        if (res.success) {
+          clearSaleForm();
+          loadRecentSales();
+          window.open('receipts.html', '_blank');
+        } else {
+          alert("Error: " + res.error);
+        }
+      })
+        .catch(function(err) {
+        // Error ki surat mein bhi button aur cursor restore karna
+        let saveBtn = document.getElementById('actionMainBtn');
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = '1';
+        saveBtn.style.cursor = 'pointer';
+        document.body.style.cursor = 'default';
+        showLoader(false);
 
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(res => {
-      saveBtn.disabled = false;
-      saveBtn.style.opacity = '1';
-      saveBtn.style.cursor = 'pointer';
-      document.body.style.cursor = 'default';
-      showLoader(false);
-
-      if (res.success) {
-        clearSaleForm();
-        loadRecentSales();
-        alert("Sales entry saved successfully!");
-      } else {
-        alert("Error: " + res.error);
-      }
-    })
-    .catch(err => {
-      saveBtn.disabled = false;
-      saveBtn.style.opacity = '1';
-      saveBtn.style.cursor = 'pointer';
-      document.body.style.cursor = 'default';
-      showLoader(false);
-
-      alert("Server Error: " + err.message);
-    });
+        alert("Server Error: " + err.message);
+      });
   }
 
   function collectFormData() {
@@ -931,9 +941,9 @@
     let fromDate = document.getElementById('recentFromDate').value;
     let toDate = document.getElementById('recentToDate').value;
 
-    fetch(`${SCRIPT_URL}?action=getRecentSalesList&fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`)
-      .then(res => res.json())
-      .then(res => {
+    fetch(SCRIPT_URL + "?action=getRecentSalesList" + "&fromDate=" + encodeURIComponent(fromDate) + "&toDate=" + encodeURIComponent(toDate))
+        .then(r => r.json())
+        .then(function(res) {
         let tbody = document.getElementById('recentSalesTableBody');
         tbody.innerHTML = '';
         
@@ -985,7 +995,7 @@
         document.getElementById('totalProcFee').innerText = sumProcFee ? sumProcFee.toLocaleString() : '0';
         document.getElementById('totalGrandAmount').innerText = sumTotalAmount ? sumTotalAmount.toLocaleString() : '0';
       })
-      .catch(err => {
+        .catch(function(err) {
         console.error("Error loading recent sales:", err);
       });
   }
@@ -994,6 +1004,28 @@
     document.getElementById('accountNo').value = accNo;
     fetchCustomerDetails();
   }
+
+    // ===== Deployment URL config (auto-added) =====
+    function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      var box = document.getElementById('configBox');
+      if (box) box.classList.add('show');
+    }
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
+    });
 </script>
 
 </body>

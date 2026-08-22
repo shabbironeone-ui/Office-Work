@@ -209,6 +209,7 @@
   <h2>Al Meezan ERP - Customer Register (COA)</h2>
 
   <!-- Ye box sirf tab dikhega jab Apps Script URL set nahi hoga -->
+    <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
   <div id="configBox" class="config-box">
     <b>Setup:</b> Pehli baar use karne ke liye apna Apps Script Web App URL neeche paste karein aur Save dabayein.
     <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
@@ -583,6 +584,28 @@
     const selects = document.querySelectorAll('select');
     selects.forEach(select => select.selectedIndex = 0);
   }
+
+    // ===== Deployment URL config (auto-added) =====
+    function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      var box = document.getElementById('configBox');
+      if (box) box.classList.add('show');
+    }
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
+    });
 </script>
 
 </body>

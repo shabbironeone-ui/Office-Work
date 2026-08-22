@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
   <meta charset="utf-8">
   <title>Product Master Registration</title>
   <style>
@@ -97,11 +96,23 @@
     }
     .success { background-color: #d1fae5; color: #065f46; }
     .error { background-color: #fee2e2; color: #b91c1c; }
+
+    .config-box { background: #fff3cd; border: 1px solid #ffe69c; padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; font-size: 11px; display: none; }
+    .config-box.show { display: block; }
+    .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px; box-sizing: border-box; text-transform: none; }
+    .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; }
   </style>
 </head>
 <body>
 
   <div class="form-container">
+      <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
+  <div id="configBox" class="config-box">
+      <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
+      <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+      <button onclick="saveScriptUrl()">Save URL</button>
+    </div>
+
     <h2>📦 Product Master Registration</h2>
     <form id="productForm" onsubmit="handleFormSubmit(event)">
       
@@ -160,17 +171,28 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
+    let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
 
+    function saveScriptUrl() {
+      const val = document.getElementById('scriptUrlInput').value.trim();
+      if (!val) { alert("URL enter karein"); return; }
+      SCRIPT_URL = val;
+      localStorage.setItem('erp_script_url', val);
+      document.getElementById('configBox').classList.remove('show');
+      loadDropdownSuggestions();
+    }
+
+    // Page load hote hi backend se dropdown lists load karna
     window.onload = function() {
       loadDropdownSuggestions();
     };
 
     function loadDropdownSuggestions() {
-      fetch(`${SCRIPT_URL}?action=getProductDropdownData`)
+      fetch(SCRIPT_URL + "?action=getProductDropdownData")
         .then(res => res.json())
-        .then(data => {
-          if (!data) return;
+        .then(res => {
+          if (!res || !res.data) return;
+          let data = res.data;
           populateDatalist('catList', data.categories);
           populateDatalist('companyList', data.companies);
           populateDatalist('modelList', data.models);
@@ -178,7 +200,7 @@
           populateDatalist('ramList', data.rams);
           populateDatalist('romList', data.roms);
         })
-        .catch(err => console.error("Error loading dropdown data:", err));
+        .catch(err => console.error("Dropdown load error:", err));
     }
 
     function populateDatalist(listId, items) {
@@ -273,7 +295,6 @@
       var formattedRam = rawRam ? (rawRam.toLowerCase().includes('gb') ? rawRam : rawRam + " GB") : "";
       
       var formData = {
-        action: "saveProductMaster",
         product_category: document.getElementById('product_category').value.trim().toUpperCase(),
         company_name: document.getElementById('company_name').value.trim().toUpperCase(),
         model: document.getElementById('model').value.trim().toUpperCase(),
@@ -284,36 +305,57 @@
       };
       
       fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(formData)
+        method: 'POST',
+        body: JSON.stringify({ action: 'saveProductMaster', data: formData })
       })
-      .then(res => res.json())
-      .then(response => {
-        btn.disabled = false;
-        btn.innerText = "Save Product";
-        statusMsg.style.display = "block";
-        
-        if (response.success) {
-          statusMsg.className = "success";
-          statusMsg.innerText = response.message + " (ID: " + response.product_id + ")";
-          document.getElementById('productForm').reset();
-          document.getElementById('mobileExtraSection').style.display = 'none';
-          loadDropdownSuggestions();
-        } else {
+        .then(res => res.json())
+        .then(response => {
+          btn.disabled = false;
+          btn.innerText = "Save Product";
+          statusMsg.style.display = "block";
+
+          if (response.success) {
+            statusMsg.className = "success";
+            statusMsg.innerText = response.message + " (ID: " + response.product_id + ")";
+            document.getElementById('productForm').reset();
+            document.getElementById('mobileExtraSection').style.display = 'none';
+            loadDropdownSuggestions();
+          } else {
+            statusMsg.className = "error";
+            statusMsg.innerText = "Error: " + response.error;
+          }
+        })
+        .catch(err => {
+          btn.disabled = false;
+          btn.innerText = "Save Product";
+          statusMsg.style.display = "block";
           statusMsg.className = "error";
-          statusMsg.innerText = "Error: " + response.error;
-        }
-      })
-      .catch(err => {
-        btn.disabled = false;
-        btn.innerText = "Save Product";
-        statusMsg.style.display = "block";
-        statusMsg.className = "error";
-        statusMsg.innerText = "Server Error: " + err.message;
-      });
+          statusMsg.innerText = "Server Error: " + err.message;
+        });
     }
-  </script>
+  
+    // ===== Deployment URL config (auto-added) =====
+    function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      var box = document.getElementById('configBox');
+      if (box) box.classList.add('show');
+    }
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
+    });
+</script>
 
 </body>
 </html>
