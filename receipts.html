@@ -806,6 +806,7 @@
       let accNo = row.querySelector('.batch-acc').value.trim();
       let rctNo = row.querySelector('.batch-rct').value.trim();
       let amt = row.querySelector('.batch-amt').value.trim();
+      let title = row.querySelector('.batch-title').value.trim();
       if (accNo && accNo !== '786' && rctNo && amt && Number(amt) > 0) {
         entries.push({
           accountNo: accNo,
@@ -813,7 +814,8 @@
           receiptNoCustom: rctNo,
           receiptDate: commonDate,
           receiptAmount: amt,
-          receiptRemarks: commonRemarks
+          receiptRemarks: commonRemarks,
+          accountTitle: title
         });
       }
     });
@@ -830,9 +832,8 @@
         isSubmitting = false;
         document.body.classList.remove('is-saving');
         saveBtn.disabled = false;
-        alert("All batch receipts saved successfully!");
+        addEntriesToLocalRecentList(entries, commonDate, commonSuffix);
         clearBatchForm();
-        loadRecentReceipts();
         return;
       }
       fetch(SCRIPT_URL, {
@@ -843,6 +844,36 @@
         .catch(() => saveNext(i + 1));
     }
     saveNext(0);
+  }
+
+  function formatDisplayDate(isoDate) {
+    if (!isoDate) return '';
+    const parts = isoDate.split('-');
+    if (parts.length === 3) return parts[2] + '-' + parts[1] + '-' + parts[0];
+    return isoDate;
+  }
+
+  // Naye save hue receipts turant list mein dikhayein - poori sheet dobara load kiye bagair (fast)
+  function addEntriesToLocalRecentList(savedEntries, dateVal, payMode) {
+    const isCash = (settingsOptions.cash || []).includes(payMode);
+    const dObj = dateVal ? new Date(dateVal).setHours(0, 0, 0, 0) : Date.now();
+    const dStr = formatDisplayDate(dateVal);
+
+    savedEntries.forEach(e => {
+      recentReceiptsData.unshift({
+        dateStr: dStr,
+        receiptNo: e.receiptNoCustom,
+        accountNo: e.accountNo,
+        accountTitle: e.accountTitle || '',
+        paymentHead: payMode,
+        amount: Number(e.receiptAmount) || 0,
+        dateObj: dObj,
+        isCash: isCash
+      });
+    });
+
+    populateModeFilterOptions();
+    renderRecentReceipts();
   }
 
   function clearBatchForm() {
@@ -1000,12 +1031,23 @@
       `;
     });
 
-    const fromVal = document.getElementById('recentFromDate').value || '(kisi bhi tareekh se)';
-    const toVal = document.getElementById('recentToDate').value || '(kisi bhi tareekh tak)';
+    const fromRaw = document.getElementById('recentFromDate').value;
+    const toRaw = document.getElementById('recentToDate').value;
+
+    let dateMetaHtml;
+    if (fromRaw && (!toRaw || toRaw === fromRaw)) {
+      dateMetaHtml = `<b>${formatDisplayDate(fromRaw)}</b>`;
+    } else if (!fromRaw && toRaw) {
+      dateMetaHtml = `<b>${formatDisplayDate(toRaw)}</b>`;
+    } else if (fromRaw && toRaw) {
+      dateMetaHtml = `From: <b>${formatDisplayDate(fromRaw)}</b> &nbsp; To: <b>${formatDisplayDate(toRaw)}</b>`;
+    } else {
+      dateMetaHtml = `All Dates`;
+    }
 
     document.getElementById('printArea').innerHTML = `
       <h2>Al Meezan ERP - Receipts Report</h2>
-      <div class="print-meta">From: ${fromVal} &nbsp; To: ${toVal}</div>
+      <div class="print-meta">${dateMetaHtml}</div>
       <table>
         <thead>
           <tr><th>Date</th><th>Receipt No</th><th>Acc No</th><th>Customer Name</th><th>Pay Mode</th><th>Amount</th></tr>
