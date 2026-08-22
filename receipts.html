@@ -1090,6 +1090,7 @@
   function renderRowAsEditable(tr, entry, btn) {
     tr.classList.add('editing');
     tr.dataset.rowIndex = entry.rowIndex;
+    tr.dataset.origAccNo = entry.accountNo || '';
 
     let cashOpts = settingsOptions.cash || ["Cash"];
     let bankOpts = settingsOptions.bank || ["Bank Transfer"];
@@ -1106,6 +1107,7 @@
     selectHtml += `</select>`;
 
     tr.querySelector('.cell-date').innerHTML = `<input type="date" value="${entry.date || ''}" class="cell-date-input" style="padding:2px; width:120px;">`;
+    tr.querySelector('.cell-rct').innerHTML = `<input type="text" value="${entry.receiptNo || ''}" class="cell-rct-input" style="padding:2px; width:70px; text-align:center;">`;
     tr.querySelector('.cell-acc').innerHTML = `<input type="text" value="${entry.accountNo || ''}" class="cell-acc-input" style="padding:2px; width:75px;">`;
     tr.querySelector('.cell-mode').innerHTML = selectHtml;
     tr.querySelector('.cell-amt').innerHTML = `<input type="number" value="${entry.amount || 0}" class="cell-amt-input" style="padding:2px; width:75px; text-align:right;">`;
@@ -1122,14 +1124,24 @@
 
   function saveRecentRowEdit(tr, btn) {
     if (!SCRIPT_URL) return;
+    const oldReceiptNo = tr.getAttribute('data-receipt');
+    const oldAccNo = tr.dataset.origAccNo || null;
+
+    const newDate = tr.querySelector('.cell-date-input').value;
+    const newRct = tr.querySelector('.cell-rct-input').value.trim();
+    const newAcc = tr.querySelector('.cell-acc-input').value.trim();
+    const newMode = tr.querySelector('.cell-mode-input').value;
+    const newAmt = tr.querySelector('.cell-amt-input').value;
+    const newRemarks = tr.querySelector('.cell-remarks-input').value;
+
     const entry = {
       rowIndex: Number(tr.dataset.rowIndex),
-      date: tr.querySelector('.cell-date-input').value,
-      receiptNoCustom: tr.getAttribute('data-receipt'),
-      accountNo: tr.querySelector('.cell-acc-input').value,
-      suffix: tr.querySelector('.cell-mode-input').value,
-      amount: tr.querySelector('.cell-amt-input').value,
-      remarks: tr.querySelector('.cell-remarks-input').value
+      date: newDate,
+      receiptNoCustom: newRct,
+      accountNo: newAcc,
+      suffix: newMode,
+      amount: newAmt,
+      remarks: newRemarks
     };
 
     btn.disabled = true;
@@ -1143,7 +1155,23 @@
         btn.disabled = false;
         setWorking(false);
         if (res && res.success) {
-          loadRecentReceipts();
+          // Poori list dobara load kiye bagair, isi entry ko locally update kar dein (fast)
+          const isCash = (settingsOptions.cash || []).includes(newMode);
+          const item = recentReceiptsData.find(r =>
+            String(r.receiptNo || '').trim() === String(oldReceiptNo || '').trim() &&
+            (!oldAccNo || String(r.accountNo || '').trim() === String(oldAccNo).trim())
+          );
+          if (item) {
+            item.dateStr = formatDisplayDate(newDate);
+            item.dateObj = newDate ? new Date(newDate).setHours(0, 0, 0, 0) : item.dateObj;
+            item.receiptNo = newRct;
+            item.accountNo = newAcc;
+            item.paymentHead = newMode;
+            item.amount = Number(newAmt) || 0;
+            item.isCash = isCash;
+          }
+          populateModeFilterOptions();
+          renderRecentReceipts();
         } else {
           alert("Error: " + (res ? res.error : "Unknown error"));
         }
