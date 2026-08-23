@@ -666,6 +666,7 @@
           document.body.classList.remove('loading');
           if (res && res.success) {
             loadSavedEntries();
+            fetch(SCRIPT_URL + "?action=rebuildStockLedgerNow").catch(() => {});
           } else {
             isSavingInline = false;
             btn.disabled = false;
@@ -687,6 +688,7 @@
         .then(function(res) {
             if (res && res.success) {
               loadSavedEntries();
+              fetch(SCRIPT_URL + "?action=rebuildStockLedgerNow").catch(() => {});
             } else {
               alert("Error: " + (res ? res.error : "Unknown error"));
             }
@@ -1133,6 +1135,7 @@
             statusMsg.style.display = 'block';
             resetForm();
             loadSavedEntries();
+            fetch(SCRIPT_URL + "?action=rebuildStockLedgerNow").catch(() => {}); // Stock Ledger turant refresh karein
           } else {
             statusMsg.className = "error";
             statusMsg.innerText = "Error: " + (res ? res.error : "Unknown error occurred.");
