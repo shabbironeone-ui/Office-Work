@@ -867,6 +867,7 @@
         if (res.success) {
           clearSaleForm();
           loadRecentSales();
+          fetch(SCRIPT_URL + "?action=rebuildStockLedgerNow").catch(() => {}); // Stock Ledger turant refresh karein
           window.open('receipts.html', '_blank');
         } else {
           alert("Error: " + res.error);
