@@ -446,9 +446,11 @@
 </style>
 </head>
 <body>
-  <div class="change-url-link" onclick="showUrlConfig()">&#9881; Sheet.best API Info</div>
+  <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
   <div id="configBox" class="config-box">
-    <b>Info:</b> Yeh report ab direct Sheet.best API se data fetch kar rahi hai.
+    <b>Setup:</b> Apna Apps Script Deployment URL neeche daal kar Save karein.
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+    <button onclick="saveScriptUrl()">Save URL</button>
   </div>
 
 
@@ -485,7 +487,7 @@
 
     <div id="loadingContainer">
       <div class="spinner"></div>
-      <div id="loadingMsg">Fetching aging records from Sheet.best... Please wait.</div>
+      <div id="loadingMsg">Fetching aging records... Please wait.</div>
     </div>
 
     <div class="table-container">
@@ -609,8 +611,8 @@
     let isDateCol = false;
     let popupAllUniqueValues = [];
 
-    // Direct Sheet.best API URL
-    let SHEET_API_URL = "https://api.sheetbest.com/sheets/003e2a7f-976e-4920-b352-359e221b16a";
+    // Permanent Web App URL configured here
+    let WEB_APP_URL = localStorage.getItem('erp_script_url') || "";
 
     function formatDateDDMMYY(dateString) {
       if (!dateString) return '';
@@ -631,17 +633,14 @@
       }
 
       document.getElementById('loadingContainer').style.display = 'block';
-      document.getElementById('loadingMsg').innerText = "Fetching aging records from Sheet.best... Please wait.";
+      document.getElementById('loadingMsg').innerText = "Fetching aging records... Please wait.";
 
-      fetch(SHEET_API_URL)
+      fetch(WEB_APP_URL + "?action=getAgingReportData")
         .then(response => response.json())
-        .then(rows => {
+        .then(res => {
           document.getElementById('loadingContainer').style.display = 'none';
-          if (Array.isArray(rows)) {
-            globalResponse = {
-              data: rows,
-              monthHeaders: { m3: 'M-3', m2: 'M-2', m1: 'M-1' }
-            };
+          if (res && res.data) {
+            globalResponse = res;
             applySearchFilter();
           } else {
             alert("Error loading data from sheet.");
@@ -655,18 +654,17 @@
 
     function getColumnValue(row, colName, monthHeaders) {
       if(colName === 'cmd') {
-        let planMonths = parseInt(String(row.plan || row.Plan || '').replace(/\D/g, '')) || 18;
+        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
         let cmdVal = 0;
-        let inst = Number(row.monthlyInst || row.MonthlyInst || 0) || 0;
-        let delDateStr = row.deliveryDate || row.DeliveryDate || '';
-        if (delDateStr) {
-          let deliveryDate = new Date(delDateStr);
+        let inst = Number(row.monthlyInst) || 0;
+        if (row.deliveryDate) {
+          let deliveryDate = new Date(row.deliveryDate);
           if (!isNaN(deliveryDate.getTime())) {
             let expiryDate = new Date(deliveryDate);
             expiryDate.setMonth(expiryDate.getMonth() + planMonths);
             let currentDate = new Date(); 
             if (currentDate > expiryDate) {
-              cmdVal = Number(row.balance || row.Balance || 0) || 0;
+              cmdVal = Number(row.balance) || 0;
             } else {
               let yearsDiff = currentDate.getFullYear() - deliveryDate.getFullYear();
               let monthsDiff = currentDate.getMonth() - deliveryDate.getMonth();
@@ -674,7 +672,7 @@
               if (currentDate.getDate() >= deliveryDate.getDate()) totalMonthsPassed += 1;
               let maxExpectedInstallments = Math.min(totalMonthsPassed, planMonths);
               let totalExpectedDue = maxExpectedInstallments * inst;
-              let effectiveReceived = Number(row.totalReceived || row.TotalReceived || 0) - (Number(row.advance || row.Advance || 0));
+              let effectiveReceived = Number(row.totalReceived || 0) - (Number(row.advance) || 0);
               if (effectiveReceived < 0) effectiveReceived = 0;
               cmdVal = totalExpectedDue - effectiveReceived;
             }
@@ -686,18 +684,12 @@
         }
         return cmdVal;
       } else if(colName === 'plan') {
-        let rawPlan = row.plan || row.Plan || '';
-        let planMonths = parseInt(String(rawPlan).replace(/\D/g, '')) || 18;
-        return planMonths ? planMonths + "M" : String(rawPlan);
+        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
+        return planMonths ? planMonths + "M" : String(row.plan || '');
       } else if(colName === 'deliveryDate') {
-        return formatDateDDMMYY(row.deliveryDate || row.DeliveryDate || '');
+        return formatDateDDMMYY(row[colName]);
       } else {
-        let val = row[colName];
-        if (val === undefined) {
-          let altKey = colName.charAt(0).toUpperCase() + colName.slice(1);
-          val = row[altKey];
-        }
-        return val !== undefined && val !== null ? val : '';
+        return row[colName] !== undefined && row[colName] !== null ? row[colName] : '';
       }
     }
 
@@ -899,8 +891,8 @@
       });
 
       let filtered = globalResponse.data.filter(row => {
-        let dDateStr = row.deliveryDate || row.DeliveryDate || '';
         if (startDate || endDate) {
+          let dDateStr = row.deliveryDate ? String(row.deliveryDate).trim() : '';
           if (!dDateStr) return false;
           let dDate = new Date(dDateStr);
           if (isNaN(dDate.getTime())) return false;
@@ -915,9 +907,9 @@
           }
         }
 
-        let acc = String(row.accNo || row.AccNo || '').toLowerCase();
-        let title = String(row.accTitle || row.AccTitle || '').toLowerCase();
-        let mob = String(row.mobile || row.Mobile || '').toLowerCase();
+        let acc = String(row.accNo || '').toLowerCase();
+        let title = String(row.accTitle || '').toLowerCase();
+        let mob = String(row.mobile || '').toLowerCase();
         
         let matchesAcc = true;
         if (accQuery) {
@@ -931,7 +923,7 @@
 
         let matchesStartFromAcct = true;
         if (startFromAcctQuery) {
-          let currentAccNum = parseFloat(row.accNo || row.AccNo) || 0;
+          let currentAccNum = parseFloat(row.accNo) || 0;
           let filterAccNum = parseFloat(startFromAcctQuery) || 0;
           if (currentAccNum < filterAccNum) {
             return false;
@@ -1002,24 +994,22 @@
       let totalBalSum = 0;
 
       data.forEach(row => {
-        let tBal = Number(row.balance || row.Balance || 0) || 0;
+        let tBal = Number(row.balance) || 0;
         totalBalSum += tBal;
 
-        let m3 = Number(row.m3Received || row.M3Received || 0) || 0;
-        let m2 = Number(row.m2Received || row.M2Received || 0) || 0;
-        let m1 = Number(row.m1Received || row.M1Received || 0) || 0;
-        let inst = Number(row.monthlyInst || row.MonthlyInst || 0) || 0;
-        let saleAdvance = Number(row.advance || row.Advance || 0) || 0;
+        let m3 = Number(row.m3Received) || 0;
+        let m2 = Number(row.m2Received) || 0;
+        let m1 = Number(row.m1Received) || 0;
+        let inst = Number(row.monthlyInst) || 0;
+        let saleAdvance = Number(row.advance) || 0;
 
-        let rawPlan = row.plan || row.Plan || '';
-        let planMonths = parseInt(String(rawPlan).replace(/\D/g, '')) || 18;
-        let shortPlanStr = planMonths ? planMonths + "M" : String(rawPlan);
-        let formattedDate = formatDateDDMMYY(row.deliveryDate || row.DeliveryDate || '');
+        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
+        let shortPlanStr = planMonths ? planMonths + "M" : (row.plan || '');
+        let formattedDate = formatDateDDMMYY(row.deliveryDate);
         let cmd = 0;
 
-        let delDateStr = row.deliveryDate || row.DeliveryDate || '';
-        if (delDateStr) {
-          let deliveryDate = new Date(delDateStr);
+        if (row.deliveryDate) {
+          let deliveryDate = new Date(row.deliveryDate);
           if (!isNaN(deliveryDate.getTime())) {
             let expiryDate = new Date(deliveryDate);
             expiryDate.setMonth(expiryDate.getMonth() + planMonths);
@@ -1040,7 +1030,7 @@
               let maxExpectedInstallments = Math.min(totalMonthsPassed, planMonths);
               let totalExpectedDue = maxExpectedInstallments * inst;
               
-              let effectiveReceived = Number(row.totalReceived || row.TotalReceived || 0) - saleAdvance;
+              let effectiveReceived = Number(row.totalReceived || 0) - saleAdvance;
               if (effectiveReceived < 0) effectiveReceived = 0;
 
               let overallPending = totalExpectedDue - effectiveReceived;
@@ -1054,30 +1044,21 @@
         }
 
         let cmdStyle = cmd < 0 ? "text-align: right; background-color: #e3f2fd; color: #0d47a1;" : "text-align: right; background-color: #ffebee;";
-        let accNoVal = row.accNo || row.AccNo || '';
-        let accTitleVal = row.accTitle || row.AccTitle || '';
-        let approvedByVal = row.approvedBy || row.ApprovedBy || '';
-        let croVal = row.cro || row.Cro || '';
-        let mobileVal = row.mobile || row.Mobile || '';
-        let remarksVal = row.remarks || row.Remarks || '';
-        let productVal = row.product || row.Product || '';
-        let totalSalesVal = Number(row.totalSales || row.TotalSales || 0);
-        let totalReceivedVal = Number(row.totalReceived || row.TotalReceived || 0);
 
         html += `<tr>
-          <td class="col-1" title="${accNoVal}">
-            <span class="account-link" onclick="openLedgerNewTab('${accNoVal}')">${accNoVal}</span>
+          <td class="col-1" title="${row.accNo || ''}">
+            <span class="account-link" onclick="openLedgerNewTab('${row.accNo}')">${row.accNo || ''}</span>
           </td>
-          <td class="col-2" title="${accTitleVal}">${accTitleVal}</td>
-          <td class="col-3" title="${approvedByVal}">${approvedByVal}</td>
-          <td class="col-4" title="${croVal}">${croVal}</td>
-          <td class="col-5" title="${mobileVal}">${mobileVal}</td>
+          <td class="col-2" title="${row.accTitle || ''}">${row.accTitle || ''}</td>
+          <td class="col-3" title="${row.approvedBy || ''}">${row.approvedBy || ''}</td>
+          <td class="col-4" title="${row.cro || ''}">${row.cro || ''}</td>
+          <td class="col-5" title="${row.mobile || ''}">${row.mobile || ''}</td>
           <td class="col-6" style="text-align: right;" title="${inst.toLocaleString()}">${inst.toLocaleString()}</td>
-          <td class="col-7" title="${remarksVal}">${remarksVal}</td>
-          <td class="col-8" title="${productVal}">${productVal}</td>
-          <td class="col-9" title="${rawPlan}">${shortPlanStr}</td>
-          <td class="col-10" style="text-align: right;" title="${totalSalesVal.toLocaleString()}">${totalSalesVal.toLocaleString()}</td>
-          <td class="col-11" style="text-align: right;" title="${totalReceivedVal.toLocaleString()}">${totalReceivedVal.toLocaleString()}</td>
+          <td class="col-7" title="${row.remarks || ''}">${row.remarks || ''}</td>
+          <td class="col-8" title="${row.product || ''}">${row.product || ''}</td>
+          <td class="col-9" title="${row.plan || ''}">${shortPlanStr}</td>
+          <td class="col-10" style="text-align: right;" title="${Number(row.totalSales || 0).toLocaleString()}">${Number(row.totalSales || 0).toLocaleString()}</td>
+          <td class="col-11" style="text-align: right;" title="${Number(row.totalReceived || 0).toLocaleString()}">${Number(row.totalReceived || 0).toLocaleString()}</td>
           <td class="col-12" style="text-align: right; color: #b71c1c;" title="${tBal.toLocaleString()}">${tBal.toLocaleString()}</td>
           <td class="col-13" title="${formattedDate}">${formattedDate}</td>
           <td class="col-14" style="text-align: right;" title="${m3.toLocaleString()}">${m3.toLocaleString()}</td>
@@ -1148,10 +1129,27 @@
       window.print();
     }
   
+    // ===== Deployment URL config (auto-added) =====
     function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
       var box = document.getElementById('configBox');
-      if (box) box.classList.toggle('show');
+      if (box) box.classList.add('show');
     }
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
+    });
 
     // ================= UNIVERSAL MIC INPUT (auto-added) =================
     (function() {
@@ -1217,7 +1215,7 @@
         if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
             input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
         if (input.closest('#configBox')) return;
-        if (input.closest('.input-with-mic')) return;
+        if (input.closest('.input-with-mic')) return; // already has a manual mic button
         if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
 
         input.dataset.autoMic = '1';
