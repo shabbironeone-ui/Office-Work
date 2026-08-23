@@ -400,23 +400,27 @@
                 .catch(err => console.error("Voucher No error:", err));
         });
 
-        // Fetch and display full ledger statement for the selected account head
+        // Fetch and display full ledger statement for the selected account head with flexible key matching
         accName.addEventListener('change', function() {
-            const selectedHead = this.value;
+            const selectedHead = this.value.trim().toLowerCase();
             if (!selectedHead) return;
 
-            document.getElementById('selectedHeadName').textContent = selectedHead;
+            document.getElementById('selectedHeadName').textContent = this.value;
             document.getElementById('historySection').style.display = 'block';
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#6b7280;">Loading ledger statement...</td></tr>`;
 
-            // Re-using the robust getVendorLedgerRecords endpoint to extract full transactions for this account/vendor
             fetch(SCRIPT_URL + "?action=getVendorLedgerRecords")
                 .then(res => res.json())
                 .then(res => {
                     tbody.innerHTML = "";
                     const allData = res && res.data ? res.data : (Array.isArray(res) ? res : []);
-                    const headData = allData.filter(item => item.vendor_name === selectedHead);
+                    
+                    // Flexible filtering across potential property names for account/vendor name
+                    const headData = allData.filter(item => {
+                        const vName = (item.vendor_name || item.account_name || item.name || item.head || item.party || "").trim().toLowerCase();
+                        return vName === selectedHead;
+                    });
 
                     if (headData.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#6b7280;">No ledger records found for this account head.</td></tr>`;
@@ -425,15 +429,15 @@
 
                     let runningBal = 0;
                     headData.forEach(row => {
-                        let d = Number(row.debit) || 0;
-                        let c = Number(row.credit) || 0;
+                        let d = Number(row.debit || row.paid || 0) || 0;
+                        let c = Number(row.credit || row.amount || 0) || 0;
                         runningBal = runningBal + c - d;
 
                         let tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${row.date || '-'}</td>
-                            <td>${row.bill_no || '-'}</td>
-                            <td>${row.particulars || '-'}</td>
+                            <td>${row.bill_no || row.voucherNo || '-'}</td>
+                            <td>${row.particulars || row.subType || '-'}</td>
                             <td style="text-align: right; color: ${d > 0 ? '#16a34a' : '#6b7280'};">${d > 0 ? d.toLocaleString() : '-'}</td>
                             <td style="text-align: right; color: ${c > 0 ? '#dc2626' : '#6b7280'}; font-weight: ${c > 0 ? 'bold' : 'normal'};">${c > 0 ? c.toLocaleString() : '-'}</td>
                             <td style="text-align: right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
