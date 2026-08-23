@@ -25,7 +25,7 @@
 
     .table-container { max-height: 500px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; }
     table { width: 100%; border-collapse: collapse; background: white; }
-    th, td { padding: 6px 8px !important; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: 12px !important; white-space: nowrap; }
+    th, td { padding: 8px 10px !important; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: 12px !important; white-space: nowrap; }
     th { background-color: #f8fafc; font-weight: bold; color: #374151; position: sticky; top: 0; z-index: 10; box-shadow: inset 0 -2px 0 #e5e7eb; }
     tr:hover { background-color: #f9fafb; }
 
@@ -52,7 +52,7 @@
   <div class="container">
     <div class="change-url-link" onclick="showUrlConfig()" style="cursor:pointer; font-size:12px; color:#2563eb; margin-bottom:5px;">&#9881; Change Deployment URL</div>
     <div id="configBox" class="config-box">
-      <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
+      <b>Setup:</b> Apna Apps Script URL yahan update karein.
       <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
       <button onclick="saveScriptUrl()">Save URL</button>
     </div>
@@ -88,7 +88,7 @@
       </div>
     </div>
 
-    <!-- Filters Section -->
+    <!-- Filters Section (Dates removed, only Vendor Filter left) -->
     <div class="filter-section">
       <div class="filter-box">
         <span>Filter Vendor:</span>
@@ -96,39 +96,30 @@
           <option value="">-- All Vendors (Grand View) --</option>
         </select>
       </div>
-      <div class="filter-box">
-        <span>From Date:</span>
-        <input type="date" id="fromDateFilter" onchange="applyFilters()">
-      </div>
-      <div class="filter-box">
-        <span>To Date:</span>
-        <input type="date" id="toDateFilter" onchange="applyFilters()">
-      </div>
       <button class="btn btn-gray" onclick="resetFilters()"><i class="fas fa-undo"></i> Reset Filter</button>
     </div>
 
-    <!-- Data Table Container (Date column removed) -->
+    <!-- Data Table Container (Merged Vendor View) -->
     <div class="table-container">
       <table>
         <thead>
           <tr>
             <th>Vendor Name</th>
-            <th>Bill / Voucher No</th>
-            <th>Particulars / Description</th>
-            <th style="text-align: right;">Debit (Paid)</th>
-            <th style="text-align: right;">Credit (Purchase)</th>
-            <th style="text-align: right;">Balance Due</th>
-            <th>Remarks</th>
+            <th style="text-align: center;">Total Transactions</th>
+            <th style="text-align: right;">Total Debit (Paid)</th>
+            <th style="text-align: right;">Total Credit (Purchase)</th>
+            <th style="text-align: right;">Net Balance Due</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody id="ledgerTableBody">
           <tr>
-            <td colspan="7" class="loader"><i class="fas fa-spinner fa-spin"></i> Loading data from sheets...</td>
+            <td colspan="6" class="loader"><i class="fas fa-spinner fa-spin"></i> Loading data from sheets...</td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
-            <th colspan="3" style="text-align: right;">GRAND TOTAL:</th>
+            <th colspan="2" style="text-align: right;">GRAND TOTAL:</th>
             <th style="text-align: right;" id="totalDebit">0.00</th>
             <th style="text-align: right;" id="totalCredit">0.00</th>
             <th style="text-align: right;" id="totalBalance">0.00</th>
@@ -220,71 +211,74 @@
     }
 
     function onDataError(error) {
-      document.getElementById("ledgerTableBody").innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Failed to load data: ${error.message}</td></tr>`;
+      document.getElementById("ledgerTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Failed to load data: ${error.message}</td></tr>`;
     }
 
     function populateVendorDropdown(data) {
-      const vendors = [...new Set(data.map(item => item.vendor_name))].sort();
+      const vendors = [...new Set(data.map(item => item.vendor_name))].filter(Boolean).sort();
       const select = document.getElementById("vendorFilter");
       select.innerHTML = '<option value="">-- All Vendors (Grand View) --</option>';
       vendors.forEach(v => {
-        if(v) {
-          let opt = document.createElement("option");
-          opt.value = v;
-          opt.textContent = v;
-          select.appendChild(opt);
-        }
+        let opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        select.appendChild(opt);
       });
     }
 
     function applyFilters() {
-      let filtered = globalData;
       const selectedVendor = document.getElementById("vendorFilter").value;
-      const fromDate = document.getElementById("fromDateFilter").value;
-      const toDate = document.getElementById("toDateFilter").value;
+      let filtered = globalData;
 
       if (selectedVendor) {
         filtered = filtered.filter(item => item.vendor_name === selectedVendor);
       }
-      if (fromDate) {
-        filtered = filtered.filter(item => !item.date || item.date >= fromDate);
-      }
-      if (toDate) {
-        filtered = filtered.filter(item => !item.date || item.date <= toDate);
-      }
 
-      renderTable(filtered);
+      renderMergedTable(filtered);
       updateSummaryCards(filtered);
     }
 
-    function renderTable(data) {
+    function renderMergedTable(data) {
       const tbody = document.getElementById("ledgerTableBody");
       tbody.innerHTML = "";
 
       if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">No records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">No records found.</td></tr>`;
         document.getElementById("totalDebit").textContent = "0.00";
         document.getElementById("totalCredit").textContent = "0.00";
         document.getElementById("totalBalance").textContent = "0.00";
         return;
       }
 
+      // Group by vendor
+      let vendorMap = {};
+      data.forEach(item => {
+        let vName = item.vendor_name || "UNKNOWN";
+        if (!vendorMap[vName]) {
+          vendorMap[vName] = { count: 0, debit: 0, credit: 0 };
+        }
+        vendorMap[vName].count += 1;
+        vendorMap[vName].debit += Number(item.debit) || 0;
+        vendorMap[vName].credit += Number(item.credit) || 0;
+      });
+
       let tDebit = 0;
       let tCredit = 0;
 
-      data.forEach(row => {
-        tDebit += Number(row.debit) || 0;
-        tCredit += Number(row.credit) || 0;
+      Object.keys(vendorMap).sort().forEach(vendor => {
+        let vData = vendorMap[vendor];
+        let balance = vData.credit - vData.debit;
+        tDebit += vData.debit;
+        tCredit += vData.credit;
 
         let tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><span class="vendor-link" onclick="openVendorModal('${row.vendor_name}')">${row.vendor_name}</span></td>
-          <td>${row.bill_no}</td>
-          <td>${row.particulars}</td>
-          <td style="text-align: right; color: ${row.debit > 0 ? '#16a34a' : '#6b7280'};">${row.debit > 0 ? Number(row.debit).toLocaleString() : '-'}</td>
-          <td style="text-align: right; color: ${row.credit > 0 ? '#dc2626' : '#6b7280'}; font-weight: ${row.credit > 0 ? 'bold' : 'normal'};">${row.credit > 0 ? Number(row.credit).toLocaleString() : '-'}</td>
-          <td style="text-align: right; font-weight: bold; color: #2563eb;">${Number(row.balance).toLocaleString()}</td>
-          <td style="font-style: italic; color: #4b5563;">${row.remarks}</td>
+          <td><span class="vendor-link" onclick="openVendorModal('${vendor}')">${vendor}</span></td>
+          <td style="text-align: center;">${vData.count}</td>
+          <td style="text-align: right; color: ${vData.debit > 0 ? '#16a34a' : '#6b7280'};">${vData.debit > 0 ? vData.debit.toLocaleString() : '-'}</td>
+          <td style="text-align: right; color: ${vData.credit > 0 ? '#dc2626' : '#6b7280'}; font-weight: bold;">${vData.credit > 0 ? vData.credit.toLocaleString() : '-'}</td>
+          <td style="text-align: right; font-weight: bold; color: #2563eb;">${balance.toLocaleString()}</td>
+          <td><button class="btn btn-blue" style="padding: 3px 8px; font-size: 11px;" onclick="openVendorModal('${vendor}')">View Ledger</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -312,15 +306,12 @@
 
     function resetFilters() {
       document.getElementById("vendorFilter").value = "";
-      document.getElementById("fromDateFilter").value = "";
-      document.getElementById("toDateFilter").value = "";
       applyFilters();
     }
 
     // Modal Functions
     function openVendorModal(vendorName) {
       currentSelectedVendor = vendorName;
-      document.getElementById("modalVendorTitle.innerHTML").textContent = "";
       document.getElementById("modalVendorTitle").innerHTML = `<i class="fas fa-file-invoice-dollar"></i> Ledger: ${vendorName}`;
       document.getElementById("modalFromDate").value = "";
       document.getElementById("modalToDate").value = "";
@@ -350,12 +341,10 @@
 
       vendorData.forEach(item => {
         if (fromDate && item.date && item.date < fromDate) {
-          // Calculate opening balance from transactions before 'from date'
           let c = Number(item.credit) || 0;
           let d = Number(item.debit) || 0;
           openingBalance = openingBalance + c - d;
         } else {
-          // Check if it fits the date range
           let matches = true;
           if (fromDate && item.date && item.date < fromDate) matches = false;
           if (toDate && item.date && item.date > toDate) matches = false;
@@ -373,7 +362,6 @@
       let tDebit = 0;
       let tCredit = 0;
 
-      // Add Opening Balance Row if fromDate is selected or openingBalance != 0
       if (fromDate || openingBalance !== 0) {
         let opTr = document.createElement("tr");
         opTr.style.backgroundColor = "#fef08a";
