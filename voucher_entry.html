@@ -124,7 +124,7 @@
             margin-bottom: 10px;
         }
         .table-container {
-            max-height: 250px;
+            max-height: 280px;
             overflow-y: auto;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
@@ -244,23 +244,24 @@
             </div>
         </form>
 
-        <!-- Recent History Section for Selected Account Head -->
+        <!-- Ledger View Section for Selected Account Head -->
         <div class="history-section" id="historySection" style="display: none;">
-            <div class="history-title"><i class="fas fa-history"></i> Recent History for: <span id="selectedHeadName" style="color: #2563eb;">-</span></div>
+            <div class="history-title"><i class="fas fa-file-invoice-dollar"></i> Ledger Statement for: <span id="selectedHeadName" style="color: #2563eb;">-</span></div>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Voucher No</th>
-                            <th>Sub-Category</th>
-                            <th>Pay Mode</th>
-                            <th style="text-align: right;">Amount</th>
+                            <th>Bill / Voucher No</th>
+                            <th>Particulars / Description</th>
+                            <th style="text-align: right;">Debit (Paid)</th>
+                            <th style="text-align: right;">Credit (Purchase)</th>
+                            <th style="text-align: right;">Balance Due</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
                     <tbody id="historyTableBody">
-                        <!-- Loaded dynamically -->
+                        <!-- Loaded dynamically as a proper ledger -->
                     </tbody>
                 </table>
             </div>
@@ -399,7 +400,7 @@
                 .catch(err => console.error("Voucher No error:", err));
         });
 
-        // Fetch and show account head history when selected
+        // Fetch and display full ledger statement for the selected account head
         accName.addEventListener('change', function() {
             const selectedHead = this.value;
             if (!selectedHead) return;
@@ -407,32 +408,42 @@
             document.getElementById('selectedHeadName').textContent = selectedHead;
             document.getElementById('historySection').style.display = 'block';
             const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#6b7280;">Loading history...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#6b7280;">Loading ledger statement...</td></tr>`;
 
-            fetch(SCRIPT_URL + "?action=getAccountHistory&accName=" + encodeURIComponent(selectedHead))
+            // Re-using the robust getVendorLedgerRecords endpoint to extract full transactions for this account/vendor
+            fetch(SCRIPT_URL + "?action=getVendorLedgerRecords")
                 .then(res => res.json())
                 .then(res => {
                     tbody.innerHTML = "";
-                    const data = res && res.data ? res.data : (Array.isArray(res) ? res : []);
-                    if (data.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#6b7280;">No recent history found for this account head.</td></tr>`;
+                    const allData = res && res.data ? res.data : (Array.isArray(res) ? res : []);
+                    const headData = allData.filter(item => item.vendor_name === selectedHead);
+
+                    if (headData.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#6b7280;">No ledger records found for this account head.</td></tr>`;
                         return;
                     }
-                    data.forEach(row => {
+
+                    let runningBal = 0;
+                    headData.forEach(row => {
+                        let d = Number(row.debit) || 0;
+                        let c = Number(row.credit) || 0;
+                        runningBal = runningBal + c - d;
+
                         let tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${row.date || '-'}</td>
-                            <td>${row.voucherNo || '-'}</td>
-                            <td>${row.subType || '-'}</td>
-                            <td>${row.payMode || '-'}</td>
-                            <td style="text-align: right; font-weight: bold;">${Number(row.amount || 0).toLocaleString()}</td>
-                            <td>${row.remarks || '-'}</td>
+                            <td>${row.bill_no || '-'}</td>
+                            <td>${row.particulars || '-'}</td>
+                            <td style="text-align: right; color: ${d > 0 ? '#16a34a' : '#6b7280'};">${d > 0 ? d.toLocaleString() : '-'}</td>
+                            <td style="text-align: right; color: ${c > 0 ? '#dc2626' : '#6b7280'}; font-weight: ${c > 0 ? 'bold' : 'normal'};">${c > 0 ? c.toLocaleString() : '-'}</td>
+                            <td style="text-align: right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
+                            <td style="font-style: italic; color: #4b5563;">${row.remarks || '-'}</td>
                         `;
                         tbody.appendChild(tr);
                     });
                 })
                 .catch(err => {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Failed to load history.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Failed to load ledger statement.</td></tr>`;
                 });
         });
 
