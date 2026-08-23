@@ -178,6 +178,18 @@
       font-size: 10px;
     }
 
+    .sortable-th {
+      cursor: pointer;
+      user-select: none;
+    }
+    .sortable-th:hover {
+      background-color: #d4e8c1 !important;
+    }
+    .sort-arrow {
+      font-size: 9px;
+      color: var(--primary);
+    }
+
     .recent-totals-bar {
       display: flex;
       background: #f8fafc;
@@ -506,22 +518,22 @@
       <table class="product-table recent-table">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Product ID</th>
-            <th>Approved By</th>
-            <th>Account No</th>
-            <th>Account Title</th>
-            <th>Company Name</th>
-            <th>Category</th>
-            <th>Model</th>
-            <th>Qty</th>
-            <th>Sales Rate</th>
-            <th>Sales Amt</th>
-            <th>Months</th>
-            <th>Advance</th>
-            <th>Per Month</th>
-            <th>Proc Fee</th>
-            <th>Total Amount</th>
+            <th class="sortable-th" data-field="date" onclick="sortSalesTable('date')">Date <span class="sort-arrow" id="arrow-date"></span></th>
+            <th class="sortable-th" data-field="productId" onclick="sortSalesTable('productId')">Product ID <span class="sort-arrow" id="arrow-productId"></span></th>
+            <th class="sortable-th" data-field="approvedBy" onclick="sortSalesTable('approvedBy')">Approved By <span class="sort-arrow" id="arrow-approvedBy"></span></th>
+            <th class="sortable-th" data-field="accountNo" onclick="sortSalesTable('accountNo')">Account No <span class="sort-arrow" id="arrow-accountNo"></span></th>
+            <th class="sortable-th" data-field="accountTitle" onclick="sortSalesTable('accountTitle')">Account Title <span class="sort-arrow" id="arrow-accountTitle"></span></th>
+            <th class="sortable-th" data-field="companyName" onclick="sortSalesTable('companyName')">Company Name <span class="sort-arrow" id="arrow-companyName"></span></th>
+            <th class="sortable-th" data-field="productCategory" onclick="sortSalesTable('productCategory')">Category <span class="sort-arrow" id="arrow-productCategory"></span></th>
+            <th class="sortable-th" data-field="model" onclick="sortSalesTable('model')">Model <span class="sort-arrow" id="arrow-model"></span></th>
+            <th class="sortable-th" data-field="qty" onclick="sortSalesTable('qty')">Qty <span class="sort-arrow" id="arrow-qty"></span></th>
+            <th class="sortable-th" data-field="salesRate" onclick="sortSalesTable('salesRate')">Sales Rate <span class="sort-arrow" id="arrow-salesRate"></span></th>
+            <th class="sortable-th" data-field="salesAmt" onclick="sortSalesTable('salesAmt')">Sales Amt <span class="sort-arrow" id="arrow-salesAmt"></span></th>
+            <th class="sortable-th" data-field="planMonths" onclick="sortSalesTable('planMonths')">Months <span class="sort-arrow" id="arrow-planMonths"></span></th>
+            <th class="sortable-th" data-field="advance" onclick="sortSalesTable('advance')">Advance <span class="sort-arrow" id="arrow-advance"></span></th>
+            <th class="sortable-th" data-field="installmentPerMonth" onclick="sortSalesTable('installmentPerMonth')">Per Month <span class="sort-arrow" id="arrow-installmentPerMonth"></span></th>
+            <th class="sortable-th" data-field="processingFee" onclick="sortSalesTable('processingFee')">Proc Fee <span class="sort-arrow" id="arrow-processingFee"></span></th>
+            <th class="sortable-th" data-field="totalAmount" onclick="sortSalesTable('totalAmount')">Total Amount <span class="sort-arrow" id="arrow-totalAmount"></span></th>
             <th style="text-align: center;">Action</th>
           </tr>
         </thead>
@@ -955,6 +967,9 @@
     document.getElementById('accountNo').focus();
   }
 
+  let recentSalesData = [];
+  let salesSortState = { field: null, asc: true };
+
   function loadRecentSales() {
     let fromDate = document.getElementById('recentFromDate').value;
     let toDate = document.getElementById('recentToDate').value;
@@ -962,60 +977,99 @@
     fetch(SCRIPT_URL + "?action=getRecentSalesList" + "&fromDate=" + encodeURIComponent(fromDate) + "&toDate=" + encodeURIComponent(toDate))
         .then(r => r.json())
         .then(function(res) {
-        let tbody = document.getElementById('recentSalesTableBody');
-        tbody.innerHTML = '';
-        
-        let sumQty = 0;
-        let sumSalesAmt = 0;
-        let sumAdvance = 0;
-        let sumProcFee = 0;
-        let sumTotalAmount = 0;
-
-        if (res && res.success && res.sales && res.sales.length > 0) {
-          res.sales.forEach(s => {
-            sumQty += Number(s.qty || 0);
-            sumSalesAmt += Number(s.salesAmt || 0);
-            sumAdvance += Number(s.advance || 0);
-            sumProcFee += Number(s.processingFee || 0);
-            sumTotalAmount += Number(s.totalAmount || 0);
-
-            let tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${s.date || ''}</td>
-              <td>${s.productId || ''}</td>
-              <td>${s.approvedBy || ''}</td>
-              <td><b>${s.accountNo || ''}</b></td>
-              <td>${s.accountTitle || ''}</td>
-              <td>${s.companyName || ''}</td>
-              <td>${s.productCategory || ''}</td>
-              <td>${s.model || ''}</td>
-              <td>${s.qty || ''}</td>
-              <td>${s.salesRate ? Number(s.salesRate).toLocaleString() : ''}</td>
-              <td>${s.salesAmt ? Number(s.salesAmt).toLocaleString() : ''}</td>
-              <td>${s.planMonths || ''}</td>
-              <td>${s.advance ? Number(s.advance).toLocaleString() : ''}</td>
-              <td>${s.installmentPerMonth ? Number(s.installmentPerMonth).toLocaleString() : ''}</td>
-              <td>${s.processingFee ? Number(s.processingFee).toLocaleString() : ''}</td>
-              <td><b>${s.totalAmount ? Number(s.totalAmount).toLocaleString() : ''}</b></td>
-              <td style="text-align: center;">
-                <button type="button" class="action-btn btn-primary" style="padding: 2px 5px; font-size: 9px;" onclick="loadSpecificSale('${s.accountNo}')">View / Edit</button>
-              </td>
-            `;
-            tbody.appendChild(tr);
-          });
-        } else {
-          tbody.innerHTML = `<tr><td colspan="17" style="text-align: center; color: #666;">No recent sales found.</td></tr>`;
-        }
-
-        document.getElementById('totalQty').innerText = sumQty ? sumQty.toLocaleString() : '0';
-        document.getElementById('totalSalesAmt').innerText = sumSalesAmt ? sumSalesAmt.toLocaleString() : '0';
-        document.getElementById('totalAdvance').innerText = sumAdvance ? sumAdvance.toLocaleString() : '0';
-        document.getElementById('totalProcFee').innerText = sumProcFee ? sumProcFee.toLocaleString() : '0';
-        document.getElementById('totalGrandAmount').innerText = sumTotalAmount ? sumTotalAmount.toLocaleString() : '0';
+        recentSalesData = (res && res.success && res.sales) ? res.sales : [];
+        salesSortState = { field: null, asc: true };
+        renderSalesTable(recentSalesData);
       })
         .catch(function(err) {
         console.error("Error loading recent sales:", err);
       });
+  }
+
+  function sortSalesTable(field) {
+    if (salesSortState.field === field) {
+      salesSortState.asc = !salesSortState.asc;
+    } else {
+      salesSortState.field = field;
+      salesSortState.asc = true;
+    }
+
+    const numericFields = ['qty', 'salesRate', 'salesAmt', 'planMonths', 'advance', 'installmentPerMonth', 'processingFee', 'totalAmount'];
+    const isNumeric = numericFields.includes(field);
+
+    recentSalesData.sort((a, b) => {
+      let valA = a[field], valB = b[field];
+      if (isNumeric) {
+        valA = Number(valA) || 0;
+        valB = Number(valB) || 0;
+        return salesSortState.asc ? valA - valB : valB - valA;
+      } else {
+        valA = String(valA || '').toLowerCase();
+        valB = String(valB || '').toLowerCase();
+        if (valA < valB) return salesSortState.asc ? -1 : 1;
+        if (valA > valB) return salesSortState.asc ? 1 : -1;
+        return 0;
+      }
+    });
+
+    document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '');
+    const arrowEl = document.getElementById('arrow-' + field);
+    if (arrowEl) arrowEl.textContent = salesSortState.asc ? '▲' : '▼';
+
+    renderSalesTable(recentSalesData);
+  }
+
+  function renderSalesTable(sales) {
+    let tbody = document.getElementById('recentSalesTableBody');
+    tbody.innerHTML = '';
+
+    let sumQty = 0;
+    let sumSalesAmt = 0;
+    let sumAdvance = 0;
+    let sumProcFee = 0;
+    let sumTotalAmount = 0;
+
+    if (sales && sales.length > 0) {
+      sales.forEach(s => {
+        sumQty += Number(s.qty || 0);
+        sumSalesAmt += Number(s.salesAmt || 0);
+        sumAdvance += Number(s.advance || 0);
+        sumProcFee += Number(s.processingFee || 0);
+        sumTotalAmount += Number(s.totalAmount || 0);
+
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${s.date || ''}</td>
+          <td>${s.productId || ''}</td>
+          <td>${s.approvedBy || ''}</td>
+          <td><b>${s.accountNo || ''}</b></td>
+          <td>${s.accountTitle || ''}</td>
+          <td>${s.companyName || ''}</td>
+          <td>${s.productCategory || ''}</td>
+          <td>${s.model || ''}</td>
+          <td>${s.qty || ''}</td>
+          <td>${s.salesRate ? Number(s.salesRate).toLocaleString() : ''}</td>
+          <td>${s.salesAmt ? Number(s.salesAmt).toLocaleString() : ''}</td>
+          <td>${s.planMonths || ''}</td>
+          <td>${s.advance ? Number(s.advance).toLocaleString() : ''}</td>
+          <td>${s.installmentPerMonth ? Number(s.installmentPerMonth).toLocaleString() : ''}</td>
+          <td>${s.processingFee ? Number(s.processingFee).toLocaleString() : ''}</td>
+          <td><b>${s.totalAmount ? Number(s.totalAmount).toLocaleString() : ''}</b></td>
+          <td style="text-align: center;">
+            <button type="button" class="action-btn btn-primary" style="padding: 2px 5px; font-size: 9px;" onclick="loadSpecificSale('${s.accountNo}')">View / Edit</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } else {
+      tbody.innerHTML = `<tr><td colspan="17" style="text-align: center; color: #666;">No recent sales found.</td></tr>`;
+    }
+
+    document.getElementById('totalQty').innerText = sumQty ? sumQty.toLocaleString() : '0';
+    document.getElementById('totalSalesAmt').innerText = sumSalesAmt ? sumSalesAmt.toLocaleString() : '0';
+    document.getElementById('totalAdvance').innerText = sumAdvance ? sumAdvance.toLocaleString() : '0';
+    document.getElementById('totalProcFee').innerText = sumProcFee ? sumProcFee.toLocaleString() : '0';
+    document.getElementById('totalGrandAmount').innerText = sumTotalAmount ? sumTotalAmount.toLocaleString() : '0';
   }
 
   function loadSpecificSale(accNo) {
