@@ -12,7 +12,7 @@
             color: #333;
         }
         .container {
-            max-width: 600px;
+            max-width: 1100px;
             background: #ffffff;
             padding: 20px;
             border-radius: 8px;
@@ -49,6 +49,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 13px;
+            width: auto;
         }
         .form-group {
             margin-bottom: 12px;
@@ -80,9 +81,11 @@
         .row {
             display: flex;
             gap: 15px;
+            flex-wrap: wrap;
         }
         .col {
             flex: 1;
+            min-width: 150px;
         }
         .btn-submit {
             background-color: #28a745;
@@ -108,34 +111,75 @@
         .config-box.show { display: block; }
         .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
         .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        
+        .history-section {
+            margin-top: 25px;
+            border-top: 2px solid #eee;
+            padding-top: 15px;
+        }
+        .history-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .table-container {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f8fafc;
+            font-weight: bold;
+            color: #374151;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:hover {
+            background-color: #f9fafb;
+        }
     
-    .auto-mic-wrap { position: relative; display: inline-block; width: 100%; }
-    .auto-mic-btn {
-      position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
-      width: 20px; height: 20px; padding: 0; border: none; background: transparent;
-      cursor: pointer; font-size: 12px; line-height: 1; z-index: 5; opacity: 0.55;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .auto-mic-btn:hover { opacity: 1; }
-    .auto-mic-btn.listening {
-      background: #c62828; border-radius: 50%; color: #fff; opacity: 1;
-      animation: autoMicPulse 1s infinite;
-    }
-    @keyframes autoMicPulse {
-      0% { box-shadow: 0 0 0 0 rgba(198,40,40,0.5); }
-      70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
-      100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
-    }
-</style>
+        .auto-mic-wrap { position: relative; display: inline-block; width: 100%; }
+        .auto-mic-btn {
+          position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+          width: 20px; height: 20px; padding: 0; border: none; background: transparent;
+          cursor: pointer; font-size: 12px; line-height: 1; z-index: 5; opacity: 0.55;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .auto-mic-btn:hover { opacity: 1; }
+        .auto-mic-btn.listening {
+          background: #c62828; border-radius: 50%; color: #fff; opacity: 1;
+          animation: autoMicPulse 1s infinite;
+        }
+        @keyframes autoMicPulse {
+          0% { box-shadow: 0 0 0 0 rgba(198,40,40,0.5); }
+          70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
+          100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
+        }
+    </style>
 </head>
 <body>
 
     <div class="container">
-          <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
-  <div id="configBox" class="config-box">
-          <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
-          <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
-          <button onclick="saveScriptUrl()">Save URL</button>
+        <div class="change-url-link" onclick="showUrlConfig()" style="cursor:pointer; color:#2563eb; font-size:12px; margin-bottom:5px;">&#9881; Change Deployment URL</div>
+        <div id="configBox" class="config-box">
+            <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
+            <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+            <button onclick="saveScriptUrl()">Save URL</button>
         </div>
 
         <!-- Header with Title and Date on Top Right Corner -->
@@ -149,7 +193,7 @@
 
         <form id="voucherForm">
             
-            <!-- Main Flow: Payments vs Receipts vs Contra -->
+            <!-- All Input Boxes in 1 Single Line Grid Row -->
             <div class="row">
                 <div class="form-group col">
                     <label for="mainType">Transaction Flow</label>
@@ -157,7 +201,7 @@
                         <option value="" selected disabled>-- Select Flow --</option>
                         <option value="Payments">Payments (Money Out)</option>
                         <option value="Receipts">Receipts (Money In)</option>
-                        <option value="Contra">Contra (Cash & Bank Transfer)</option>
+                        <option value="Contra">Contra (Cash & Bank)</option>
                     </select>
                 </div>
                 <div class="form-group col">
@@ -166,46 +210,61 @@
                         <option value="" selected disabled>-- Select First --</option>
                     </select>
                 </div>
-            </div>
-
-            <!-- Pay Mode & Voucher No -->
-            <div class="row">
                 <div class="form-group col">
                     <label for="payMode">Pay Mode (Cash/Bank)</label>
                     <select id="payMode" required>
-                        <option value="" selected disabled>-- Loading Pay Modes --</option>
+                        <option value="" selected disabled>-- Loading --</option>
                     </select>
                 </div>
-                <div class="form-group col">
-                    <label for="voucherNo">Voucher No (Auto)</label>
-                    <input type="text" id="voucherNo" readonly placeholder="Auto Generated">
+                <div class="form-group col" style="max-width: 110px;">
+                    <label for="voucherNo">Voucher No</label>
+                    <input type="text" id="voucherNo" readonly placeholder="Auto">
                 </div>
-            </div>
-
-            <div class="row">
-                <!-- Account Name / Head Dropdown -->
                 <div class="form-group col">
                     <label for="accName" id="accNameLabel">Account Name / Head</label>
                     <select id="accName" required disabled>
-                        <option value="" selected disabled>-- Select Sub-Category First --</option>
+                        <option value="" selected disabled>-- Select First --</option>
                     </select>
                 </div>
-                <!-- Amount -->
-                <div class="form-group col">
+                <div class="form-group col" style="max-width: 140px;">
                     <label for="amount">Amount</label>
                     <input type="number" id="amount" required placeholder="0.00">
                 </div>
             </div>
 
-            <!-- Remarks -->
-            <div class="form-group">
-                <label for="remarks">Remarks</label>
-                <input type="text" id="remarks" placeholder="Enter remarks here...">
+            <!-- Remarks & Save Button in Next Line -->
+            <div class="row">
+                <div class="form-group col" style="flex: 3;">
+                    <label for="remarks">Remarks</label>
+                    <input type="text" id="remarks" placeholder="Enter remarks here...">
+                </div>
+                <div class="form-group col" style="flex: 1; display: flex; align-items: flex-end;">
+                    <button type="submit" id="submitBtn" class="btn-submit" style="margin-top: 0;">Save Voucher</button>
+                </div>
             </div>
-
-            <!-- Submit Button -->
-            <button type="submit" id="submitBtn" class="btn-submit">Save Voucher</button>
         </form>
+
+        <!-- Recent History Section for Selected Account Head -->
+        <div class="history-section" id="historySection" style="display: none;">
+            <div class="history-title"><i class="fas fa-history"></i> Recent History for: <span id="selectedHeadName" style="color: #2563eb;">-</span></div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Voucher No</th>
+                            <th>Sub-Category</th>
+                            <th>Pay Mode</th>
+                            <th style="text-align: right;">Amount</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -234,6 +293,7 @@
         dateInput.valueAsDate = new Date();
 
         function loadSettingsData() {
+            if(!SCRIPT_URL) return;
             fetch(SCRIPT_URL + "?action=getStructuredSettingsData")
                 .then(res => res.json())
                 .then(res => {
@@ -246,7 +306,6 @@
                                 const opt = document.createElement('option');
                                 opt.value = mode;
                                 opt.textContent = mode;
-                                // Default to Daybook (Cash) if available
                                 if (mode.toLowerCase().includes('daybook') || mode.toLowerCase().includes('cash')) {
                                     opt.selected = true;
                                 }
@@ -256,7 +315,7 @@
                                 payModeSelect.selectedIndex = 0;
                             }
                         } else {
-                            payModeSelect.innerHTML = '<option value="" selected disabled>No Pay Modes found in Col G/H</option>';
+                            payModeSelect.innerHTML = '<option value="" selected disabled>No Pay Modes found</option>';
                         }
                     }
                 })
@@ -264,14 +323,15 @@
         }
 
         window.addEventListener('load', function() {
-            loadSettingsData();
+            if(SCRIPT_URL) loadSettingsData();
         });
 
         mainType.addEventListener('change', function() {
             subType.innerHTML = '<option value="" selected disabled>-- Select Sub-Category --</option>';
             subType.disabled = false;
-            accName.innerHTML = '<option value="" selected disabled>-- Select Sub-Category First --</option>';
+            accName.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
             accName.disabled = true;
+            document.getElementById('historySection').style.display = 'none';
 
             if (this.value === 'Payments') {
                 subType.innerHTML += `
@@ -297,6 +357,7 @@
         subType.addEventListener('change', function() {
             accName.disabled = false;
             accName.innerHTML = '<option value="" selected disabled>-- Select Name / Head --</option>';
+            document.getElementById('historySection').style.display = 'none';
             
             let listToUse = [];
 
@@ -308,11 +369,11 @@
                 listToUse = settingsData.investments;
             } else if (this.value === 'GeneralReceipts') {
                 listToUse = [...settingsData.expenses, ...settingsData.investments];
-            } else if (this.value === 'CashToBank' || this.value === 'BankToCash' || this.value === 'BankToBank') {
+            } else if (['CashToBank', 'BankToCash', 'BankToBank'].includes(this.value)) {
                 listToUse = settingsData.payModes;
             }
 
-            listToUse = [...new Set(listToUse)];
+            listToUse = [...new Set(listToUse)].filter(Boolean);
 
             listToUse.forEach(item => {
                 const opt = document.createElement('option');
@@ -336,6 +397,43 @@
                     voucherNoInput.value = res.voucherNo || res;
                 })
                 .catch(err => console.error("Voucher No error:", err));
+        });
+
+        // Fetch and show account head history when selected
+        accName.addEventListener('change', function() {
+            const selectedHead = this.value;
+            if (!selectedHead) return;
+
+            document.getElementById('selectedHeadName').textContent = selectedHead;
+            document.getElementById('historySection').style.display = 'block';
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#6b7280;">Loading history...</td></tr>`;
+
+            fetch(SCRIPT_URL + "?action=getAccountHistory&accName=" + encodeURIComponent(selectedHead))
+                .then(res => res.json())
+                .then(res => {
+                    tbody.innerHTML = "";
+                    const data = res && res.data ? res.data : (Array.isArray(res) ? res : []);
+                    if (data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#6b7280;">No recent history found for this account head.</td></tr>`;
+                        return;
+                    }
+                    data.forEach(row => {
+                        let tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${row.date || '-'}</td>
+                            <td>${row.voucherNo || '-'}</td>
+                            <td>${row.subType || '-'}</td>
+                            <td>${row.payMode || '-'}</td>
+                            <td style="text-align: right; font-weight: bold;">${Number(row.amount || 0).toLocaleString()}</td>
+                            <td>${row.remarks || '-'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Failed to load history.</td></tr>`;
+                });
         });
 
         voucherForm.addEventListener('submit', function(e) {
@@ -375,8 +473,9 @@
                         dateInput.valueAsDate = new Date();
                         subType.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
                         subType.disabled = true;
-                        accName.innerHTML = '<option value="" selected disabled>-- Select Sub-Category First --</option>';
+                        accName.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
                         accName.disabled = true;
+                        document.getElementById('historySection').style.display = 'none';
                         submitBtn.disabled = false;
                         submitBtn.innerText = "Save Voucher";
                     } else {
@@ -392,137 +491,103 @@
                 });
         });
     
-    // ===== Deployment URL config (auto-added) =====
-    function showUrlConfig() {
-      var inp = document.getElementById('scriptUrlInput');
-      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
-      var box = document.getElementById('configBox');
-      if (box) box.classList.add('show');
-    }
-    function saveScriptUrl() {
-      var inp = document.getElementById('scriptUrlInput');
-      var val = inp ? inp.value.trim() : '';
-      if (!val) { alert("URL enter karein"); return; }
-      localStorage.setItem('erp_script_url', val);
-      location.reload();
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-      var savedUrl = localStorage.getItem('erp_script_url');
-      if (!savedUrl) {
-        var box = document.getElementById('configBox');
-        if (box) box.classList.add('show');
-      }
-    });
-
-    // ================= UNIVERSAL MIC INPUT (auto-added) =================
-    (function() {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      let activeRec = null, activeBtn = null, activeInput = null;
-
-      function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
-
-      function stopActiveMic() {
-        if (activeRec) {
-          activeRec.onend = null; activeRec.onresult = null;
-          try { activeRec.abort(); } catch (e) {}
-          activeRec = null;
+        // ===== Deployment URL config =====
+        function showUrlConfig() {
+          var inp = document.getElementById('scriptUrlInput');
+          if (inp) inp.value = SCRIPT_URL;
+          var box = document.getElementById('configBox');
+          if (box) box.classList.add('show');
         }
-        if (activeBtn) activeBtn.classList.remove('listening');
-        if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
-        activeBtn = null; activeInput = null;
-      }
-
-      function toggleMic(input, btn) {
-        if (!SR) { alert('Ye browser voice input support nahi karta. Chrome use karein.'); return; }
-        const isNumeric = input.type === 'number';
-
-        if (btn.classList.contains('listening')) { stopActiveMic(); return; }
-        stopActiveMic();
-
-        const rec = new SR();
-        rec.lang = 'en-US';
-        rec.continuous = true;
-        rec.interimResults = true;
-        let finalText = '';
-
-        activeRec = rec; activeBtn = btn; activeInput = input;
-        btn.classList.add('listening');
-        input.dataset.origPh = input.placeholder || '';
-        input.placeholder = 'Sun raha hoon... rokne ke liye mic dobara dabayein';
-
-        rec.onresult = function(ev) {
-          let interim = '';
-          for (let i = ev.resultIndex; i < ev.results.length; i++) {
-            const t = ev.results[i][0].transcript;
-            if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
+        document.addEventListener('DOMContentLoaded', function() {
+          var savedUrl = localStorage.getItem('erp_script_url');
+          if (!savedUrl) {
+            var box = document.getElementById('configBox');
+            if (box) box.classList.add('show');
           }
-          let text = (finalText + interim).trim();
-          if (isNumeric) text = cleanNumeric(text);
-          input.value = text;
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        };
-        rec.onerror = function(ev) {
-          if (ev.error !== 'no-speech' && ev.error !== 'aborted') console.error('Mic error:', ev.error);
-        };
-        rec.onend = function() {
-          btn.classList.remove('listening');
-          input.placeholder = input.dataset.origPh || '';
-          if (isNumeric) input.value = cleanNumeric(input.value);
-          if (activeInput === input) { activeRec = null; activeBtn = null; activeInput = null; }
-        };
-        try { rec.start(); } catch (e) {}
-      }
-
-      function attachMic(input) {
-        if (!input || input.dataset.autoMic) return;
-        if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
-            input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
-        if (input.closest('#configBox')) return;
-        if (input.closest('.input-with-mic')) return; // already has a manual mic button
-        if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
-
-        input.dataset.autoMic = '1';
-
-        const wrap = document.createElement('span');
-        wrap.className = 'auto-mic-wrap';
-        input.parentNode.insertBefore(wrap, input);
-        wrap.appendChild(input);
-
-        const curPad = window.getComputedStyle(input).paddingRight;
-        input.style.paddingRight = '24px';
-        input.style.boxSizing = 'border-box';
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'auto-mic-btn';
-        btn.title = 'Voice input';
-        btn.innerHTML = '&#127908;';
-        btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
-        wrap.appendChild(btn);
-      }
-
-      function scanAndAttach(root) {
-        root.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
-      }
-
-      document.addEventListener('DOMContentLoaded', function() {
-        scanAndAttach(document);
-      });
-
-      const mo = new MutationObserver(function(mutations) {
-        mutations.forEach(function(m) {
-          m.addedNodes.forEach(function(node) {
-            if (node.nodeType !== 1) return;
-            if (node.matches && (node.matches('input[type="text"]') || node.matches('input[type="number"]') || node.matches('input:not([type])'))) {
-              attachMic(node);
-            }
-            if (node.querySelectorAll) scanAndAttach(node);
-          });
         });
-      });
-      mo.observe(document.body, { childList: true, subtree: true });
-    })();
-</script>
 
+        // ================= UNIVERSAL MIC INPUT =================
+        (function() {
+          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+          let activeRec = null, activeBtn = null, activeInput = null;
+
+          function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
+
+          function stopActiveMic() {
+            if (activeRec) {
+              activeRec.onend = null; activeRec.onresult = null;
+              try { activeRec.abort(); } catch (e) {}
+              activeRec = null;
+            }
+            if (activeBtn) activeBtn.classList.remove('listening');
+            if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
+            activeBtn = null; activeInput = null;
+          }
+
+          function toggleMic(input, btn) {
+            if (!SR) { alert('Ye browser voice input support nahi karta.'); return; }
+            const isNumeric = input.type === 'number';
+
+            if (btn.classList.contains('listening')) { stopActiveMic(); return; }
+            stopActiveMic();
+
+            const rec = new SR();
+            rec.lang = 'en-US';
+            rec.continuous = true;
+            rec.interimResults = true;
+            let finalText = '';
+
+            activeRec = rec; activeBtn = btn; activeInput = input;
+            btn.classList.add('listening');
+            input.dataset.origPh = input.placeholder || '';
+            input.placeholder = 'Sun raha hoon...';
+
+            rec.onresult = function(ev) {
+              let interim = '';
+              for (let i = ev.resultIndex; i < ev.results.length; i++) {
+                const t = ev.results[i][0].transcript;
+                if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
+              }
+              let text = (finalText + interim).trim();
+              if (isNumeric) text = cleanNumeric(text);
+              input.value = text;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+            rec.onend = function() {
+              btn.classList.remove('listening');
+              input.placeholder = input.dataset.origPh || '';
+              if (isNumeric) input.value = cleanNumeric(input.value);
+            };
+            try { rec.start(); } catch (e) {}
+          }
+
+          function attachMic(input) {
+            if (!input || input.dataset.autoMic) return;
+            if (input.type === 'date' || input.type === 'hidden' || input.readOnly || input.disabled) return;
+            if (input.closest('#configBox')) return;
+
+            input.dataset.autoMic = '1';
+            const wrap = document.createElement('span');
+            wrap.className = 'auto-mic-wrap';
+            input.parentNode.insertBefore(wrap, input);
+            wrap.appendChild(input);
+
+            input.style.paddingRight = '24px';
+            input.style.boxSizing = 'border-box';
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'auto-mic-btn';
+            btn.title = 'Voice input';
+            btn.innerHTML = '&#127908;';
+            btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
+            wrap.appendChild(btn);
+          }
+
+          document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
+          });
+        })();
+    </script>
 </body>
 </html>
