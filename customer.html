@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <title>Al Meezan ERP - Customer Register</title>
+  <!-- Supabase SDK & Dual Backend Connector -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="erp-backend.js"></script>
   <style>
     :root {
       --primary: #1b5e20;
@@ -496,51 +499,52 @@
   }
 
   // ============================================================
-  // BACKEND CALLS (fetch se, google.script.run ki jagah)
+  // BACKEND CALLS (Dual Support: Google Apps Script & Supabase)
   // ============================================================
 
-  function loadNextAccountNo() {
-    fetch(SCRIPT_URL + "?action=getNextAccountNumber")
-      .then(res => res.json())
-      .then(res => {
-        if (res && res.success) {
-          document.getElementById('accNo').value = res.nextAccNo;
-        }
-      })
-      .catch(err => console.error("Account No load error:", err));
+  async function loadNextAccountNo() {
+    try {
+      const res = await erpApi.getNextAccountNumber();
+      if (res && res.success) {
+        document.getElementById('accNo').value = res.nextAccNo;
+      }
+    } catch (err) {
+      console.error("Account No load error:", err);
+    }
   }
 
-  function loadDropdownSettings() {
-    fetch(SCRIPT_URL + "?action=getAppSettings")
-      .then(res => res.json())
-      .then(res => {
-        if (res && res.success) {
-          let croSelect = document.getElementById('cro');
-          croSelect.innerHTML = '<option value="">Select CRO...</option>';
-          if (res.cros) {
-            res.cros.forEach(cro => {
-              croSelect.innerHTML += `<option value="${cro}">${cro}</option>`;
-            });
-          }
-
-          let approvedSelect = document.getElementById('approvedBy');
-          approvedSelect.innerHTML = '<option value="">Select Approved By...</option>';
-          if (res.approvedBy) {
-            res.approvedBy.forEach(name => {
-              approvedSelect.innerHTML += `<option value="${name}">${name}</option>`;
-            });
-          }
+  async function loadDropdownSettings() {
+    try {
+      const res = await erpApi.getSettings();
+      if (res && res.success) {
+        let croSelect = document.getElementById('cro');
+        croSelect.innerHTML = '<option value="">Select CRO...</option>';
+        if (res.cros) {
+          res.cros.forEach(cro => {
+            croSelect.innerHTML += `<option value="${cro}">${cro}</option>`;
+          });
         }
-      })
-      .catch(err => console.error("Settings load error:", err));
+
+        let approvedSelect = document.getElementById('approvedBy');
+        approvedSelect.innerHTML = '<option value="">Select Approved By...</option>';
+        if (res.approvedBy) {
+          res.approvedBy.forEach(name => {
+            approvedSelect.innerHTML += `<option value="${name}">${name}</option>`;
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Settings load error:", err);
+    }
   }
 
   function showLoader(show) {
     document.getElementById('loader').style.display = show ? 'block' : 'none';
   }
 
-  function saveCustomer() {
+  async function saveCustomer() {
     let data = {
+      accountNo: document.getElementById('accNo').value.trim(),
       accountTitle: document.getElementById('accTitle').value.trim(),
       approvedBy: document.getElementById('approvedBy').value,
       cro: document.getElementById('cro').value,
@@ -568,32 +572,22 @@
       return;
     }
 
-    if (!SCRIPT_URL) {
-      alert("Pehle Apps Script URL set karein (upar wale box mein).");
-      return;
-    }
-
     showLoader(true);
 
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'saveNewCustomer', data: data })
-    })
-      .then(res => res.json())
-      .then(res => {
-        showLoader(false);
-        if (res && res.success) {
-          alert("Customer Saved Successfully!");
-          clearForm();
-          loadNextAccountNo();
-        } else {
-          alert("Error: " + (res ? res.error : "Unknown error"));
-        }
-      })
-      .catch(err => {
-        showLoader(false);
-        alert("Server Error: " + err.message);
-      });
+    try {
+      const res = await erpApi.saveCustomer(data);
+      showLoader(false);
+      if (res && res.success) {
+        alert("Customer Saved Successfully!");
+        clearForm();
+        loadNextAccountNo();
+      } else {
+        alert("Error: " + (res ? res.error : "Unknown error"));
+      }
+    } catch (err) {
+      showLoader(false);
+      alert("Server Error: " + err.message);
+    }
   }
 
   function clearForm() {

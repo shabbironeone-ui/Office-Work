@@ -2,6 +2,10 @@
 <html>
 <head>
   <base target="_top">
+  <title>Customer Aging Report</title>
+  <!-- Supabase SDK & Dual Backend Connector -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="erp-backend.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     body {
@@ -446,14 +450,6 @@
 </style>
 </head>
 <body>
-  <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
-  <div id="configBox" class="config-box">
-    <b>Setup:</b> Apna Apps Script Deployment URL neeche daal kar Save karein.
-    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
-    <button onclick="saveScriptUrl()">Save URL</button>
-  </div>
-
-
   <div class="container">
     <h2>Al-Meezan Electronics - Customer Aging Report</h2>
     
@@ -626,7 +622,7 @@
       return `${day}-${month}-${year}`;
     }
 
-    function fetchAndFilterData() {
+    async function fetchAndFilterData() {
       if (globalResponse !== null) {
         applySearchFilter();
         return;
@@ -635,21 +631,19 @@
       document.getElementById('loadingContainer').style.display = 'block';
       document.getElementById('loadingMsg').innerText = "Fetching aging records... Please wait.";
 
-      fetch(WEB_APP_URL + "?action=getAgingReportData")
-        .then(response => response.json())
-        .then(res => {
-          document.getElementById('loadingContainer').style.display = 'none';
-          if (res && res.data) {
-            globalResponse = res;
-            applySearchFilter();
-          } else {
-            alert("Error loading data from sheet.");
-          }
-        })
-        .catch(err => {
-          document.getElementById('loadingContainer').style.display = 'none';
-          alert("Fetch Failure: " + err.message);
-        });
+      try {
+        const res = await erpApi.getAgingReportData();
+        document.getElementById('loadingContainer').style.display = 'none';
+        if (res && res.data) {
+          globalResponse = res;
+          applySearchFilter();
+        } else {
+          alert("Error loading aging data.");
+        }
+      } catch (err) {
+        document.getElementById('loadingContainer').style.display = 'none';
+        alert("Fetch Failure: " + err.message);
+      }
     }
 
     function getColumnValue(row, colName, monthHeaders) {

@@ -3,6 +3,9 @@
 <head>
   <base target="_top">
   <meta charset="utf-8">
+  <!-- Supabase SDK & Dual Backend Connector -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="erp-backend.js"></script>
   <style>
     :root {
       --primary: #1b5e20;
@@ -635,38 +638,27 @@
     }
   }
 
-  function fetchCustomerDetails() {
+  async function fetchCustomerDetails() {
     let accNo = document.getElementById("accountNo").value.trim();
     if (!accNo) return;
 
     showLoader(true);
-    fetch(SCRIPT_URL + "?action=getCustomerDetailsForSales" + "&accNo=" + encodeURIComponent(accNo))
-        .then(r => r.json())
-        .then(function(res) {
-        showLoader(false);
-        if (res && res.success) {
-          if (res.alreadySaved) {
-            alert("Error: Sale against this Account Number is already saved!");
-            document.getElementById("accountNo").value = "";
-            document.getElementById("accountTitle").value = "";
-            document.getElementById("approvedBy").value = "";
-            document.getElementById("cro").value = "";
-            document.getElementById("accountNo").focus();
-            return;
-          }
-          document.getElementById("accountTitle").value = res.accountTitle || "";
-          document.getElementById("approvedBy").value = res.approvedBy || "";
-          document.getElementById("cro").value = res.cro || "";
-        } else {
-          alert(res.error || "Account not found!");
-          document.getElementById("accountNo").value = "";
-          document.getElementById("accountNo").focus();
-        }
-      })
-        .catch(function(err) {
-        showLoader(false);
-        alert("Error fetching customer details.");
-      });
+    try {
+      const res = await erpApi.getCustomer(accNo);
+      showLoader(false);
+      if (res && res.success) {
+        document.getElementById("accountTitle").value = res.accountTitle || "";
+        document.getElementById("approvedBy").value = res.approvedBy || "";
+        document.getElementById("cro").value = res.cro || "";
+      } else {
+        alert(res.error || "Account not found!");
+        document.getElementById("accountNo").value = "";
+        document.getElementById("accountNo").focus();
+      }
+    } catch (err) {
+      showLoader(false);
+      alert("Error fetching customer details: " + err.message);
+    }
   }
 
   function openGlobalSearchModal() {
@@ -842,11 +834,10 @@
     document.getElementById('totalAmount').value = grandTotal.toFixed(2);
   }
 
-  function submitNewSale() {
+    async function submitNewSale() {
     let data = collectFormData();
     if (!data) return;
 
-    // Save button ko disable aur cursor ko wait (loading wheel) banana
     let saveBtn = document.getElementById('actionMainBtn');
     saveBtn.disabled = true;
     saveBtn.style.opacity = '0.5';
@@ -854,48 +845,34 @@
     document.body.style.cursor = 'wait';
 
     showLoader(true);
-    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveSalesEntry", data: data }) })
-        .then(r => r.json())
-        .then(function(res) {
-        // Button aur cursor ko wapas normal karna
-        saveBtn.disabled = false;
-        saveBtn.style.opacity = '1';
-        saveBtn.style.cursor = 'pointer';
-        document.body.style.cursor = 'default';
-        showLoader(false);
+    try {
+      const res = await erpApi.saveSalesEntry(data);
+      saveBtn.disabled = false;
+      saveBtn.style.opacity = '1';
+      saveBtn.style.cursor = 'pointer';
+      document.body.style.cursor = 'default';
+      showLoader(false);
 
-        if (res.success) {
-          clearSaleForm();
-          loadRecentSales();
-          fetch(SCRIPT_URL + "?action=rebuildStockLedgerNow").catch(() => {}); // Stock Ledger turant refresh karein
-          window.open('receipts.html', '_blank');
-        } else {
-          alert("Error: " + res.error);
-        }
-      })
-        .catch(function(err) {
-        // Error ki surat mein bhi button aur cursor restore karna
-        let saveBtn = document.getElementById('actionMainBtn');
-        saveBtn.disabled = false;
-        saveBtn.style.opacity = '1';
-        saveBtn.style.cursor = 'pointer';
-        document.body.style.cursor = 'default';
-        showLoader(false);
-
-        alert("Server Error: " + err.message);
-      });
+      if (res && res.success) {
+        alert("Sale Saved Successfully!");
+        clearSaleForm();
+        loadRecentSales();
+      } else {
+        alert("Error: " + (res ? res.error : "Unknown error"));
+      }
+    } catch (err) {
+      saveBtn.disabled = false;
+      saveBtn.style.opacity = '1';
+      saveBtn.style.cursor = 'pointer';
+      document.body.style.cursor = 'default';
+      showLoader(false);
+      alert("Server Error: " + err.message);
+    }
   }
 
   function collectFormData() {
     let accNoVal = document.getElementById('accountNo').value.trim();
-    let rawDate = document.getElementById('saleDate').value;
-    let formattedDate = "";
-    if (rawDate) {
-      let parts = rawDate.split("-");
-      if (parts.length === 3) {
-        formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0].slice(-2);
-      }
-    }
+    let rawDate = document.getElementById('saleDate').value || new Date().toISOString().split('T')[0];
 
     let rows = document.querySelectorAll("#productTableBody tr");
     let products = [];
@@ -918,22 +895,16 @@
       });
     });
 
-    let data = {
+    return {
       accountNo: accNoVal,
       accountTitle: document.getElementById('accountTitle').value.trim(),
       approvedBy: document.getElementById('approvedBy').value.trim(),
       cro: document.getElementById('cro').value.trim(),
-      date: formattedDate || rawDate,
+      date: rawDate,
       products: products,
       totalAmount: document.getElementById('totalAmount').value,
       nextInstMonth: document.getElementById('nextInstMonth').value.trim()
     };
-
-    if (!data.accountNo || !products[0].model || !products[0].salesRate) {
-      alert("Please fill required fields (Account No, Model, Sales Rate)!");
-      return null;
-    }
-    return data;
   }
 
   function clearSaleForm() {
@@ -971,20 +942,18 @@
   let recentSalesData = [];
   let salesSortState = { field: null, asc: true };
 
-  function loadRecentSales() {
+  async function loadRecentSales() {
     let fromDate = document.getElementById('recentFromDate').value;
     let toDate = document.getElementById('recentToDate').value;
 
-    fetch(SCRIPT_URL + "?action=getRecentSalesList" + "&fromDate=" + encodeURIComponent(fromDate) + "&toDate=" + encodeURIComponent(toDate))
-        .then(r => r.json())
-        .then(function(res) {
-        recentSalesData = (res && res.success && res.sales) ? res.sales : [];
-        salesSortState = { field: null, asc: true };
-        renderSalesTable(recentSalesData);
-      })
-        .catch(function(err) {
-        console.error("Error loading recent sales:", err);
-      });
+    try {
+      const res = await erpApi.getRecentSales({ fromDate, toDate });
+      recentSalesData = (res && res.success && res.data) ? res.data : [];
+      salesSortState = { field: null, asc: true };
+      renderSalesTable(recentSalesData);
+    } catch (err) {
+      console.error("Error loading recent sales:", err);
+    }
   }
 
   function sortSalesTable(field) {
