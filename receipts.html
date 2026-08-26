@@ -4,9 +4,6 @@
   <meta charset="utf-8">
   <title>Al Meezan ERP Receipts</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <!-- Supabase Official SDK & Dual Backend Connector -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="erp-backend.js"></script>
   <style>
     :root {
       --primary: #1b5e20;
@@ -51,752 +48,954 @@
       padding-bottom: 3px;
     }
 
-    /* DUAL BACKEND CONFIG BOX */
-    .erp-cfg-link {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 11px; font-weight: bold; color: #166534;
-      cursor: pointer; padding: 4px 10px; margin-bottom: 8px;
-      background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;
+    /* CONFIG BOX - Apps Script URL */
+    .config-box {
+      background: #fff3cd;
+      border: 1px solid #ffe69c;
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      display: none;
     }
-    .erp-cfg-link:hover { background: #bbf7d0; }
-    .erp-cfg-panel {
-      display: none; background: #ffffff; border: 1px solid #cbd5e1;
-      border-radius: 8px; padding: 14px 18px; margin-bottom: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08); font-size: 12px; color: #334155;
+    .config-box.show { display: block; }
+    .config-box input {
+      width: 100%;
+      padding: 6px 8px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 11px;
+      box-sizing: border-box;
     }
-    .erp-cfg-panel.show { display: block; }
-    .erp-cfg-row { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
-    .erp-cfg-radio { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; cursor: pointer; }
-    .erp-cfg-input-group { margin-bottom: 8px; }
-    .erp-cfg-input-group label { display: block; font-weight: 600; font-size: 11px; margin-bottom: 3px; color: #475569; }
-    .erp-cfg-input-group input { width: 100%; padding: 6px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; }
-    .erp-cfg-save-btn {
-      background: #15803d; color: #ffffff; border: none; padding: 6px 14px;
-      font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer;
+    .config-box button {
+      margin-top: 6px;
+      padding: 6px 14px;
+      background: #1b5e20;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
     }
-    .erp-cfg-save-btn:hover { background: #166534; }
 
-    .form-group {
-      margin-bottom: 6px;
+    .nav-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
     }
+
+    .tab {
+      flex: 1;
+      padding: 6px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: bold;
+      color: #666;
+      background: #e0e0e0;
+      border-radius: 4px;
+      font-size: 12px;
+      transition: 0.3s;
+    }
+
+    .tab.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .form-section { display: none; }
+    .form-section.active { display: block; }
 
     label {
       display: block;
+      margin-bottom: 2px;
       font-weight: 600;
-      margin-bottom: 1px;
+      color: #444;
       font-size: 11px;
     }
 
     input, select {
       width: 100%;
-      padding: 4px 6px;
+      padding: 5px 8px;
       border: 1px solid var(--border);
       border-radius: 4px;
       box-sizing: border-box;
       font-size: 12px;
-      background: #fff;
+      transition: all 0.3s ease;
     }
 
     input:focus, select:focus {
-      outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 2px rgba(27,94,32,0.15);
+      outline: none;
     }
 
-    .btn-main {
+    input.listening-input {
+      border-color: var(--danger) !important;
+      background-color: #ffebee !important;
+      box-shadow: 0 0 6px rgba(198, 40, 40, 0.4);
+    }
+
+    input[readonly] { background-color: #eaeded; color: #555; }
+
+    .input-with-mic {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+    .mic-btn {
       background-color: var(--primary);
       color: white;
       border: none;
-      padding: 6px 14px;
-      font-size: 12px;
-      font-weight: 600;
       border-radius: 4px;
+      padding: 0 6px;
       cursor: pointer;
-      width: 100%;
-    }
-    .btn-main:hover { background-color: var(--primary-hover); }
-
-    .btn-secondary {
-      background-color: #37474f;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .btn-secondary:hover { background-color: #263238; }
-
-    .btn-danger {
-      background-color: var(--danger);
-      color: white;
-      border: none;
-      padding: 4px 8px;
+      height: 28px;
       font-size: 11px;
-      border-radius: 3px;
-      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
-    .btn-danger:hover { background-color: #b71c1c; }
+    .mic-btn:hover { background-color: var(--primary-hover); }
+    .mic-btn.listening {
+      background-color: var(--danger);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .action-btn {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 12px;
+      color: #fff;
+    }
+
+    .btn-primary { background-color: var(--primary); }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-danger { background-color: var(--danger); }
+    .btn-secondary { background-color: #546e7a; }
+
+    .loader {
+      display: none;
+      text-align: center;
+      color: var(--primary);
+      font-weight: bold;
+      margin: 6px 0;
+      font-size: 12px;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(27, 94, 32, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .search-box-card {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
 
     .table-responsive {
+      width: 100%;
       overflow-x: auto;
       margin-top: 4px;
-      margin-bottom: 6px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      max-height: 240px;
+      overflow-y: auto;
     }
 
-    .batch-table {
+    table.edit-table, table.batch-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 11px;
     }
 
-    .batch-table th, .batch-table td {
-      border: 1px solid var(--border);
-      padding: 2px 3px;
-      text-align: left;
+    table.edit-table th, table.edit-table td,
+    table.batch-table th, table.batch-table td {
+      border: 1px solid #ddd;
+      padding: 4px 6px;
+      text-align: center;
       vertical-align: middle;
     }
 
-    .batch-table th {
-      background-color: #e8f5e9;
-      color: var(--primary);
-      font-weight: 600;
-      padding: 3px;
-    }
-
-    .batch-table td input {
-      border: 1px solid transparent;
-      padding: 2px 4px;
-      font-size: 11px;
-      height: 22px;
-    }
-
-    .batch-table td input:focus {
-      border: 1px solid var(--primary);
-      background-color: #ffffff;
-    }
-
-    .input-with-mic {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-    .input-with-mic input {
-      padding-right: 20px !important;
-    }
-    .input-with-mic .mic-btn {
-      position: absolute;
-      right: 2px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: transparent;
-      border: none;
-      color: #757575;
-      cursor: pointer;
-      padding: 2px;
-      font-size: 10px;
-    }
-    .input-with-mic .mic-btn.listening {
-      color: #d32f2f;
-      animation: pulse 1s infinite;
-    }
-    @keyframes pulse {
-      0% { transform: translateY(-50%) scale(1); }
-      50% { transform: translateY(-50%) scale(1.2); }
-      100% { transform: translateY(-50%) scale(1); }
-    }
-
-    /* RECENT SAVED RECEIPTS TABLE */
-    .recent-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 12px;
-      margin-bottom: 6px;
-      border-bottom: 1px solid #e0e0e0;
-      padding-bottom: 4px;
-    }
-    .recent-header-row h3 {
-      margin: 0;
-      font-size: 13px;
-      color: var(--primary);
-    }
-    .filter-bar {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 6px;
-      background: #f1f8e9;
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-size: 11px;
-    }
-    .filter-bar input, .filter-bar select {
-      width: auto;
-      padding: 2px 6px;
-      font-size: 11px;
-      height: 24px;
-    }
-
-    .recent-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-    }
-    .recent-table th, .recent-table td {
-      border: 1px solid #ddd;
-      padding: 4px 6px;
-      text-align: left;
-    }
-    .recent-table th {
+    table.edit-table th, table.batch-table th {
       background-color: #f1f8e9;
       color: var(--primary);
-      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
-    .recent-table tr:hover { background-color: #f9fbe7; }
-    .amount-cell { text-align: right; font-weight: 600; }
-  </style>
+
+    /* RECENT SAVED RECEIPTS SECTION */
+    .recent-section {
+      margin-top: 16px;
+      border-top: 2px solid var(--border);
+      padding-top: 10px;
+    }
+    .recent-section h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: var(--primary);
+    }
+    .recent-filters {
+      display: flex;
+      gap: 8px;
+      align-items: end;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .recent-filters .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .recent-filters input[type="date"] {
+      width: 140px;
+    }
+    tr.editing {
+      background-color: #fffde7 !important;
+    }
+    
+    /* PRINT AREA */
+    #printArea { display: none; }
+    @media print {
+      .container { display: none !important; }
+      #printArea { display: block !important; padding: 15px; }
+      #printArea table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      #printArea th, #printArea td { border: 1px solid #000; padding: 5px 8px; text-align: left; }
+      #printArea h2 { text-align: center; margin-bottom: 4px; }
+      #printArea .print-meta { text-align: center; margin-bottom: 12px; font-size: 12px; }
+      #printArea .print-total { text-align: right; font-weight: bold; margin-top: 10px; font-size: 13px; }
+    }
+  
+    .auto-mic-wrap { position: relative; display: inline-block; width: 100%; }
+    .auto-mic-btn {
+      position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+      width: 20px; height: 20px; padding: 0; border: none; background: transparent;
+      cursor: pointer; font-size: 12px; line-height: 1; z-index: 5; opacity: 0.55;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .auto-mic-btn:hover { opacity: 1; }
+    .auto-mic-btn.listening {
+      background: #c62828; border-radius: 50%; color: #fff; opacity: 1;
+      animation: autoMicPulse 1s infinite;
+    }
+    @keyframes autoMicPulse {
+      0% { box-shadow: 0 0 0 0 rgba(198,40,40,0.5); }
+      70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
+      100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
+    }
+</style>
 </head>
 <body>
 
 <div class="container">
   <h2>Al Meezan ERP Receipts</h2>
 
-  <!-- RECEIPT BATCH INPUT SECTION -->
-  <div style="display: flex; gap: 8px; margin-bottom: 6px;" class="form-group">
-    <div style="flex: 1.2;">
-      <label for="batchReceiptDate">Receipt Date</label>
-      <input type="date" id="batchReceiptDate">
+    <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
+  <div id="configBox" class="config-box">
+    <b>Setup:</b> Pehli baar use karne ke liye apna Apps Script Web App URL neeche paste karein aur Save dabayein.
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+    <button onclick="saveScriptUrl()">Save URL</button>
+  </div>
+  
+  <div class="nav-bar-container" style="border-bottom:none; margin-bottom:0;"></div>
+
+  <div id="loader" class="loader"><span class="spinner"></span>Processing, please wait...</div>
+
+  <!-- NEW RECEIPTS ENTRY -->
+  <div id="sectionNew" class="form-section active">
+    <div id="batchReceiptsSection">
+      <div style="display: flex; gap: 8px; margin-bottom: 6px;" class="form-group">
+        <div style="flex: 1.2;">
+          <label for="batchReceiptDate">Receipt Date</label>
+          <input type="date" id="batchReceiptDate">
+        </div>
+        <div style="flex: 1;">
+          <label for="batchPaymentMode">Payment Type</label>
+          <select id="batchPaymentMode" onchange="onBatchPaymentModeChange()">
+            <option value="Cash" selected>Cash</option>
+            <option value="Bank">Bank</option>
+          </select>
+        </div>
+        <div style="flex: 1.2;">
+          <label for="batchReceiptSuffix">Pay Mode / Subhead</label>
+          <select id="batchReceiptSuffix"></select>
+        </div>
+        <div style="flex: 0.8; display: flex; align-items: flex-end;">
+          <button type="button" class="action-btn btn-secondary" style="padding: 5px 8px; font-size: 11px; width: 100%;" onclick="addBatchRow()"><i class="fas fa-plus"></i> Add Row</button>
+        </div>
+      </div>
+
+      <div style="text-align: left; font-weight: bold; font-size: 12px; color: var(--primary); margin-bottom: 2px;">
+        Qty: <span id="totalReceiptsQty">0</span> &nbsp;|&nbsp; Amount: <span id="totalReceiptsAmount">0</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="batch-table" id="batchTable">
+          <thead>
+            <tr>
+              <th style="width: 15%;">Account No</th>
+              <th style="width: 11%;">Receipt No</th>
+              <th style="width: 10%;">Amount</th>
+              <th style="width: 7%;">Inst</th>
+              <th style="width: 12%;">Total Sale Amount</th>
+              <th style="width: 10%;">Paid Amount</th>
+              <th style="width: 10%;">Balance</th>
+              <th style="width: 21%;">Customer Name</th>
+              <th style="width: 4%;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="batchTableBody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 8px;">
+        <label for="batchRemarks">Remarks (Common for all entries)</label>
+        <div class="input-with-mic">
+          <input type="text" id="batchRemarks" placeholder="Enter remarks (optional)..." onkeydown="handleRemarksKey(event)">
+          <button type="button" class="mic-btn" onclick="startCleanVoiceInput('batchRemarks', false)"><i class="fas fa-microphone"></i></button>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top: 6px;">
+        <button id="saveBatchBtn" class="action-btn btn-primary" style="flex:1;" onclick="submitBatchReceipts()">Save All Receipts</button>
+        <button class="action-btn btn-secondary" style="flex:1;" onclick="clearBatchForm()">Reset</button>
+      </div>
     </div>
-    <div style="flex: 1;">
-      <label for="batchPaymentMode">Payment Type</label>
-      <select id="batchPaymentMode" onchange="onPaymentTypeChange()">
-        <option value="Cash" selected>Cash</option>
-        <option value="Bank">Bank</option>
-      </select>
+
+    <!-- RECENT SAVED RECEIPTS -->
+    <div class="recent-section">
+      <h3>Recent Saved Receipts</h3>
+      <div class="recent-filters">
+        <div class="form-group">
+          <label>From Date</label>
+          <input type="date" id="recentFromDate" onchange="renderRecentReceipts()">
+        </div>
+        <div class="form-group">
+          <label>To Date</label>
+          <input type="date" id="recentToDate" onchange="renderRecentReceipts()">
+        </div>
+        <div class="form-group">
+          <label>Search Receipt No</label>
+          <input type="text" id="recentSearchRct" placeholder="Receipt No..." oninput="renderRecentReceipts()" style="width:140px;">
+        </div>
+        <div class="form-group">
+          <label>Payment Mode</label>
+          <select id="recentModeFilter" onchange="renderRecentReceipts()" style="width:170px;">
+            <option value="All">All Modes</option>
+          </select>
+        </div>
+        
+        <div class="form-group" style="flex-direction:row; align-items:center; gap:6px; padding-bottom:6px;">
+          <input type="checkbox" id="recentDaybookOnly" checked onchange="renderRecentReceipts()" style="width:auto; margin:0;">
+          <label style="margin:0; margin-right:6px;">Daybook</label>
+          <input type="checkbox" id="recentBankOnly" onchange="renderRecentReceipts()" style="width:auto; margin:0;">
+          <label style="margin:0;">Bank</label>
+        </div>
+
+        <button class="action-btn btn-secondary" style="height: 30px;" onclick="resetRecentFilter()">Reset Filter</button>
+        <button class="action-btn btn-primary" style="height: 30px;" onclick="loadRecentReceipts()"><i class="fas fa-sync-alt"></i> Refresh</button>
+        <button class="action-btn btn-secondary" style="height: 30px; background:#37474f;" onclick="printRecentReceipts()"><i class="fas fa-print"></i> Print</button>
+      </div>
+
+      <div style="text-align: left; font-weight: bold; font-size: 12px; color: var(--primary); margin-bottom: 2px;">
+        Qty: <span id="recentTotalsQty">0</span> &nbsp;|&nbsp; Amount: <span id="recentTotalsAmount">0</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="edit-table" id="recentReceiptsTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Receipt No</th>
+              <th>Acc No</th>
+              <th>Customer Name</th>
+              <th>Pay Mode</th>
+              <th>Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recentReceiptsBody">
+            <tr><td colspan="7" style="text-align:center;">Loading recent receipts...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div style="flex: 1.2;">
-      <label for="batchReceiptSuffix">Pay Mode / Subhead</label>
-      <select id="batchReceiptSuffix"></select>
-    </div>
-    <div style="flex: 0.8; display: flex; align-items: flex-end;">
-      <button type="button" class="btn-secondary" style="padding: 5px 8px; font-size: 11px; width: 100%;" onclick="addBatchRow()"><i class="fas fa-plus"></i> Add Row</button>
-    </div>
-  </div>
-
-  <div style="text-align: left; font-weight: bold; font-size: 12px; color: var(--primary); margin-bottom: 4px;">
-    Qty: <span id="totalReceiptsQty">0</span> &nbsp;|&nbsp; Total Amount: Rs <span id="totalReceiptsAmount">0</span>
-  </div>
-
-  <div class="table-responsive">
-    <table class="batch-table" id="batchTable">
-      <thead>
-        <tr>
-          <th style="width: 14%;">Account No</th>
-          <th style="width: 12%;">Receipt No</th>
-          <th style="width: 12%;">Amount</th>
-          <th style="width: 8%;">Inst</th>
-          <th style="width: 12%;">Total Sale</th>
-          <th style="width: 10%;">Paid Amt</th>
-          <th style="width: 10%;">Balance</th>
-          <th style="width: 18%;">Customer Name</th>
-          <th style="width: 4%;">Action</th>
-        </tr>
-      </thead>
-      <tbody id="batchTableBody"></tbody>
-    </table>
-  </div>
-
-  <div class="form-group" style="margin-top: 6px;">
-    <div class="input-with-mic">
-      <input type="text" id="batchRemarks" placeholder="Remarks (Common for all entries)...">
-      <button type="button" class="mic-btn" onclick="startMic(this, 'batchRemarks')"><i class="fas fa-microphone"></i></button>
-    </div>
-  </div>
-
-  <div style="display: flex; gap: 8px; margin-top: 6px;">
-    <button type="button" class="btn-main" id="saveBatchBtn" style="flex: 3;" onclick="saveAllBatchReceipts()">Save All Receipts</button>
-    <button type="button" class="btn-secondary" style="flex: 1;" onclick="clearBatchForm()">Reset</button>
-  </div>
-
-  <!-- RECENT RECEIPTS VIEWER -->
-  <div class="recent-header-row">
-    <h3>Recent Saved Receipts</h3>
-  </div>
-  <div class="filter-bar">
-    <label>From: <input type="date" id="recentFromDate" onchange="filterRecentReceipts()"></label>
-    <label>To: <input type="date" id="recentToDate" onchange="filterRecentReceipts()"></label>
-    <input type="text" id="recentSearchRct" placeholder="Search Receipt / Name / Acc..." oninput="filterRecentReceipts()">
-    <select id="recentModeFilter" onchange="filterRecentReceipts()">
-      <option value="All">All Modes</option>
-    </select>
-    <button type="button" class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="loadRecentReceipts()"><i class="fas fa-sync"></i> Refresh</button>
-  </div>
-
-  <div class="table-responsive">
-    <table class="recent-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Receipt No</th>
-          <th>Acc No</th>
-          <th>Customer Name</th>
-          <th>Pay Mode</th>
-          <th style="text-align:right;">Amount</th>
-          <th>Remarks</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="recentReceiptsBody">
-        <tr><td colspan="8" style="text-align:center;">Loading receipts...</td></tr>
-      </tbody>
-    </table>
   </div>
 </div>
 
+<div id="printArea"></div>
+
 <script>
-  // ============================================================
-  // STANDALONE CONFIG & SUPABASE CLIENT (SELF-CONTAINED)
-  // ============================================================
-  const DEFAULT_SB_URL = "https://ofplfqawiupcmqvzkhfp.supabase.co";
-  const DEFAULT_SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcGxmcWF3aXVwY21xdnpraGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NzA5MjAsImV4cCI6MjEwMzE0NjkyMH0.DP6_HPAoDhexUwiavzbmrXNfh3BOD27P4rsUcSKkQdU";
+  let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
 
-  let activeBackend = localStorage.getItem('erp_active_backend') || 'supabase';
-  let scriptUrl = localStorage.getItem('erp_script_url') || '';
-  let supabaseUrl = localStorage.getItem('erp_supabase_url') || DEFAULT_SB_URL;
-  let supabaseKey = localStorage.getItem('erp_supabase_key') || DEFAULT_SB_KEY;
-
-  let sbClient = null;
-  function getSB() {
-    if (!sbClient && window.supabase) {
-      sbClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+  window.onload = function() {
+    if (!SCRIPT_URL) {
+      document.getElementById('configBox').classList.add('show');
     }
-    return sbClient;
-  }
-
-  function toggleConfigPanel() {
-    document.getElementById('configPanel').classList.toggle('show');
-  }
-
-  function onBackendChange(val) {
-    document.getElementById('googleSection').style.display = val === 'google' ? 'block' : 'none';
-    document.getElementById('supabaseSection').style.display = val === 'supabase' ? 'block' : 'none';
-  }
-
-  function saveConfig() {
-    const selected = document.querySelector('input[name="erpBackendType"]:checked').value;
-    localStorage.setItem('erp_active_backend', selected);
-    localStorage.setItem('erp_script_url', document.getElementById('cfgScriptUrl').value.trim());
-    localStorage.setItem('erp_supabase_url', document.getElementById('cfgSupabaseUrl').value.trim());
-    localStorage.setItem('erp_supabase_key', document.getElementById('cfgSupabaseKey').value.trim());
-    alert("Connection Settings Saved!");
-    window.location.reload();
-  }
-
-  // ============================================================
-  // UNIFIED API METHODS (Always uses lowercase 'receipts' table!)
-  // ============================================================
-  let customerCache = {};
-  let settingsOptions = { cash: ["Cash", "Daybook (Cash)"], bank: ["Allied Bank (1870014)", "Online Transfer"] };
-
-  async function apiGetSettings() {
-    if (activeBackend === 'google' && scriptUrl) {
-      const r = await fetch(scriptUrl + "?action=getSettings");
-      return await r.json();
-    } else {
-      const sb = getSB();
-      const { data } = await sb.from('app_settings').select('*').eq('is_active', true);
-      if (data) {
-        const cash = data.filter(d => d.category === 'PAY_MODE').map(d => d.display_name);
-        const bank = data.filter(d => d.category === 'BANK').map(d => d.display_name);
-        return { success: true, cash: cash.length ? cash : settingsOptions.cash, bank: bank.length ? bank : settingsOptions.bank };
-      }
-      return { success: true, cash: settingsOptions.cash, bank: settingsOptions.bank };
-    }
-  }
-
-  async function apiGetCustomer(accNo) {
-    if (activeBackend === 'google' && scriptUrl) {
-      const r = await fetch(scriptUrl + "?action=getCustomer&accNo=" + encodeURIComponent(accNo));
-      return await r.json();
-    } else {
-      const sb = getSB();
-      // exact lowercase table 'customers'
-      const { data: cust } = await sb.from('customers').select('*').eq('account_no', String(accNo).trim()).maybeSingle();
-      if (!cust) return { success: false, error: "Account not found" };
-
-      // exact lowercase tables 'sales' and 'receipts'
-      const { data: sales } = await sb.from('sales').select('total_amt, advance, installment_per_month').eq('account_no', String(accNo).trim());
-      const { data: receipts } = await sb.from('receipts').select('amount').eq('account_no', String(accNo).trim());
-
-      let totalSale = 0, advance = 0, monthlyInst = 0;
-      if (sales) sales.forEach(s => { totalSale += Number(s.total_amt || 0); advance += Number(s.advance || 0); if (s.installment_per_month) monthlyInst = Number(s.installment_per_month); });
-      let totalPaidReceipts = 0;
-      if (receipts) receipts.forEach(r => totalPaidReceipts += Number(r.amount || 0));
-
-      let totalPaid = advance + totalPaidReceipts;
-      let balance = totalSale - totalPaid;
-
-      return {
-        success: true,
-        accountTitle: cust.account_title,
-        totalSale: totalSale,
-        paidAmount: totalPaid,
-        balance: balance > 0 ? balance : 0,
-        installment: monthlyInst
-      };
-    }
-  }
-
-  async function apiSaveReceipt(rct) {
-    if (activeBackend === 'google' && scriptUrl) {
-      const res = await fetch(scriptUrl, { method: "POST", body: JSON.stringify({ action: "saveReceipt", data: rct }) });
-      return await res.json();
-    } else {
-      const sb = getSB();
-      // EXACT LOWERCASE TABLE 'receipts'
-      const record = {
-        voucher_no: String(rct.receiptNoCustom || rct.receiptNo || '').trim(),
-        date: rct.receiptDate || rct.date,
-        account_no: String(rct.accountNo || rct.accNo).trim(),
-        account_title: String(rct.accountTitle || rct.customerName).trim(),
-        account_head: rct.receiptSuffix || rct.payMode || 'Cash',
-        pay_mode: rct.paymentMode || rct.pay_mode || 'Cash',
-        amount: Number(rct.receiptAmount || rct.amount || 0),
-        remarks: rct.receiptRemarks || rct.remarks || ''
-      };
-      const { data, error } = await sb.from('receipts').insert([record]).select();
-      if (error) throw error;
-      return { success: true, data: data };
-    }
-  }
-
-  async function apiGetRecentReceipts() {
-    if (activeBackend === 'google' && scriptUrl) {
-      const r = await fetch(scriptUrl + "?action=getAllReceiptsForReport");
-      return await r.json();
-    } else {
-      const sb = getSB();
-      // EXACT LOWERCASE TABLE 'receipts'
-      const { data, error } = await sb.from('receipts').select('*').order('date', { ascending: false }).limit(200);
-      if (error) throw error;
-      return {
-        success: true,
-        data: (data || []).map(r => ({
-          id: r.id,
-          receiptNo: r.voucher_no,
-          date: r.date,
-          accountNo: r.account_no,
-          accountTitle: r.account_title,
-          paymentHead: r.pay_mode,
-          amount: r.amount,
-          remarks: r.remarks
-        }))
-      };
-    }
-  }
-
-  async function apiDeleteReceipt(idOrVoucher) {
-    if (activeBackend === 'google' && scriptUrl) {
-      const r = await fetch(scriptUrl, { method: "POST", body: JSON.stringify({ action: "deleteReceiptEntry", data: { receiptNo: idOrVoucher } }) });
-      return await r.json();
-    } else {
-      const sb = getSB();
-      const { error } = await sb.from('receipts').delete().or(`id.eq.${idOrVoucher},voucher_no.eq.${idOrVoucher}`);
-      if (error) throw error;
-      return { success: true };
-    }
-  }
-
-  // ============================================================
-  // UI LOGIC & EVENTS
-  // ============================================================
-  window.onload = async function() {
-    document.getElementById('activeBackendLabel').textContent = activeBackend === 'supabase' ? '🟢 Supabase Direct' : '🟠 Google Apps Script';
-    document.getElementById('cfgScriptUrl').value = scriptUrl;
-    document.getElementById('cfgSupabaseUrl').value = supabaseUrl;
-    document.getElementById('cfgSupabaseKey').value = supabaseKey;
-    if (activeBackend === 'google') {
-      document.querySelector('input[value="google"]').checked = true;
-      onBackendChange('google');
-    }
-
     document.getElementById('batchReceiptDate').value = new Date().toISOString().split('T')[0];
     addBatchRow();
-
-    try {
-      const setRes = await apiGetSettings();
-      if (setRes && setRes.success) {
-        if (setRes.cash) settingsOptions.cash = setRes.cash;
-        if (setRes.bank) settingsOptions.bank = setRes.bank;
-      }
-    } catch(e){}
-    onPaymentTypeChange();
+    loadInitialData();
     loadRecentReceipts();
   };
 
-  function onPaymentTypeChange() {
-    const type = document.getElementById('batchPaymentMode').value;
-    const suffix = document.getElementById('batchReceiptSuffix');
-    const opts = type === 'Cash' ? settingsOptions.cash : settingsOptions.bank;
-    suffix.innerHTML = '';
-    opts.forEach(o => { suffix.innerHTML += `<option value="${o}">${o}</option>`; });
+  function saveScriptUrl() {
+    const val = document.getElementById('scriptUrlInput').value.trim();
+    if (!val) { alert("URL enter karein"); return; }
+    SCRIPT_URL = val;
+    localStorage.setItem('erp_script_url', val);
+    document.getElementById('configBox').classList.remove('show');
+    loadInitialData();
+    loadRecentReceipts();
+  }
+
+  let settingsOptions = { 
+    cash: ["Cash", "Head Office Cash", "Collection Cash"], 
+    bank: ["Bank Transfer", "Online Meezan", "Cheque"] 
+  };
+  let customerCache = {}; 
+  let isSubmitting = false;
+
+  function setWorking(active) {
+    if (active) document.body.classList.add('is-working');
+    else document.body.classList.remove('is-working');
+  }
+
+  function loadInitialData() {
+    if (!SCRIPT_URL) return;
+    setWorking(true);
+
+    Promise.all([
+      fetch(SCRIPT_URL + "?action=getSettings").then(res => res.json()).catch(() => null),
+      fetch(SCRIPT_URL + "?action=getAllCustomersCache").then(res => res.json()).catch(() => null)
+    ]).then(([settingsRes, custRes]) => {
+      setWorking(false);
+      if (settingsRes && settingsRes.success) {
+        if (settingsRes.cash && settingsRes.cash.length > 0) settingsOptions.cash = settingsRes.cash;
+        if (settingsRes.bank && settingsRes.bank.length > 0) settingsOptions.bank = settingsRes.bank;
+        onBatchPaymentModeChange();
+      }
+      if (custRes && custRes.data) {
+        customerCache = custRes.data;
+      }
+    });
+  }
+
+  function checkDuplicateReceipt(rctNo, inputElement) {
+    if (!rctNo || rctNo.trim() === '' || !SCRIPT_URL) return;
+    setWorking(true);
+    fetch(SCRIPT_URL + "?action=checkReceiptExists&rctNo=" + encodeURIComponent(rctNo.trim()))
+      .then(res => res.json())
+      .then(res => {
+        setWorking(false);
+        if (res && res.exists) {
+          alert("⚠️ Warning: Receipt No '" + rctNo + "' pehle se save hai!\n📅 Date: " + res.date);
+          if (inputElement) { inputElement.focus(); inputElement.select(); }
+        }
+      })
+      .catch(err => { setWorking(false); console.error("Duplicate check error:", err); });
   }
 
   function addBatchRow() {
-    const tbody = document.getElementById('batchTableBody');
-    const row = document.createElement('tr');
+    let tbody = document.getElementById('batchTableBody');
+    let row = document.createElement('tr');
     row.innerHTML = `
       <td>
         <div class="input-with-mic">
-          <input type="text" class="batch-acc" value="786" oninput="onAccInput(this)" onblur="onAccBlur(this)" onkeydown="handleRowKey(event, this, 'acc')" placeholder="786XXXX">
-          <button type="button" class="mic-btn" onclick="startRowMic(this, true)"><i class="fas fa-microphone"></i></button>
+          <input type="text" class="batch-acc" value="786" oninput="onBatchAccountInput(this)" onblur="onBatchAccountBlur(this)" onkeydown="handleBatchKey(event, this, 'acc')" placeholder="786XXXX">
+          <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, true)"><i class="fas fa-microphone"></i></button>
         </div>
       </td>
       <td>
         <div class="input-with-mic">
-          <input type="text" class="batch-rct" placeholder="Receipt No" onkeydown="handleRowKey(event, this, 'rct')" oninput="calcTotals()">
-          <button type="button" class="mic-btn" onclick="startRowMic(this, false)"><i class="fas fa-microphone"></i></button>
+          <input type="text" class="batch-rct" placeholder="Receipt No" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'rct')" onblur="if(this.value.trim()){ checkDuplicateReceipt(this.value.trim(), this); }">
+          <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, false)"><i class="fas fa-microphone"></i></button>
         </div>
       </td>
       <td>
         <div class="input-with-mic">
-          <input type="number" class="batch-amt" placeholder="Amount" oninput="calcTotals()" onkeydown="handleRowKey(event, this, 'amt')">
-          <button type="button" class="mic-btn" onclick="startRowMic(this, true)"><i class="fas fa-microphone"></i></button>
+          <input type="number" class="batch-amt" placeholder="" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'amt')">
+          <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, true)"><i class="fas fa-microphone"></i></button>
         </div>
       </td>
-      <td><input type="text" class="batch-inst" readonly placeholder="--" style="background:#f1f5f9; text-align:center;"></td>
-      <td><input type="text" class="batch-total-sale" readonly placeholder="--" style="background:#f1f5f9; text-align:center;"></td>
-      <td><input type="text" class="batch-paid-amt" readonly placeholder="--" style="background:#f1f5f9; text-align:center;"></td>
-      <td><input type="text" class="batch-bal" readonly placeholder="--" style="background:#f1f5f9; text-align:center;"></td>
-      <td><input type="text" class="batch-title" readonly placeholder="Auto Name..." style="background:#f1f5f9;"></td>
-      <td style="text-align:center;"><button type="button" class="btn-danger" onclick="removeRow(this)">X</button></td>
+      <td><input type="text" class="batch-inst" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
+      <td><input type="text" class="batch-total-sale" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
+      <td><input type="text" class="batch-paid-amt" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
+      <td><input type="text" class="batch-bal" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
+      <td><input type="text" class="batch-title" readonly placeholder="Auto..." style="background-color: #eaeded; text-align: left;"></td>
+      <td><button type="button" class="action-btn btn-danger" style="padding: 2px 5px; font-size: 10px;" onclick="removeBatchRow(this)"><i class="fas fa-trash"></i></button></td>
     `;
     tbody.appendChild(row);
     return row;
   }
 
-  function removeRow(btn) {
-    const tbody = document.getElementById('batchTableBody');
-    if (tbody.children.length > 1) {
-      btn.closest('tr').remove();
-      calcTotals();
-    } else {
-      clearRowDetails(btn.closest('tr'));
+  function handleBatchKey(event, inputElement, fieldType) {
+    let currentRow = inputElement.closest('tr');
+    if (event.key === 'Backspace' && inputElement.value === '') {
+      event.preventDefault();
+      if (fieldType === 'rct') {
+        let accInput = currentRow.querySelector('.batch-acc');
+        if (accInput) { accInput.focus(); accInput.select(); }
+      } else if (fieldType === 'amt') {
+        let rctInput = currentRow.querySelector('.batch-rct');
+        if (rctInput) { rctInput.focus(); rctInput.select(); }
+      }
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      setWorking(true);
+      setTimeout(() => setWorking(false), 300);
+
+      if (fieldType === 'acc') {
+        let accNo = inputElement.value.trim();
+        if (accNo.length > 3) fetchBatchCustomerDetails(accNo, currentRow);
+        let rctInput = currentRow.querySelector('.batch-rct');
+        if (rctInput) { rctInput.focus(); rctInput.select(); }
+      } else if (fieldType === 'rct') {
+        let rctVal = inputElement.value.trim();
+        if (rctVal) checkDuplicateReceipt(rctVal, inputElement);
+        let amtInput = currentRow.querySelector('.batch-amt');
+        if (amtInput) { amtInput.focus(); amtInput.select(); }
+      } else if (fieldType === 'amt') {
+        let tbody = document.getElementById('batchTableBody');
+        let isLastRow = (currentRow === tbody.lastElementChild);
+        if (isLastRow) {
+          let newRow = addBatchRow();
+          newRow.querySelector('.batch-acc').focus();
+        } else {
+          currentRow.nextElementSibling.querySelector('.batch-acc').focus();
+        }
+      }
     }
   }
 
-  function clearRowDetails(row) {
-    row.querySelector('.batch-acc').value = '786';
-    row.querySelector('.batch-rct').value = '';
-    row.querySelector('.batch-amt').value = '';
+  function handleRemarksKey(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      let lastRow = document.getElementById('batchTableBody').lastElementChild;
+      if (lastRow) lastRow.querySelector('.batch-acc').focus();
+    }
+  }
+
+  function onBatchAccountInput(input) {
+    if (!input.value.startsWith('786')) {
+      input.value = '786' + input.value.replace(/786/g, '');
+    }
+    let accNo = input.value.trim();
+    let row = input.closest('tr');
+    if (accNo.length > 3 && customerCache[accNo]) {
+      populateBatchRowDetails(row, customerCache[accNo]);
+    } else if (accNo.length <= 3) {
+      clearBatchRowDetails(row);
+    }
+  }
+
+  function onBatchAccountBlur(input) {
+    let accNo = input.value.trim();
+    if (accNo.length > 3) fetchBatchCustomerDetails(accNo, input.closest('tr'));
+  }
+
+  function clearBatchRowDetails(row) {
+    row.querySelector('.batch-title').value = '';
     row.querySelector('.batch-inst').value = '';
     row.querySelector('.batch-total-sale').value = '';
     row.querySelector('.batch-paid-amt').value = '';
     row.querySelector('.batch-bal').value = '';
-    row.querySelector('.batch-title').value = '';
-    calcTotals();
+    row.querySelector('.batch-amt').value = '';
+    calculateBatchTotal();
   }
 
-  function onAccInput(input) {
-    if (!input.value.startsWith('786')) input.value = '786' + input.value.replace(/786/g, '');
-    const acc = input.value.trim();
-    if (acc.length > 3 && customerCache[acc]) populateRowCustomer(input.closest('tr'), customerCache[acc]);
-  }
+  function fetchBatchCustomerDetails(accNo, row) {
+    if (customerCache[accNo]) {
+      populateBatchRowDetails(row, customerCache[accNo]);
+      return;
+    }
+    if (!SCRIPT_URL) return;
 
-  async function onAccBlur(input) {
-    const acc = input.value.trim();
-    const row = input.closest('tr');
-    if (acc.length > 3) {
-      if (customerCache[acc]) {
-        populateRowCustomer(row, customerCache[acc]);
-        return;
-      }
-      try {
-        const res = await apiGetCustomer(acc);
+    setWorking(true);
+    fetch(SCRIPT_URL + "?action=getCustomer&accNo=" + encodeURIComponent(accNo))
+      .then(res => res.json())
+      .then(res => {
+        setWorking(false);
         if (res && res.success) {
-          customerCache[acc] = res;
-          populateRowCustomer(row, res);
-        } else {
-          row.querySelector('.batch-title').value = "Not Found";
-        }
-      } catch(e){}
-    }
+          customerCache[accNo] = res;
+          populateBatchRowDetails(row, res);
+        } else { clearBatchRowDetails(row); }
+      })
+      .catch(err => { setWorking(false); clearBatchRowDetails(row); });
   }
 
-  function populateRowCustomer(row, data) {
+  function populateBatchRowDetails(row, data) {
     row.querySelector('.batch-title').value = data.accountTitle || "";
-    row.querySelector('.batch-inst').value = (data.installment || 0).toLocaleString();
-    row.querySelector('.batch-total-sale').value = (data.totalSale || 0).toLocaleString();
-    row.querySelector('.batch-paid-amt').value = (data.paidAmount || 0).toLocaleString();
-    row.querySelector('.batch-bal').value = (data.balance || 0).toLocaleString();
+    row.querySelector('.batch-inst').value = data.installment ?? "--";
+    row.querySelector('.batch-total-sale').value = data.totalSale ?? "--";
+    row.querySelector('.batch-paid-amt').value = data.paidAmount ?? "--";
+    row.querySelector('.batch-bal').value = data.balance ?? "--";
   }
 
-  function handleRowKey(e, input, type) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const tr = input.closest('tr');
-      if (type === 'acc') {
-        onAccBlur(input);
-        tr.querySelector('.batch-rct').focus();
-      } else if (type === 'rct') {
-        tr.querySelector('.batch-amt').focus();
-      } else if (type === 'amt') {
-        const tbody = document.getElementById('batchTableBody');
-        if (tr === tbody.lastElementChild) {
-          const newRow = addBatchRow();
-          newRow.querySelector('.batch-acc').focus();
-        } else {
-          tr.nextElementSibling.querySelector('.batch-acc').focus();
-        }
-      }
-    }
+  function removeBatchRow(btn) {
+    let tbody = document.getElementById('batchTableBody');
+    if (tbody.children.length > 1) {
+      btn.closest('tr').remove();
+      calculateBatchTotal();
+    } else { alert("Kam az kam aik row honi zaroori hai."); }
   }
 
-  function calcTotals() {
+  function calculateBatchTotal() {
+    let rows = document.querySelectorAll('#batchTableBody tr');
     let total = 0;
-    let rctCount = 0;
-    document.querySelectorAll('#batchTableBody tr').forEach(r => {
-      const amt = Number(r.querySelector('.batch-amt').value) || 0;
+    let uniqueReceipts = new Set();
+    rows.forEach(row => {
+      let amt = Number(row.querySelector('.batch-amt').value) || 0;
       total += amt;
-      if (r.querySelector('.batch-rct').value.trim()) rctCount++;
+      let rct = row.querySelector('.batch-rct').value.trim();
+      if (rct) uniqueReceipts.add(rct);
     });
     document.getElementById('totalReceiptsAmount').innerText = total.toLocaleString();
-    document.getElementById('totalReceiptsQty').innerText = rctCount;
+    document.getElementById('totalReceiptsQty').innerText = uniqueReceipts.size;
   }
 
-  async function saveAllBatchReceipts() {
-    const commonDate = document.getElementById('batchReceiptDate').value;
-    const commonType = document.getElementById('batchPaymentMode').value;
-    const commonSuffix = document.getElementById('batchReceiptSuffix').value;
-    const commonRemarks = document.getElementById('batchRemarks').value.trim();
+  // ============================================================
+  // VOICE INPUT (Mic Button)
+  // ============================================================
+  let activeRecognition = null;
+  let activeBtn = null;
 
-    const entries = [];
-    document.querySelectorAll('#batchTableBody tr').forEach(r => {
-      const acc = r.querySelector('.batch-acc').value.trim();
-      const rct = r.querySelector('.batch-rct').value.trim();
-      const amt = r.querySelector('.batch-amt').value.trim();
-      const title = r.querySelector('.batch-title').value.trim();
+  function startCleanVoiceInput(inputId, isNum) {
+    executeSpeechRecognition(document.getElementById(inputId), null, isNum);
+  }
 
-      if (acc && acc !== '786' && rct && amt && Number(amt) > 0) {
+  function startCleanVoiceInputForElement(btn, isNum) {
+    executeSpeechRecognition(btn.parentElement.querySelector('input'), btn, isNum);
+  }
+
+  function forceStopMic(input, micBtn, isNum) {
+    if (activeRecognition) {
+      activeRecognition.onend = null;
+      activeRecognition.onresult = null;
+      try { activeRecognition.abort(); } catch (e) {}
+      activeRecognition = null;
+    }
+    if (input) {
+      input.classList.remove('listening-input');
+      input.placeholder = input.dataset.origPlaceholder || '';
+      if (isNum) input.value = input.value.replace(/[^\d\-]/g, '');
+    }
+    if (micBtn) micBtn.classList.remove('listening');
+    activeBtn = null;
+  }
+
+  function executeSpeechRecognition(input, micBtn, isNum) {
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!window.SpeechRecognition) { alert("Browser voice input support nahi karta."); return; }
+
+    if (input.classList.contains('listening-input')) {
+      forceStopMic(input, micBtn, isNum);
+      return;
+    }
+
+    if (activeRecognition) {
+      forceStopMic(activeBtn ? activeBtn.parentElement.querySelector('input') : null, activeBtn, false);
+    }
+
+    input.focus(); input.select();
+    input.classList.add('listening-input');
+    input.dataset.origPlaceholder = input.placeholder;
+    input.placeholder = "🎙️ Sun raha hoon...";
+    if (micBtn) micBtn.classList.add('listening');
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let finalTranscript = '';
+    activeRecognition = recognition;
+    activeBtn = micBtn;
+
+    recognition.onresult = function(event) {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript;
+        if (event.results[i].isFinal) finalTranscript += t + ' ';
+        else interim += t;
+      }
+      let text = (finalTranscript + interim).trim();
+      if (isNum) text = text.replace(/[^\d\-]/g, '');
+      if (input.classList.contains('batch-acc') && text && !text.startsWith('786')) text = '786' + text;
+      input.value = text;
+      input.dispatchEvent(new Event('input'));
+    };
+
+    recognition.onerror = function() {};
+
+    recognition.onend = function() {
+      input.classList.remove('listening-input');
+      input.placeholder = input.dataset.origPlaceholder || '';
+      if (micBtn) micBtn.classList.remove('listening');
+      if (activeBtn === micBtn) {
+        activeRecognition = null;
+        activeBtn = null;
+      }
+    };
+
+    try { recognition.start(); } catch(e) {}
+  }
+
+  function onBatchPaymentModeChange() {
+    let mode = document.getElementById('batchPaymentMode').value;
+    let suffixSelect = document.getElementById('batchReceiptSuffix');
+    if (!suffixSelect) return;
+    suffixSelect.innerHTML = "";
+    let list = (mode === 'Cash') ? settingsOptions.cash : settingsOptions.bank;
+    if (!list || list.length === 0) list = [mode];
+    list.forEach(item => {
+      let opt = document.createElement('option');
+      opt.value = item; opt.textContent = item;
+      suffixSelect.appendChild(opt);
+    });
+  }
+
+  function showLoader(show) {
+    document.getElementById('loader').style.display = show ? 'block' : 'none';
+  }
+
+  function submitBatchReceipts() {
+    if (isSubmitting) return;
+    if (!SCRIPT_URL) { alert("Pehle Apps Script URL set karein."); return; }
+
+    let commonDate = document.getElementById('batchReceiptDate').value;
+    let commonSuffix = document.getElementById('batchReceiptSuffix').value;
+    let commonRemarks = document.getElementById('batchRemarks').value.trim();
+    let entries = [];
+
+    document.querySelectorAll('#batchTableBody tr').forEach(row => {
+      let accNo = row.querySelector('.batch-acc').value.trim();
+      let rctNo = row.querySelector('.batch-rct').value.trim();
+      let amt = row.querySelector('.batch-amt').value.trim();
+      let title = row.querySelector('.batch-title').value.trim();
+      if (accNo && accNo !== '786' && rctNo && amt && Number(amt) > 0) {
         entries.push({
-          accountNo: acc,
-          receiptNoCustom: rct,
-          receiptAmount: amt,
-          receiptDate: commonDate,
-          paymentMode: commonType,
+          accountNo: accNo,
           receiptSuffix: commonSuffix,
+          receiptNoCustom: rctNo,
+          receiptDate: commonDate,
+          receiptAmount: amt,
           receiptRemarks: commonRemarks,
           accountTitle: title
         });
       }
     });
 
-    if (entries.length === 0) {
-      alert("Kam az kam aik mukammal row (Account No, Receipt No, Amount) enter karein!");
-      return;
-    }
+    if (entries.length === 0) { alert("Kam az kam aik mukammal row enter karein!"); return; }
 
-    const btn = document.getElementById('saveBatchBtn');
-    btn.disabled = true;
-    btn.innerText = "Saving to Database...";
+    isSubmitting = true;
+    document.body.classList.add('is-saving');
+    let saveBtn = document.getElementById('saveBatchBtn');
+    saveBtn.disabled = true;
 
-    try {
-      for (let i = 0; i < entries.length; i++) {
-        await apiSaveReceipt(entries[i]);
+    function saveNext(i) {
+      if (i >= entries.length) {
+        isSubmitting = false;
+        document.body.classList.remove('is-saving');
+        saveBtn.disabled = false;
+        addEntriesToLocalRecentList(entries, commonDate, commonSuffix);
+        clearBatchForm();
+        return;
       }
-      btn.disabled = false;
-      btn.innerText = "Save All Receipts";
-      alert("All Receipts Saved Successfully!");
-      clearBatchForm();
-      loadRecentReceipts();
-    } catch (err) {
-      btn.disabled = false;
-      btn.innerText = "Save All Receipts";
-      alert("Save Error: " + err.message);
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'saveReceipt', data: entries[i] })
+      })
+        .then(() => saveNext(i + 1))
+        .catch(() => saveNext(i + 1));
     }
+    saveNext(0);
+  }
+
+  function formatDisplayDate(isoDate) {
+    if (!isoDate) return '';
+    const parts = isoDate.split('-');
+    if (parts.length === 3) return parts[2] + '-' + parts[1] + '-' + parts[0];
+    return isoDate;
+  }
+
+  // Naye save hue receipts turant list mein dikhayein - poori sheet dobara load kiye bagair (fast)
+  function addEntriesToLocalRecentList(savedEntries, dateVal, payMode) {
+    const isCash = (settingsOptions.cash || []).includes(payMode);
+    const dObj = dateVal ? new Date(dateVal).setHours(0, 0, 0, 0) : Date.now();
+    const dStr = formatDisplayDate(dateVal);
+
+    savedEntries.forEach(e => {
+      recentReceiptsData.unshift({
+        dateStr: dStr,
+        receiptNo: e.receiptNoCustom,
+        accountNo: e.accountNo,
+        accountTitle: e.accountTitle || '',
+        paymentHead: payMode,
+        amount: Number(e.receiptAmount) || 0,
+        dateObj: dObj,
+        isCash: isCash
+      });
+    });
+
+    populateModeFilterOptions();
+    renderRecentReceipts();
   }
 
   function clearBatchForm() {
     document.getElementById('batchTableBody').innerHTML = '';
     addBatchRow();
-    calcTotals();
+    calculateBatchTotal();
     document.getElementById('batchRemarks').value = '';
     document.getElementById('batchReceiptDate').value = new Date().toISOString().split('T')[0];
   }
 
   // ============================================================
-  // RECENT RECEIPTS
+  // RECENT SAVED RECEIPTS
   // ============================================================
-  let rawRecentData = [];
+  let recentReceiptsData = [];
 
-  async function loadRecentReceipts() {
+  function loadRecentReceipts() {
+    if (!SCRIPT_URL) return;
     const tbody = document.getElementById('recentReceiptsBody');
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading receipts from Supabase...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading recent receipts...</td></tr>';
+    setWorking(true);
 
-    try {
-      const res = await apiGetRecentReceipts();
-      if (res && res.success) {
-        rawRecentData = res.data || [];
-        populateModesFilter();
-        renderRecentTable(rawRecentData);
-      } else {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Could not load data</td></tr>';
-      }
-    } catch(err) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">${err.message}</td></tr>`;
+    fetch(SCRIPT_URL + "?action=getAllReceiptsForReport")
+      .then(res => res.json())
+      .then(res => {
+        setWorking(false);
+        if (res && res.success) {
+          recentReceiptsData = res.data || [];
+          populateModeFilterOptions();
+          renderRecentReceipts();
+        } else {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Error loading data</td></tr>';
+        }
+      })
+      .catch(err => {
+        setWorking(false);
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">' + err.message + '</td></tr>';
+      });
+  }
+
+  function populateModeFilterOptions() {
+    const select = document.getElementById('recentModeFilter');
+    const currentVal = select.value;
+    const modes = [...new Set(recentReceiptsData.map(r => r.paymentHead).filter(Boolean))].sort();
+    select.innerHTML = '<option value="All">All Modes</option>';
+    modes.forEach(m => {
+      select.innerHTML += `<option value="${m}">${m}</option>`;
+    });
+    if (modes.includes(currentVal)) select.value = currentVal;
+  }
+
+  function isDaybookRow(r) {
+    if (typeof r.isCash === 'boolean') return r.isCash;
+    return /daybook|cash/i.test(r.paymentHead || '');
+  }
+
+  function getFilteredRecentReceipts() {
+    const fromVal = document.getElementById('recentFromDate').value;
+    const toVal = document.getElementById('recentToDate').value;
+    const searchVal = document.getElementById('recentSearchRct').value.trim().toLowerCase();
+    const modeVal = document.getElementById('recentModeFilter').value;
+    const daybookOnly = document.getElementById('recentDaybookOnly').checked;
+    const bankOnly = document.getElementById('recentBankOnly').checked;
+
+    let fTime = fromVal ? new Date(fromVal).setHours(0, 0, 0, 0) : null;
+    let tTime = toVal ? new Date(toVal).setHours(23, 59, 59, 999) : null;
+
+    // FIX: Agar From Date selected hai aur To Date khali hai, toh To Date ko bhi wahi din set kar dein
+    if (fTime && !tTime) {
+      tTime = new Date(fromVal).setHours(23, 59, 59, 999);
     }
-  }
 
-  function populateModesFilter() {
-    const sel = document.getElementById('recentModeFilter');
-    const modes = [...new Set(rawRecentData.map(r => r.paymentHead).filter(Boolean))];
-    sel.innerHTML = '<option value="All">All Modes</option>';
-    modes.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
-  }
+    let filtered = recentReceiptsData.filter(r => {
+      if (fTime && r.dateObj && r.dateObj < fTime) return false;
+      if (tTime && r.dateObj && r.dateObj > tTime) return false;
+      if (searchVal && !String(r.receiptNo || '').toLowerCase().includes(searchVal)) return false;
 
-  function filterRecentReceipts() {
-    const from = document.getElementById('recentFromDate').value;
-    const to = document.getElementById('recentToDate').value;
-    const q = document.getElementById('recentSearchRct').value.toLowerCase().trim();
-    const mode = document.getElementById('recentModeFilter').value;
-
-    const filtered = rawRecentData.filter(r => {
-      if (from && r.date < from) return false;
-      if (to && r.date > to) return false;
-      if (mode !== 'All' && r.paymentHead !== mode) return false;
-      if (q) {
-        const full = `${r.receiptNo} ${r.accountNo} ${r.accountTitle} ${r.remarks}`.toLowerCase();
-        if (!full.includes(q)) return false;
+      if (daybookOnly || bankOnly) {
+        let matched = false;
+        if (daybookOnly && isDaybookRow(r)) matched = true;
+        if (bankOnly && !isDaybookRow(r)) matched = true;
+        if (!matched) return false;
+      } else if (modeVal && modeVal !== 'All') {
+        if ((r.paymentHead || '') !== modeVal) return false;
       }
       return true;
     });
-    renderRecentTable(filtered);
+
+    filtered.sort((a, b) => (b.dateObj || 0) - (a.dateObj || 0));
+    return filtered;
   }
 
-  function renderRecentTable(list) {
+  function renderRecentReceipts() {
     const tbody = document.getElementById('recentReceiptsBody');
-    if (!list || list.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No records found.</td></tr>';
+    const filtered = getFilteredRecentReceipts();
+
+    let total = 0;
+    let uniqueReceiptsSet = new Set();
+    filtered.forEach(r => {
+      total += Number(r.amount) || 0;
+      if (r.receiptNo) uniqueReceiptsSet.add(String(r.receiptNo).trim());
+    });
+    document.getElementById('recentTotalsQty').innerText = uniqueReceiptsSet.size;
+    document.getElementById('recentTotalsAmount').innerText = total.toLocaleString();
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No records found.</td></tr>';
       return;
     }
 
     let html = '';
-    list.forEach(r => {
+    filtered.slice(0, 150).forEach(row => {
       html += `
-        <tr id="rctRow_${r.id || r.receiptNo}" data-id="${r.id || ''}" data-voucher="${r.receiptNo || ''}">
-          <td class="cell-date">${r.date || ''}</td>
-          <td class="cell-rct"><b>${r.receiptNo || ''}</b></td>
-          <td class="cell-acc">${r.accountNo || ''}</td>
-          <td class="cell-title">${r.accountTitle || ''}</td>
-          <td class="cell-mode">${r.paymentHead || ''}</td>
-          <td class="cell-amt amount-cell">Rs ${(Number(r.amount) || 0).toLocaleString()}</td>
-          <td class="cell-rem">${r.remarks || ''}</td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button type="button" class="btn-secondary" style="padding:2px 6px; font-size:10px; margin-right:3px;" onclick="editRecentRow('${r.id || r.receiptNo}')"><i class="fas fa-edit"></i> Edit</button>
-            <button type="button" class="btn-danger" style="padding:2px 6px; font-size:10px;" onclick="deleteRecent('${r.id || r.receiptNo}')"><i class="fas fa-trash"></i> Delete</button>
+        <tr data-receipt="${row.receiptNo || ''}">
+          <td class="cell-date">${row.dateStr || ''}</td>
+          <td class="cell-rct">${row.receiptNo || ''}</td>
+          <td class="cell-acc">${row.accountNo || ''}</td>
+          <td class="cell-title" style="text-align:left;">${row.accountTitle || ''}</td>
+          <td class="cell-mode">${row.paymentHead || ''}</td>
+          <td class="cell-amt">${(Number(row.amount) || 0).toLocaleString()}</td>
+          <td style="white-space:nowrap;">
+            <button class="action-btn btn-secondary edit-toggle-btn" style="padding:3px 7px; font-size:10px;" onclick="toggleEditRow(this)" title="Edit"><i class="fas fa-pen"></i></button>
+            <button class="action-btn btn-danger" style="padding:3px 7px; font-size:10px;" onclick="deleteRecentReceipt('${row.receiptNo}')" title="Delete"><i class="fas fa-trash"></i></button>
           </td>
         </tr>
       `;
@@ -804,108 +1003,342 @@
     tbody.innerHTML = html;
   }
 
-  function editRecentRow(idOrVoucher) {
-    const tr = document.getElementById(`rctRow_${idOrVoucher}`);
-    if (!tr) return;
+  function resetRecentFilter() {
+    document.getElementById('recentFromDate').value = '';
+    document.getElementById('recentToDate').value = '';
+    document.getElementById('recentSearchRct').value = '';
+    document.getElementById('recentModeFilter').value = 'All';
+    document.getElementById('recentDaybookOnly').checked = true;
+    document.getElementById('recentBankOnly').checked = false;
+    renderRecentReceipts();
+  }
 
-    if (tr.classList.contains('is-editing')) {
-      saveRecentRowInline(tr, idOrVoucher);
+  function printRecentReceipts() {
+    const filtered = getFilteredRecentReceipts();
+    let total = 0;
+    let rowsHtml = '';
+    filtered.forEach(r => {
+      total += Number(r.amount) || 0;
+      rowsHtml += `
+        <tr>
+          <td>${r.dateStr || ''}</td>
+          <td>${r.receiptNo || ''}</td>
+          <td>${r.accountNo || ''}</td>
+          <td>${r.accountTitle || ''}</td>
+          <td>${r.paymentHead || ''}</td>
+          <td style="text-align:right;">${(Number(r.amount) || 0).toLocaleString()}</td>
+        </tr>
+      `;
+    });
+
+    const fromRaw = document.getElementById('recentFromDate').value;
+    const toRaw = document.getElementById('recentToDate').value;
+
+    let dateMetaHtml;
+    if (fromRaw && (!toRaw || toRaw === fromRaw)) {
+      dateMetaHtml = `<b>${formatDisplayDate(fromRaw)}</b>`;
+    } else if (!fromRaw && toRaw) {
+      dateMetaHtml = `<b>${formatDisplayDate(toRaw)}</b>`;
+    } else if (fromRaw && toRaw) {
+      dateMetaHtml = `From: <b>${formatDisplayDate(fromRaw)}</b> &nbsp; To: <b>${formatDisplayDate(toRaw)}</b>`;
+    } else {
+      dateMetaHtml = `All Dates`;
+    }
+
+    document.getElementById('printArea').innerHTML = `
+      <h2>Al Meezan ERP - Receipts Report</h2>
+      <div class="print-meta">${dateMetaHtml}</div>
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Receipt No</th><th>Acc No</th><th>Customer Name</th><th>Pay Mode</th><th>Amount</th></tr>
+        </thead>
+        <tbody>${rowsHtml || '<tr><td colspan="6" style="text-align:center;">No records</td></tr>'}</tbody>
+      </table>
+      <div class="print-total">Total: Rs ${total.toLocaleString()} (${filtered.length} records)</div>
+    `;
+
+    setTimeout(() => window.print(), 150);
+  }
+
+  function toggleEditRow(btn) {
+    const tr = btn.closest('tr');
+    const receiptNo = tr.getAttribute('data-receipt');
+
+    if (tr.classList.contains('editing')) {
+      saveRecentRowEdit(tr, btn);
       return;
     }
 
-    tr.classList.add('is-editing');
-    tr.style.backgroundColor = '#fff9c4';
+    if (!SCRIPT_URL) return;
+    btn.disabled = true;
+    setWorking(true);
 
-    const dateCell = tr.querySelector('.cell-date');
-    const curDate = dateCell.innerText.trim();
-    dateCell.innerHTML = `<input type="date" class="edit-date" value="${curDate}" style="width:120px; font-size:11px; padding:2px;">`;
+    fetch(SCRIPT_URL + "?action=searchReceipt&rctNo=" + encodeURIComponent(receiptNo))
+      .then(res => res.json())
+      .then(res => {
+        btn.disabled = false;
+        setWorking(false);
+        if (!res || !res.success || !res.entries || res.entries.length === 0) {
+          alert("Entry ki detail nahi mil saki.");
+          return;
+        }
+        renderRowAsEditable(tr, res.entries[0], btn);
+      })
+      .catch(err => { btn.disabled = false; setWorking(false); alert("Error: " + err.message); });
+  }
 
-    const amtCell = tr.querySelector('.cell-amt');
-    const curAmt = amtCell.innerText.replace(/[^\d\.]/g, '').trim();
-    amtCell.innerHTML = `<input type="number" class="edit-amt" value="${curAmt}" style="width:80px; font-size:11px; padding:2px; text-align:right;">`;
+  function renderRowAsEditable(tr, entry, btn) {
+    tr.classList.add('editing');
+    tr.dataset.rowIndex = entry.rowIndex;
+    tr.dataset.origAccNo = entry.accountNo || '';
 
-    const modeCell = tr.querySelector('.cell-mode');
-    const curMode = modeCell.innerText.trim();
-    modeCell.innerHTML = `
-      <select class="edit-mode" style="font-size:11px; padding:2px;">
-        <option value="Daybook (Cash)" ${curMode.includes('Cash') ? 'selected' : ''}>Daybook (Cash)</option>
-        <option value="Allied Bank (1870014)" ${curMode.includes('Bank') ? 'selected' : ''}>Allied Bank (1870014)</option>
-      </select>
+    let cashOpts = settingsOptions.cash || ["Cash"];
+    let bankOpts = settingsOptions.bank || ["Bank Transfer"];
+    let currentVal = (entry.payMode || entry.suffix || entry.receiptSuffix || entry.paymentMode || '').trim();
+
+    let selectHtml = `<select class="cell-mode-input" style="padding:2px; font-size:11px; width:100%;">`;
+    [...cashOpts, ...bankOpts].forEach(item => {
+      let sel = (currentVal === item) ? 'selected' : '';
+      selectHtml += `<option value="${item}" ${sel}>${item}</option>`;
+    });
+    if (currentVal && !cashOpts.includes(currentVal) && !bankOpts.includes(currentVal)) {
+      selectHtml += `<option value="${currentVal}" selected>${currentVal}</option>`;
+    }
+    selectHtml += `</select>`;
+
+    tr.querySelector('.cell-date').innerHTML = `<input type="date" value="${entry.date || ''}" class="cell-date-input" style="padding:2px; width:120px;">`;
+    tr.querySelector('.cell-rct').innerHTML = `<input type="text" value="${entry.receiptNo || ''}" class="cell-rct-input" style="padding:2px; width:70px; text-align:center;">`;
+    tr.querySelector('.cell-acc').innerHTML = `<input type="text" value="${entry.accountNo || ''}" class="cell-acc-input" style="padding:2px; width:75px;">`;
+    tr.querySelector('.cell-mode').innerHTML = selectHtml;
+    tr.querySelector('.cell-amt').innerHTML = `<input type="number" value="${entry.amount || 0}" class="cell-amt-input" style="padding:2px; width:75px; text-align:right;">`;
+    tr.querySelector('.cell-title').innerHTML = `
+      <input type="text" value="${entry.accountTitle || ''}" disabled style="padding:2px; width:100%; background:#eee; margin-bottom:2px;">
+      <input type="text" value="${entry.remarks || ''}" class="cell-remarks-input" placeholder="Remarks" style="padding:2px; width:100%; font-size:10px;">
     `;
 
-    const remCell = tr.querySelector('.cell-rem');
-    const curRem = remCell.innerText.trim();
-    remCell.innerHTML = `<input type="text" class="edit-rem" value="${curRem}" style="width:100px; font-size:11px; padding:2px;">`;
-
-    const actionCell = tr.lastElementChild;
-    actionCell.innerHTML = `
-      <button type="button" class="btn-main" style="padding:2px 8px; font-size:10px; background:#2e7d32;" onclick="saveRecentRowInline(this.closest('tr'), '${idOrVoucher}')"><i class="fas fa-check"></i> Save</button>
-      <button type="button" class="btn-secondary" style="padding:2px 6px; font-size:10px; margin-left:3px;" onclick="loadRecentReceipts()">Cancel</button>
-    `;
+    btn.innerHTML = '<i class="fas fa-save"></i>';
+    btn.title = "Save";
+    btn.classList.remove('btn-secondary');
+    btn.classList.add('btn-primary');
   }
 
-  async function saveRecentRowInline(tr, idOrVoucher) {
-    const newDate = tr.querySelector('.edit-date').value;
-    const newAmt = tr.querySelector('.edit-amt').value;
-    const newMode = tr.querySelector('.edit-mode').value;
-    const newRem = tr.querySelector('.edit-rem').value.trim();
+  function saveRecentRowEdit(tr, btn) {
+    if (!SCRIPT_URL) return;
+    const oldReceiptNo = tr.getAttribute('data-receipt');
+    const oldAccNo = tr.dataset.origAccNo || null;
 
-    try {
-      await apiUpdateReceipt(idOrVoucher, {
-        date: newDate,
-        amount: newAmt,
-        pay_mode: newMode,
-        remarks: newRem
-      });
-      alert("Receipt Updated Successfully!");
-      loadRecentReceipts();
-    } catch(err) {
-      alert("Update Error: " + err.message);
-    }
-  }
+    const newDate = tr.querySelector('.cell-date-input').value;
+    const newRct = tr.querySelector('.cell-rct-input').value.trim();
+    const newAcc = tr.querySelector('.cell-acc-input').value.trim();
+    const newMode = tr.querySelector('.cell-mode-input').value;
+    const newAmt = tr.querySelector('.cell-amt-input').value;
+    const newRemarks = tr.querySelector('.cell-remarks-input').value;
 
-  async function apiUpdateReceipt(idOrVoucher, data) {
-    if (activeBackend === 'google' && scriptUrl) {
-      const r = await fetch(scriptUrl, {
-        method: "POST",
-        body: JSON.stringify({ action: "updateReceiptEntry", data: { receiptNo: idOrVoucher, ...data } })
-      });
-      return await r.json();
-    } else {
-      const sb = getSB();
-      const { data: updated, error } = await sb.from('receipts')
-        .update({
-          date: data.date,
-          amount: Number(data.amount),
-          pay_mode: data.pay_mode,
-          remarks: data.remarks
-        })
-        .or(`id.eq.${idOrVoucher},voucher_no.eq.${idOrVoucher}`)
-        .select();
-
-      if (error) throw error;
-      return { success: true, data: updated };
-    }
-  }
-
-  // Voice Input Helper
-  function startRowMic(btn, isNum) {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Voice recognition not supported"); return; }
-    const input = btn.closest('.input-with-mic').querySelector('input');
-    const rec = new SR();
-    rec.lang = 'en-US';
-    btn.classList.add('listening');
-    rec.onresult = function(e) {
-      let t = e.results[0][0].transcript;
-      if (isNum) t = t.replace(/[^\d]/g, '');
-      input.value = t;
-      input.dispatchEvent(new Event('input'));
+    const entry = {
+      rowIndex: Number(tr.dataset.rowIndex),
+      date: newDate,
+      receiptNoCustom: newRct,
+      accountNo: newAcc,
+      suffix: newMode,
+      amount: newAmt,
+      remarks: newRemarks
     };
-    rec.onend = function() { btn.classList.remove('listening'); };
-    rec.start();
-  }
-</script>
 
+    btn.disabled = true;
+    setWorking(true);
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'updateAllReceiptEntries', data: [entry] })
+    })
+      .then(res => res.json())
+      .then(res => {
+        btn.disabled = false;
+        setWorking(false);
+        if (res && res.success) {
+          // Poori list dobara load kiye bagair, isi entry ko locally update kar dein (fast)
+          const isCash = (settingsOptions.cash || []).includes(newMode);
+          const item = recentReceiptsData.find(r =>
+            String(r.receiptNo || '').trim() === String(oldReceiptNo || '').trim() &&
+            (!oldAccNo || String(r.accountNo || '').trim() === String(oldAccNo).trim())
+          );
+          if (item) {
+            item.dateStr = formatDisplayDate(newDate);
+            item.dateObj = newDate ? new Date(newDate).setHours(0, 0, 0, 0) : item.dateObj;
+            item.receiptNo = newRct;
+            item.accountNo = newAcc;
+            item.paymentHead = newMode;
+            item.amount = Number(newAmt) || 0;
+            item.isCash = isCash;
+          }
+          populateModeFilterOptions();
+          renderRecentReceipts();
+        } else {
+          alert("Error: " + (res ? res.error : "Unknown error"));
+        }
+      })
+      .catch(err => { btn.disabled = false; setWorking(false); alert("Server Error: " + err.message); });
+  }
+
+  function deleteRecentReceipt(receiptNo) {
+    if (!confirm("Kya aap waqai receipt '" + receiptNo + "' delete karna chahte hain?")) return;
+    if (!SCRIPT_URL) return;
+
+    setWorking(true);
+    fetch(SCRIPT_URL + "?action=searchReceipt&rctNo=" + encodeURIComponent(receiptNo))
+      .then(res => res.json())
+      .then(res => {
+        if (!res || !res.success || !res.entries || res.entries.length === 0) {
+          setWorking(false);
+          alert("Entry nahi mili.");
+          return null;
+        }
+        const rowIndex = res.entries[0].rowIndex;
+        return fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'deleteReceiptEntry', data: { rowIndex: rowIndex } })
+        }).then(r => r.json());
+      })
+      .then(res => {
+        setWorking(false);
+        if (res && res.success) {
+          loadRecentReceipts();
+        } else if (res) {
+          alert("Error: " + res.error);
+        }
+      })
+      .catch(err => { setWorking(false); alert("Error: " + err.message); });
+  }
+
+    // ===== Deployment URL config (auto-added) =====
+    function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      var box = document.getElementById('configBox');
+      if (box) box.classList.add('show');
+    }
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
+    });
+
+    // ================= UNIVERSAL MIC INPUT (auto-added) =================
+    (function() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let activeRec = null, activeBtn = null, activeInput = null;
+
+      function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
+
+      function stopActiveMic() {
+        if (activeRec) {
+          activeRec.onend = null; activeRec.onresult = null;
+          try { activeRec.abort(); } catch (e) {}
+          activeRec = null;
+        }
+        if (activeBtn) activeBtn.classList.remove('listening');
+        if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
+        activeBtn = null; activeInput = null;
+      }
+
+      function toggleMic(input, btn) {
+        if (!SR) { alert('Ye browser voice input support nahi karta. Chrome use karein.'); return; }
+        const isNumeric = input.type === 'number';
+
+        if (btn.classList.contains('listening')) { stopActiveMic(); return; }
+        stopActiveMic();
+
+        const rec = new SR();
+        rec.lang = 'en-US';
+        rec.continuous = true;
+        rec.interimResults = true;
+        let finalText = '';
+
+        activeRec = rec; activeBtn = btn; activeInput = input;
+        btn.classList.add('listening');
+        input.dataset.origPh = input.placeholder || '';
+        input.placeholder = 'Sun raha hoon... rokne ke liye mic dobara dabayein';
+
+        rec.onresult = function(ev) {
+          let interim = '';
+          for (let i = ev.resultIndex; i < ev.results.length; i++) {
+            const t = ev.results[i][0].transcript;
+            if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
+          }
+          let text = (finalText + interim).trim();
+          if (isNumeric) text = cleanNumeric(text);
+          input.value = text;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        rec.onerror = function(ev) {
+          if (ev.error !== 'no-speech' && ev.error !== 'aborted') console.error('Mic error:', ev.error);
+        };
+        rec.onend = function() {
+          btn.classList.remove('listening');
+          input.placeholder = input.dataset.origPh || '';
+          if (isNumeric) input.value = cleanNumeric(input.value);
+          if (activeInput === input) { activeRec = null; activeBtn = null; activeInput = null; }
+        };
+        try { rec.start(); } catch (e) {}
+      }
+
+      function attachMic(input) {
+        if (!input || input.dataset.autoMic) return;
+        if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
+            input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
+        if (input.closest('#configBox')) return;
+        if (input.closest('.input-with-mic')) return; // already has a manual mic button
+        if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
+
+        input.dataset.autoMic = '1';
+
+        const wrap = document.createElement('span');
+        wrap.className = 'auto-mic-wrap';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+
+        const curPad = window.getComputedStyle(input).paddingRight;
+        input.style.paddingRight = '24px';
+        input.style.boxSizing = 'border-box';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'auto-mic-btn';
+        btn.title = 'Voice input';
+        btn.innerHTML = '&#127908;';
+        btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
+        wrap.appendChild(btn);
+      }
+
+      function scanAndAttach(root) {
+        root.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        scanAndAttach(document);
+      });
+
+      const mo = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          m.addedNodes.forEach(function(node) {
+            if (node.nodeType !== 1) return;
+            if (node.matches && (node.matches('input[type="text"]') || node.matches('input[type="number"]') || node.matches('input:not([type])'))) {
+              attachMic(node);
+            }
+            if (node.querySelectorAll) scanAndAttach(node);
+          });
+        });
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
+    })();
+</script>
 </body>
 </html>
