@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <title>Customer Ledger View</title>
+  <!-- Supabase SDK & Dual Backend Connector -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="erp-backend.js"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 8px auto; max-width: 1100px; background-color: #f4f6f9; color: #222; font-size: 11px; }
     
@@ -153,7 +156,7 @@
       }
     };
 
-    function loadLedgerForAccount() {
+    async function loadLedgerForAccount() {
       accNo = document.getElementById('accNoInput').value.trim();
       if (!accNo) {
         document.getElementById('loading').innerHTML = '<span style="color:red;">Error: Account Number enter karein!</span>';
@@ -164,21 +167,42 @@
       document.getElementById('loading').innerHTML = 'Loading customer ledger details... Please wait.';
       document.getElementById('ledgerTable').style.display = 'none';
 
-      fetch(SCRIPT_URL + "?action=getCustomerLedgerData&accNo=" + encodeURIComponent(accNo))
-        .then(res => res.json())
-        .then(result => {
-          document.getElementById('loading').style.display = 'none';
-          if (!result || !result.success) {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('loading').innerHTML = '<span style="color:red;">Error: ' + (result ? result.message : 'Data not found') + '</span>';
-            return;
-          }
-          renderLedger(result);
-        })
-        .catch(err => {
+      try {
+        const custRes = await erpApi.getCustomer(accNo);
+        const ledgerRes = await erpApi.getCustomerLedger(accNo);
+
+        document.getElementById('loading').style.display = 'none';
+
+        if (!custRes || !custRes.success) {
           document.getElementById('loading').style.display = 'block';
-          document.getElementById('loading').innerHTML = '<span style="color:red;">Connection Error: ' + err.message + '</span>';
+          document.getElementById('loading').innerHTML = '<span style="color:red;">Error: ' + (custRes ? custRes.error : 'Account not found') + '</span>';
+          return;
+        }
+
+        const formattedEntries = (ledgerRes.data || []).map(r => ({
+          date: r.date,
+          receiptNo: r.reference_no,
+          voucherNo: r.reference_no,
+          type: r.reference_type,
+          particulars: r.particulars,
+          debit: r.debit,
+          credit: r.credit,
+          balance: r.balance
+        }));
+
+        renderLedger({
+          accNo: custRes.accountNo,
+          accTitle: custRes.accountTitle,
+          approvedBy: custRes.approvedBy,
+          cro: custRes.cro,
+          mobile: custRes.mobileNo,
+          perMonthInst: custRes.monthlyInst,
+          entries: formattedEntries
         });
+      } catch (err) {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('loading').innerHTML = '<span style="color:red;">Connection Error: ' + err.message + '</span>';
+      }
     }
 
     function formatMonthYear(dateStr) {
