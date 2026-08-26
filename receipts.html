@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8">
   <title>Al Meezan ERP Receipts</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <!-- Supabase JS Client CDN -->
+  <!-- Supabase SDK & Dual Backend Connector -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="erp-backend.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     :root {
       --primary: #1b5e20;
@@ -50,20 +51,10 @@
       padding-bottom: 3px;
     }
 
-    /* CONFIG BOX - Dual Backend Config */
-    .change-url-link {
-      cursor: pointer;
-      color: var(--primary);
-      font-weight: bold;
-      margin-bottom: 6px;
-      display: inline-block;
-      font-size: 11px;
-    }
-    .change-url-link:hover { text-decoration: underline; }
-
+    /* CONFIG BOX - Apps Script URL */
     .config-box {
-      background: #e8f5e9;
-      border: 1px solid #a5d6a7;
+      background: #fff3cd;
+      border: 1px solid #ffe69c;
       padding: 10px 14px;
       border-radius: 6px;
       margin-bottom: 10px;
@@ -73,16 +64,15 @@
     .config-box.show { display: block; }
     .config-box input {
       width: 100%;
-      padding: 5px 8px;
-      margin-top: 4px;
-      margin-bottom: 8px;
+      padding: 6px 8px;
+      margin-top: 6px;
       border: 1px solid #ccc;
       border-radius: 4px;
       font-size: 11px;
       box-sizing: border-box;
     }
     .config-box button {
-      margin-top: 4px;
+      margin-top: 6px;
       padding: 6px 14px;
       background: #1b5e20;
       color: #fff;
@@ -231,6 +221,14 @@
       100% { transform: rotate(360deg); }
     }
 
+    .search-box-card {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
     .table-responsive {
       width: 100%;
       overflow-x: auto;
@@ -321,44 +319,18 @@
       70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
       100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
     }
-  </style>
+</style>
 </head>
 <body>
 
 <div class="container">
   <h2>Al Meezan ERP Receipts</h2>
 
-  <div class="change-url-link" onclick="showUrlConfig()">⚙️ Change Backend & Connection Settings</div>
-  
+    <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
   <div id="configBox" class="config-box">
-    <b>⚙️ Connection & Backend Settings:</b><br><br>
-    
-    <label><strong>Select Active Backend:</strong></label>
-    <div style="display:flex; gap: 15px; margin-top: 4px; margin-bottom: 10px;">
-      <label style="font-weight:normal; cursor:pointer;">
-        <input type="radio" id="modeGas" name="backend_mode_choice" value="GAS" onchange="toggleBackendConfigVisibility()" style="width:auto;"> Google Apps Script (Legacy)
-      </label>
-      <label style="font-weight:normal; cursor:pointer;">
-        <input type="radio" id="modeSupabase" name="backend_mode_choice" value="SUPABASE" onchange="toggleBackendConfigVisibility()" style="width:auto;"> Supabase PostgreSQL (Fast Direct)
-      </label>
-    </div>
-
-    <!-- Apps Script Config -->
-    <div id="gasConfigGroup">
-      <label>Apps Script Web App URL:</label>
-      <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
-    </div>
-
-    <!-- Supabase Config -->
-    <div id="supabaseConfigGroup">
-      <label>Supabase Project URL:</label>
-      <input type="text" id="supabaseUrlInput" placeholder="https://xxxx.supabase.co">
-      
-      <label>Supabase Anon / Public Key:</label>
-      <input type="password" id="supabaseKeyInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
-    </div>
-
-    <button onclick="saveBackendSettings()">Save & Connect Settings</button>
+    <b>Setup:</b> Pehli baar use karne ke liye apna Apps Script Web App URL neeche paste karein aur Save dabayein.
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+    <button onclick="saveScriptUrl()">Save URL</button>
   </div>
   
   <div class="nav-bar-container" style="border-bottom:none; margin-bottom:0;"></div>
@@ -490,24 +462,11 @@
 <div id="printArea"></div>
 
 <script>
-  // Dynamic Connection Settings
   let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
-  let SUPABASE_URL = localStorage.getItem('erp_supabase_url') || "";
-  let SUPABASE_KEY = localStorage.getItem('erp_supabase_key') || "";
-  let BACKEND_MODE = localStorage.getItem('erp_backend_mode') || "GAS";
-
-  let supabaseClient = null;
-
-  function initSupabase() {
-    if (SUPABASE_URL && SUPABASE_KEY && window.supabase) {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-  }
 
   window.onload = function() {
-    initSupabase();
-    if ((BACKEND_MODE === 'GAS' && !SCRIPT_URL) || (BACKEND_MODE === 'SUPABASE' && (!SUPABASE_URL || !SUPABASE_KEY))) {
-      showUrlConfig();
+    if (!SCRIPT_URL) {
+      document.getElementById('configBox').classList.add('show');
     }
     document.getElementById('batchReceiptDate').value = new Date().toISOString().split('T')[0];
     addBatchRow();
@@ -515,49 +474,14 @@
     loadRecentReceipts();
   };
 
-  function showUrlConfig() {
-    document.getElementById('scriptUrlInput').value = SCRIPT_URL;
-    document.getElementById('supabaseUrlInput').value = SUPABASE_URL;
-    document.getElementById('supabaseKeyInput').value = SUPABASE_KEY;
-    
-    if (BACKEND_MODE === 'SUPABASE') {
-      document.getElementById('modeSupabase').checked = true;
-    } else {
-      document.getElementById('modeGas').checked = true;
-    }
-    
-    toggleBackendConfigVisibility();
-    document.getElementById('configBox').classList.add('show');
-  }
-
-  function toggleBackendConfigVisibility() {
-    const isSupabase = document.getElementById('modeSupabase').checked;
-    document.getElementById('gasConfigGroup').style.display = isSupabase ? 'none' : 'block';
-    document.getElementById('supabaseConfigGroup').style.display = isSupabase ? 'block' : 'none';
-  }
-
-  function saveBackendSettings() {
-    const selectedMode = document.querySelector('input[name="backend_mode_choice"]:checked').value;
-    const gasUrl = document.getElementById('scriptUrlInput').value.trim();
-    const spUrl = document.getElementById('supabaseUrlInput').value.trim();
-    const spKey = document.getElementById('supabaseKeyInput').value.trim();
-
-    if (selectedMode === 'GAS' && !gasUrl) { alert("Google Apps Script URL zaroori hai!"); return; }
-    if (selectedMode === 'SUPABASE' && (!spUrl || !spKey)) { alert("Supabase URL aur Key dono zaroori hain!"); return; }
-
-    localStorage.setItem('erp_backend_mode', selectedMode);
-    localStorage.setItem('erp_script_url', gasUrl);
-    localStorage.setItem('erp_supabase_url', spUrl);
-    localStorage.setItem('erp_supabase_key', spKey);
-
-    SCRIPT_URL = gasUrl;
-    SUPABASE_URL = spUrl;
-    SUPABASE_KEY = spKey;
-    BACKEND_MODE = selectedMode;
-
-    initSupabase();
+  function saveScriptUrl() {
+    const val = document.getElementById('scriptUrlInput').value.trim();
+    if (!val) { alert("URL enter karein"); return; }
+    SCRIPT_URL = val;
+    localStorage.setItem('erp_script_url', val);
     document.getElementById('configBox').classList.remove('show');
-    location.reload();
+    loadInitialData();
+    loadRecentReceipts();
   }
 
   let settingsOptions = { 
@@ -574,54 +498,23 @@
 
   async function loadInitialData() {
     setWorking(true);
-
-    if (BACKEND_MODE === 'SUPABASE' && supabaseClient) {
-      try {
-        const { data: custData } = await supabaseClient.from('COA').select('accountNo, accountTitle, installment, totalSale, paidAmount, balance');
-        if (custData) {
-          custData.forEach(c => {
-            customerCache[c.accountNo] = c;
-          });
-        }
-      } catch (e) { console.error(e); }
-      setWorking(false);
-      onBatchPaymentModeChange();
-      return;
-    }
-
-    if (!SCRIPT_URL) { setWorking(false); return; }
-
-    Promise.all([
-      fetch(SCRIPT_URL + "?action=getSettings").then(res => res.json()).catch(() => null),
-      fetch(SCRIPT_URL + "?action=getAllCustomersCache").then(res => res.json()).catch(() => null)
-    ]).then(([settingsRes, custRes]) => {
+    try {
+      const settingsRes = await erpApi.getSettings();
       setWorking(false);
       if (settingsRes && settingsRes.success) {
         if (settingsRes.cash && settingsRes.cash.length > 0) settingsOptions.cash = settingsRes.cash;
         if (settingsRes.bank && settingsRes.bank.length > 0) settingsOptions.bank = settingsRes.bank;
         onBatchPaymentModeChange();
       }
-      if (custRes && custRes.data) {
-        customerCache = custRes.data;
-      }
-    });
+    } catch (err) {
+      setWorking(false);
+      console.error("Initial data load error:", err);
+    }
   }
 
-  async function checkDuplicateReceipt(rctNo, inputElement) {
-    if (!rctNo || rctNo.trim() === '') return;
+  function checkDuplicateReceipt(rctNo, inputElement) {
+    if (!rctNo || rctNo.trim() === '' || !SCRIPT_URL) return;
     setWorking(true);
-
-    if (BACKEND_MODE === 'SUPABASE' && supabaseClient) {
-      const { data } = await supabaseClient.from('RECEIPTS').select('receiptNoCustom, receiptDate').eq('receiptNoCustom', rctNo.trim()).limit(1);
-      setWorking(false);
-      if (data && data.length > 0) {
-        alert("⚠️ Warning: Receipt No '" + rctNo + "' pehle se save hai!\n📅 Date: " + data[0].receiptDate);
-        if (inputElement) { inputElement.focus(); inputElement.select(); }
-      }
-      return;
-    }
-
-    if (!SCRIPT_URL) { setWorking(false); return; }
     fetch(SCRIPT_URL + "?action=checkReceiptExists&rctNo=" + encodeURIComponent(rctNo.trim()))
       .then(res => res.json())
       .then(res => {
@@ -751,28 +644,19 @@
     }
 
     setWorking(true);
-
-    if (BACKEND_MODE === 'SUPABASE' && supabaseClient) {
-      const { data } = await supabaseClient.from('COA').select('*').eq('accountNo', accNo).single();
+    try {
+      const res = await erpApi.getCustomer(accNo);
       setWorking(false);
-      if (data) {
-        customerCache[accNo] = data;
-        populateBatchRowDetails(row, data);
-      } else { clearBatchRowDetails(row); }
-      return;
+      if (res && res.success) {
+        customerCache[accNo] = res;
+        populateBatchRowDetails(row, res);
+      } else {
+        clearBatchRowDetails(row);
+      }
+    } catch (err) {
+      setWorking(false);
+      clearBatchRowDetails(row);
     }
-
-    if (!SCRIPT_URL) { setWorking(false); return; }
-    fetch(SCRIPT_URL + "?action=getCustomer&accNo=" + encodeURIComponent(accNo))
-      .then(res => res.json())
-      .then(res => {
-        setWorking(false);
-        if (res && res.success) {
-          customerCache[accNo] = res;
-          populateBatchRowDetails(row, res);
-        } else { clearBatchRowDetails(row); }
-      })
-      .catch(err => { setWorking(false); clearBatchRowDetails(row); });
   }
 
   function populateBatchRowDetails(row, data) {
@@ -805,7 +689,9 @@
     document.getElementById('totalReceiptsQty').innerText = uniqueReceipts.size;
   }
 
-  // Voice Input Helper Logic
+  // ============================================================
+  // VOICE INPUT (Mic Button)
+  // ============================================================
   let activeRecognition = null;
   let activeBtn = null;
 
@@ -904,8 +790,13 @@
     });
   }
 
-  async function submitBatchReceipts() {
+  function showLoader(show) {
+    document.getElementById('loader').style.display = show ? 'block' : 'none';
+  }
+
+  function submitBatchReceipts() {
     if (isSubmitting) return;
+    if (!SCRIPT_URL) { alert("Pehle Apps Script URL set karein."); return; }
 
     let commonDate = document.getElementById('batchReceiptDate').value;
     let commonSuffix = document.getElementById('batchReceiptSuffix').value;
@@ -937,56 +828,25 @@
     let saveBtn = document.getElementById('saveBatchBtn');
     saveBtn.disabled = true;
 
-    // FAST SUPABASE DIRECT INSERT
-    if (BACKEND_MODE === 'SUPABASE' && supabaseClient) {
+    async function saveAllBatch() {
       try {
-        const insertPayload = entries.map(e => ({
-          accountNo: e.accountNo,
-          paymentHead: e.receiptSuffix,
-          receiptNoCustom: e.receiptNoCustom,
-          receiptDate: e.receiptDate,
-          amount: Number(e.receiptAmount),
-          remarks: e.receiptRemarks,
-          accountTitle: e.accountTitle
-        }));
-
-        const { error } = await supabaseClient.from('RECEIPTS').insert(insertPayload);
-        if (error) throw error;
-
+        for (let i = 0; i < entries.length; i++) {
+          await erpApi.saveReceipt(entries[i]);
+        }
         isSubmitting = false;
         document.body.classList.remove('is-saving');
         saveBtn.disabled = false;
         addEntriesToLocalRecentList(entries, commonDate, commonSuffix);
         clearBatchForm();
+        alert("Receipts Saved Successfully!");
       } catch (err) {
         isSubmitting = false;
         document.body.classList.remove('is-saving');
         saveBtn.disabled = false;
-        alert("Supabase Error: " + err.message);
+        alert("Save Error: " + err.message);
       }
-      return;
     }
-
-    // LEGACY GAS SUBMIT LOGIC
-    if (!SCRIPT_URL) { alert("Apps Script URL configured nahi hai."); isSubmitting = false; document.body.classList.remove('is-saving'); saveBtn.disabled = false; return; }
-
-    function saveNext(i) {
-      if (i >= entries.length) {
-        isSubmitting = false;
-        document.body.classList.remove('is-saving');
-        saveBtn.disabled = false;
-        addEntriesToLocalRecentList(entries, commonDate, commonSuffix);
-        clearBatchForm();
-        return;
-      }
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'saveReceipt', data: entries[i] })
-      })
-        .then(() => saveNext(i + 1))
-        .catch(() => saveNext(i + 1));
-    }
-    saveNext(0);
+    saveAllBatch();
   }
 
   function formatDisplayDate(isoDate) {
@@ -996,6 +856,7 @@
     return isoDate;
   }
 
+  // Naye save hue receipts turant list mein dikhayein - poori sheet dobara load kiye bagair (fast)
   function addEntriesToLocalRecentList(savedEntries, dateVal, payMode) {
     const isCash = (settingsOptions.cash || []).includes(payMode);
     const dObj = dateVal ? new Date(dateVal).setHours(0, 0, 0, 0) : Date.now();
@@ -1036,59 +897,30 @@
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading recent receipts...</td></tr>';
     setWorking(true);
 
-    if (BACKEND_MODE === 'SUPABASE' && supabaseClient) {
-      try {
-        const { data, error } = await supabaseClient
-          .from('RECEIPTS')
-          .select('*')
-          .order('receiptDate', { ascending: false })
-          .limit(300);
-
-        setWorking(false);
-        if (error) throw error;
-
-        recentReceiptsData = (data || []).map(r => ({
-          dateStr: formatDisplayDate(r.receiptDate),
-          receiptNo: r.receiptNoCustom,
+    try {
+      const res = await erpApi.getRecentReceipts();
+      setWorking(false);
+      if (res && res.success) {
+        recentReceiptsData = (res.data || []).map(r => ({
+          id: r.id,
+          receiptNo: r.receiptNo,
+          dateStr: r.date,
           accountNo: r.accountNo,
-          accountTitle: r.accountTitle || '',
-          paymentHead: r.paymentHead || '',
-          amount: Number(r.amount) || 0,
-          dateObj: r.receiptDate ? new Date(r.receiptDate).setHours(0, 0, 0, 0) : 0,
-          isCash: /daybook|cash/i.test(r.paymentHead || '')
+          accountTitle: r.customerTitle,
+          paymentHead: r.paymentMode,
+          amount: r.amount,
+          remarks: r.remarks,
+          isCash: isDaybookRow({ paymentHead: r.paymentMode })
         }));
-
         populateModeFilterOptions();
         renderRecentReceipts();
-      } catch (err) {
-        setWorking(false);
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">' + err.message + '</td></tr>';
+      } else {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Error loading data</td></tr>';
       }
-      return;
-    }
-
-    if (!SCRIPT_URL) {
+    } catch (err) {
       setWorking(false);
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Settings me Backend URL/Key save karein.</td></tr>';
-      return;
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">' + err.message + '</td></tr>';
     }
-
-    fetch(SCRIPT_URL + "?action=getAllReceiptsForReport")
-      .then(res => res.json())
-      .then(res => {
-        setWorking(false);
-        if (res && res.success) {
-          recentReceiptsData = res.data || [];
-          populateModeFilterOptions();
-          renderRecentReceipts();
-        } else {
-          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Error loading data</td></tr>';
-        }
-      })
-      .catch(err => {
-        setWorking(false);
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">' + err.message + '</td></tr>';
-      });
   }
 
   function populateModeFilterOptions() {
@@ -1118,6 +950,7 @@
     let fTime = fromVal ? new Date(fromVal).setHours(0, 0, 0, 0) : null;
     let tTime = toVal ? new Date(toVal).setHours(23, 59, 59, 999) : null;
 
+    // FIX: Agar From Date selected hai aur To Date khali hai, toh To Date ko bhi wahi din set kar dein
     if (fTime && !tTime) {
       tTime = new Date(fromVal).setHours(23, 59, 59, 999);
     }
@@ -1237,7 +1070,7 @@
     setTimeout(() => window.print(), 150);
   }
 
-  async function toggleEditRow(btn) {
+  function toggleEditRow(btn) {
     const tr = btn.closest('tr');
     const receiptNo = tr.getAttribute('data-receipt');
 
@@ -1246,29 +1079,10 @@
       return;
     }
 
+    if (!SCRIPT_URL) return;
     btn.disabled = true;
     setWorking(true);
 
-    if (BACKEND_MODE === 'SUPABASE' && supabaseClient) {
-      const { data } = await supabaseClient.from('RECEIPTS').select('*').eq('receiptNoCustom', receiptNo).limit(1);
-      btn.disabled = false;
-      setWorking(false);
-      if (data && data.length > 0) {
-        renderRowAsEditable(tr, {
-          rowIndex: data[0].id,
-          date: data[0].receiptDate,
-          receiptNo: data[0].receiptNoCustom,
-          accountNo: data[0].accountNo,
-          accountTitle: data[0].accountTitle,
-          payMode: data[0].paymentHead,
-          amount: data[0].amount,
-          remarks: data[0].remarks
-        }, btn);
-      } else { alert("Entry ki detail nahi mil saki."); }
-      return;
-    }
-
-    if (!SCRIPT_URL) return;
     fetch(SCRIPT_URL + "?action=searchReceipt&rctNo=" + encodeURIComponent(receiptNo))
       .then(res => res.json())
       .then(res => {
@@ -1318,7 +1132,8 @@
     btn.classList.add('btn-primary');
   }
 
-  async function saveRecentRowEdit(tr, btn) {
+  function saveRecentRowEdit(tr, btn) {
+    if (!SCRIPT_URL) return;
     const oldReceiptNo = tr.getAttribute('data-receipt');
     const oldAccNo = tr.dataset.origAccNo || null;
 
@@ -1329,47 +1144,6 @@
     const newAmt = tr.querySelector('.cell-amt-input').value;
     const newRemarks = tr.querySelector('.cell-remarks-input').value;
 
-    btn.disabled = true;
-    setWorking(true);
-
-    if (BACKEND_MODE === 'SUPABASE' && supabaseClient) {
-      try {
-        const { error } = await supabaseClient.from('RECEIPTS').update({
-          receiptDate: newDate,
-          receiptNoCustom: newRct,
-          accountNo: newAcc,
-          paymentHead: newMode,
-          amount: Number(newAmt),
-          remarks: newRemarks
-        }).eq('receiptNoCustom', oldReceiptNo);
-
-        btn.disabled = false;
-        setWorking(false);
-
-        if (error) throw error;
-
-        const isCash = (settingsOptions.cash || []).includes(newMode);
-        const item = recentReceiptsData.find(r => String(r.receiptNo || '').trim() === String(oldReceiptNo || '').trim());
-        if (item) {
-          item.dateStr = formatDisplayDate(newDate);
-          item.dateObj = newDate ? new Date(newDate).setHours(0, 0, 0, 0) : item.dateObj;
-          item.receiptNo = newRct;
-          item.accountNo = newAcc;
-          item.paymentHead = newMode;
-          item.amount = Number(newAmt) || 0;
-          item.isCash = isCash;
-        }
-        populateModeFilterOptions();
-        renderRecentReceipts();
-      } catch (err) {
-        btn.disabled = false;
-        setWorking(false);
-        alert("Supabase Error: " + err.message);
-      }
-      return;
-    }
-
-    if (!SCRIPT_URL) return;
     const entry = {
       rowIndex: Number(tr.dataset.rowIndex),
       date: newDate,
@@ -1380,6 +1154,8 @@
       remarks: newRemarks
     };
 
+    btn.disabled = true;
+    setWorking(true);
     fetch(SCRIPT_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'updateAllReceiptEntries', data: [entry] })
@@ -1389,6 +1165,7 @@
         btn.disabled = false;
         setWorking(false);
         if (res && res.success) {
+          // Poori list dobara load kiye bagair, isi entry ko locally update kar dein (fast)
           const isCash = (settingsOptions.cash || []).includes(newMode);
           const item = recentReceiptsData.find(r =>
             String(r.receiptNo || '').trim() === String(oldReceiptNo || '').trim() &&
@@ -1412,23 +1189,11 @@
       .catch(err => { btn.disabled = false; setWorking(false); alert("Server Error: " + err.message); });
   }
 
-  async function deleteRecentReceipt(receiptNo) {
+  function deleteRecentReceipt(receiptNo) {
     if (!confirm("Kya aap waqai receipt '" + receiptNo + "' delete karna chahte hain?")) return;
+    if (!SCRIPT_URL) return;
 
     setWorking(true);
-
-    if (BACKEND_MODE === 'SUPABASE' && supabaseClient) {
-      const { error } = await supabaseClient.from('RECEIPTS').delete().eq('receiptNoCustom', receiptNo);
-      setWorking(false);
-      if (error) {
-        alert("Delete Error: " + error.message);
-      } else {
-        loadRecentReceipts();
-      }
-      return;
-    }
-
-    if (!SCRIPT_URL) return;
     fetch(SCRIPT_URL + "?action=searchReceipt&rctNo=" + encodeURIComponent(receiptNo))
       .then(res => res.json())
       .then(res => {
@@ -1454,113 +1219,136 @@
       .catch(err => { setWorking(false); alert("Error: " + err.message); });
   }
 
-  // Universal Mic Handler
-  (function() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let activeRec = null, activeBtn = null, activeInput = null;
-
-    function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
-
-    function stopActiveMic() {
-      if (activeRec) {
-        activeRec.onend = null; activeRec.onresult = null;
-        try { activeRec.abort(); } catch (e) {}
-        activeRec = null;
-      }
-      if (activeBtn) activeBtn.classList.remove('listening');
-      if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
-      activeBtn = null; activeInput = null;
+    // ===== Deployment URL config (auto-added) =====
+    function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      var box = document.getElementById('configBox');
+      if (box) box.classList.add('show');
     }
-
-    function toggleMic(input, btn) {
-      if (!SR) { alert('Ye browser voice input support nahi karta. Chrome use karein.'); return; }
-      const isNumeric = input.type === 'number';
-
-      if (btn.classList.contains('listening')) { stopActiveMic(); return; }
-      stopActiveMic();
-
-      const rec = new SR();
-      rec.lang = 'en-US';
-      rec.continuous = true;
-      rec.interimResults = true;
-      let finalText = '';
-
-      activeRec = rec; activeBtn = btn; activeInput = input;
-      btn.classList.add('listening');
-      input.dataset.origPh = input.placeholder || '';
-      input.placeholder = 'Sun raha hoon... rokne ke liye mic dobara dabayein';
-
-      rec.onresult = function(ev) {
-        let interim = '';
-        for (let i = ev.resultIndex; i < ev.results.length; i++) {
-          const t = ev.results[i][0].transcript;
-          if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
-        }
-        let text = (finalText + interim).trim();
-        if (isNumeric) text = cleanNumeric(text);
-        input.value = text;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-      };
-      rec.onerror = function(ev) {
-        if (ev.error !== 'no-speech' && ev.error !== 'aborted') console.error('Mic error:', ev.error);
-      };
-      rec.onend = function() {
-        btn.classList.remove('listening');
-        input.placeholder = input.dataset.origPh || '';
-        if (isNumeric) input.value = cleanNumeric(input.value);
-        if (activeInput === input) { activeRec = null; activeBtn = null; activeInput = null; }
-      };
-      try { rec.start(); } catch (e) {}
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
     }
-
-    function attachMic(input) {
-      if (!input || input.dataset.autoMic) return;
-      if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
-          input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
-      if (input.closest('#configBox')) return;
-      if (input.closest('.input-with-mic')) return;
-      if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
-
-      input.dataset.autoMic = '1';
-
-      const wrap = document.createElement('span');
-      wrap.className = 'auto-mic-wrap';
-      input.parentNode.insertBefore(wrap, input);
-      wrap.appendChild(input);
-
-      input.style.paddingRight = '24px';
-      input.style.boxSizing = 'border-box';
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'auto-mic-btn';
-      btn.title = 'Voice input';
-      btn.innerHTML = '&#127908;';
-      btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
-      wrap.appendChild(btn);
-    }
-
-    function scanAndAttach(root) {
-      root.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
-    }
-
     document.addEventListener('DOMContentLoaded', function() {
-      scanAndAttach(document);
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
     });
 
-    const mo = new MutationObserver(function(mutations) {
-      mutations.forEach(function(m) {
-        m.addedNodes.forEach(function(node) {
-          if (node.nodeType !== 1) return;
-          if (node.matches && (node.matches('input[type="text"]') || node.matches('input[type="number"]') || node.matches('input:not([type])'))) {
-            attachMic(node);
+    // ================= UNIVERSAL MIC INPUT (auto-added) =================
+    (function() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let activeRec = null, activeBtn = null, activeInput = null;
+
+      function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
+
+      function stopActiveMic() {
+        if (activeRec) {
+          activeRec.onend = null; activeRec.onresult = null;
+          try { activeRec.abort(); } catch (e) {}
+          activeRec = null;
+        }
+        if (activeBtn) activeBtn.classList.remove('listening');
+        if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
+        activeBtn = null; activeInput = null;
+      }
+
+      function toggleMic(input, btn) {
+        if (!SR) { alert('Ye browser voice input support nahi karta. Chrome use karein.'); return; }
+        const isNumeric = input.type === 'number';
+
+        if (btn.classList.contains('listening')) { stopActiveMic(); return; }
+        stopActiveMic();
+
+        const rec = new SR();
+        rec.lang = 'en-US';
+        rec.continuous = true;
+        rec.interimResults = true;
+        let finalText = '';
+
+        activeRec = rec; activeBtn = btn; activeInput = input;
+        btn.classList.add('listening');
+        input.dataset.origPh = input.placeholder || '';
+        input.placeholder = 'Sun raha hoon... rokne ke liye mic dobara dabayein';
+
+        rec.onresult = function(ev) {
+          let interim = '';
+          for (let i = ev.resultIndex; i < ev.results.length; i++) {
+            const t = ev.results[i][0].transcript;
+            if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
           }
-          if (node.querySelectorAll) scanAndAttach(node);
+          let text = (finalText + interim).trim();
+          if (isNumeric) text = cleanNumeric(text);
+          input.value = text;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        rec.onerror = function(ev) {
+          if (ev.error !== 'no-speech' && ev.error !== 'aborted') console.error('Mic error:', ev.error);
+        };
+        rec.onend = function() {
+          btn.classList.remove('listening');
+          input.placeholder = input.dataset.origPh || '';
+          if (isNumeric) input.value = cleanNumeric(input.value);
+          if (activeInput === input) { activeRec = null; activeBtn = null; activeInput = null; }
+        };
+        try { rec.start(); } catch (e) {}
+      }
+
+      function attachMic(input) {
+        if (!input || input.dataset.autoMic) return;
+        if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
+            input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
+        if (input.closest('#configBox')) return;
+        if (input.closest('.input-with-mic')) return; // already has a manual mic button
+        if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
+
+        input.dataset.autoMic = '1';
+
+        const wrap = document.createElement('span');
+        wrap.className = 'auto-mic-wrap';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+
+        const curPad = window.getComputedStyle(input).paddingRight;
+        input.style.paddingRight = '24px';
+        input.style.boxSizing = 'border-box';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'auto-mic-btn';
+        btn.title = 'Voice input';
+        btn.innerHTML = '&#127908;';
+        btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
+        wrap.appendChild(btn);
+      }
+
+      function scanAndAttach(root) {
+        root.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        scanAndAttach(document);
+      });
+
+      const mo = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          m.addedNodes.forEach(function(node) {
+            if (node.nodeType !== 1) return;
+            if (node.matches && (node.matches('input[type="text"]') || node.matches('input[type="number"]') || node.matches('input:not([type])'))) {
+              attachMic(node);
+            }
+            if (node.querySelectorAll) scanAndAttach(node);
+          });
         });
       });
-    });
-    mo.observe(document.body, { childList: true, subtree: true });
-  })();
+      mo.observe(document.body, { childList: true, subtree: true });
+    })();
 </script>
 </body>
 </html>
