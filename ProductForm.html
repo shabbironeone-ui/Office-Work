@@ -3,9 +3,6 @@
 <head>
   <meta charset="utf-8">
   <title>Product Master Registration</title>
-  <!-- Supabase SDK & Dual Backend Connector -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="erp-backend.js"></script>
   <style>
     :root {
       --primary-color: #1e293b;
@@ -208,19 +205,19 @@
       loadDropdownSuggestions();
     };
 
-    async function loadDropdownSuggestions() {
-      try {
-        const data = await erpApi.getProductDropdownData();
-        if (!data) return;
-        populateDatalist('catList', data.categories);
-        populateDatalist('companyList', data.companies);
-        populateDatalist('modelList', data.models);
-        populateDatalist('colorList', data.colors);
-        populateDatalist('ramList', data.rams);
-        populateDatalist('romList', data.roms);
-      } catch (err) {
-        console.error("Dropdown load error:", err);
-      }
+    function loadDropdownSuggestions() {
+      fetch(SCRIPT_URL + "?action=getProductDropdownData")
+        .then(res => res.json())
+        .then(data => {
+          if (!data) return;
+          populateDatalist('catList', data.categories);
+          populateDatalist('companyList', data.companies);
+          populateDatalist('modelList', data.models);
+          populateDatalist('colorList', data.colors);
+          populateDatalist('ramList', data.rams);
+          populateDatalist('romList', data.roms);
+        })
+        .catch(err => console.error("Dropdown load error:", err));
     }
 
     function populateDatalist(listId, items) {
@@ -298,7 +295,7 @@
       }
     }
 
-    async function handleFormSubmit(event) {
+    function handleFormSubmit(event) {
       event.preventDefault();
       
       var btn = document.getElementById('submitBtn');
@@ -324,29 +321,34 @@
         remarks: document.getElementById('remarks').value.trim().toUpperCase()
       };
       
-      try {
-        const response = await erpApi.saveProductMaster(formData);
-        btn.disabled = false;
-        btn.innerText = "Save Product";
-        statusMsg.style.display = "block";
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'saveProductMaster', data: formData })
+      })
+        .then(res => res.json())
+        .then(response => {
+          btn.disabled = false;
+          btn.innerText = "Save Product";
+          statusMsg.style.display = "block";
 
-        if (response && response.success) {
-          statusMsg.className = "success";
-          statusMsg.innerText = response.message + " (ID: " + response.product_id + ")";
-          document.getElementById('productForm').reset();
-          document.getElementById('mobileExtraSection').style.display = 'none';
-          loadDropdownSuggestions();
-        } else {
+          if (response.success) {
+            statusMsg.className = "success";
+            statusMsg.innerText = response.message + " (ID: " + response.product_id + ")";
+            document.getElementById('productForm').reset();
+            document.getElementById('mobileExtraSection').style.display = 'none';
+            loadDropdownSuggestions();
+          } else {
+            statusMsg.className = "error";
+            statusMsg.innerText = "Error: " + response.error;
+          }
+        })
+        .catch(err => {
+          btn.disabled = false;
+          btn.innerText = "Save Product";
+          statusMsg.style.display = "block";
           statusMsg.className = "error";
-          statusMsg.innerText = "Error: " + (response ? response.error : "Unknown error");
-        }
-      } catch (err) {
-        btn.disabled = false;
-        btn.innerText = "Save Product";
-        statusMsg.style.display = "block";
-        statusMsg.className = "error";
-        statusMsg.innerText = "Server Error: " + err.message;
-      }
+          statusMsg.innerText = "Server Error: " + err.message;
+        });
     }
   
     // ===== Deployment URL config (auto-added) =====
