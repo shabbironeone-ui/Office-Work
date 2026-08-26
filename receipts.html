@@ -3,9 +3,6 @@
 <head>
   <meta charset="utf-8">
   <title>Al Meezan ERP Receipts</title>
-  <!-- Supabase SDK & Dual Backend Connector -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="erp-backend.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     :root {
@@ -496,20 +493,24 @@
     else document.body.classList.remove('is-working');
   }
 
-  async function loadInitialData() {
+  function loadInitialData() {
+    if (!SCRIPT_URL) return;
     setWorking(true);
-    try {
-      const settingsRes = await erpApi.getSettings();
+
+    Promise.all([
+      fetch(SCRIPT_URL + "?action=getSettings").then(res => res.json()).catch(() => null),
+      fetch(SCRIPT_URL + "?action=getAllCustomersCache").then(res => res.json()).catch(() => null)
+    ]).then(([settingsRes, custRes]) => {
       setWorking(false);
       if (settingsRes && settingsRes.success) {
         if (settingsRes.cash && settingsRes.cash.length > 0) settingsOptions.cash = settingsRes.cash;
         if (settingsRes.bank && settingsRes.bank.length > 0) settingsOptions.bank = settingsRes.bank;
         onBatchPaymentModeChange();
       }
-    } catch (err) {
-      setWorking(false);
-      console.error("Initial data load error:", err);
-    }
+      if (custRes && custRes.data) {
+        customerCache = custRes.data;
+      }
+    });
   }
 
   function checkDuplicateReceipt(rctNo, inputElement) {
@@ -637,26 +638,24 @@
     calculateBatchTotal();
   }
 
-  async function fetchBatchCustomerDetails(accNo, row) {
+  function fetchBatchCustomerDetails(accNo, row) {
     if (customerCache[accNo]) {
       populateBatchRowDetails(row, customerCache[accNo]);
       return;
     }
+    if (!SCRIPT_URL) return;
 
     setWorking(true);
-    try {
-      const res = await erpApi.getCustomer(accNo);
-      setWorking(false);
-      if (res && res.success) {
-        customerCache[accNo] = res;
-        populateBatchRowDetails(row, res);
-      } else {
-        clearBatchRowDetails(row);
-      }
-    } catch (err) {
-      setWorking(false);
-      clearBatchRowDetails(row);
-    }
+    fetch(SCRIPT_URL + "?action=getCustomer&accNo=" + encodeURIComponent(accNo))
+      .then(res => res.json())
+      .then(res => {
+        setWorking(false);
+        if (res && res.success) {
+          customerCache[accNo] = res;
+          populateBatchRowDetails(row, res);
+        } else { clearBatchRowDetails(row); }
+      })
+      .catch(err => { setWorking(false); clearBatchRowDetails(row); });
   }
 
   function populateBatchRowDetails(row, data) {
@@ -828,25 +827,23 @@
     let saveBtn = document.getElementById('saveBatchBtn');
     saveBtn.disabled = true;
 
-    async function saveAllBatch() {
-      try {
-        for (let i = 0; i < entries.length; i++) {
-          await erpApi.saveReceipt(entries[i]);
-        }
+    function saveNext(i) {
+      if (i >= entries.length) {
         isSubmitting = false;
         document.body.classList.remove('is-saving');
         saveBtn.disabled = false;
         addEntriesToLocalRecentList(entries, commonDate, commonSuffix);
         clearBatchForm();
-        alert("Receipts Saved Successfully!");
-      } catch (err) {
-        isSubmitting = false;
-        document.body.classList.remove('is-saving');
-        saveBtn.disabled = false;
-        alert("Save Error: " + err.message);
+        return;
       }
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'saveReceipt', data: entries[i] })
+      })
+        .then(() => saveNext(i + 1))
+        .catch(() => saveNext(i + 1));
     }
-    saveAllBatch();
+    saveNext(0);
   }
 
   function formatDisplayDate(isoDate) {
@@ -892,35 +889,28 @@
   // ============================================================
   let recentReceiptsData = [];
 
-  async function loadRecentReceipts() {
+  function loadRecentReceipts() {
+    if (!SCRIPT_URL) return;
     const tbody = document.getElementById('recentReceiptsBody');
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading recent receipts...</td></tr>';
     setWorking(true);
 
-    try {
-      const res = await erpApi.getRecentReceipts();
-      setWorking(false);
-      if (res && res.success) {
-        recentReceiptsData = (res.data || []).map(r => ({
-          id: r.id,
-          receiptNo: r.receiptNo,
-          dateStr: r.date,
-          accountNo: r.accountNo,
-          accountTitle: r.customerTitle,
-          paymentHead: r.paymentMode,
-          amount: r.amount,
-          remarks: r.remarks,
-          isCash: isDaybookRow({ paymentHead: r.paymentMode })
-        }));
-        populateModeFilterOptions();
-        renderRecentReceipts();
-      } else {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Error loading data</td></tr>';
-      }
-    } catch (err) {
-      setWorking(false);
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">' + err.message + '</td></tr>';
-    }
+    fetch(SCRIPT_URL + "?action=getAllReceiptsForReport")
+      .then(res => res.json())
+      .then(res => {
+        setWorking(false);
+        if (res && res.success) {
+          recentReceiptsData = res.data || [];
+          populateModeFilterOptions();
+          renderRecentReceipts();
+        } else {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Error loading data</td></tr>';
+        }
+      })
+      .catch(err => {
+        setWorking(false);
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">' + err.message + '</td></tr>';
+      });
   }
 
   function populateModeFilterOptions() {
