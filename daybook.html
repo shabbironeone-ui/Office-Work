@@ -2,6 +2,10 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <title>Daybook</title>
+    <!-- Supabase SDK & Dual Backend Connector -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="erp-backend.js"></script>
     <style>
       body { font-family: Arial, sans-serif; margin: 15px; color: #333; }
       .filter-container { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
@@ -135,33 +139,38 @@
 
       let allEntries = [];
 
-      function loadDayBookData() {
+      async function loadDayBookData() {
         showLoader(true);
-        fetch(SCRIPT_URL + "?action=getDayBookData")
-          .then(res => res.json())
-          .then(response => {
-            showLoader(false);
-            if (response.success) {
-              allEntries = response.entries;
+        try {
+          const response = await erpApi.getRecentReceipts();
+          showLoader(false);
+          if (response && response.success) {
+            allEntries = (response.data || []).map(r => ({
+              date: r.date,
+              receiptNo: r.receiptNo,
+              voucherNo: r.receiptNo,
+              accountNo: r.accountNo,
+              accountTitle: r.accountTitle,
+              paymentHead: r.paymentHead,
+              debit: 0,
+              credit: Number(r.amount) || 0,
+              particulars: `${r.accountTitle || ''} (Acc ${r.accountNo || ''}) - ${r.remarks || ''}`
+            }));
 
-              if (allEntries.length > 0) {
-                let lastItem = allEntries[allEntries.length - 1];
-                let parts = lastItem.date.split("-");
-                let lastDateStr = parts[2] + "-" + parts[1] + "-" + parts[0];
-
-                document.getElementById("startDate").value = lastDateStr;
-                document.getElementById("endDate").value = lastDateStr;
+            if (allEntries.length > 0) {
+              let lastItem = allEntries[0];
+              if (lastItem.date) {
+                document.getElementById("startDate").value = lastItem.date;
+                document.getElementById("endDate").value = lastItem.date;
               }
-
-              applyFilterAndRender();
-            } else {
-              alert(response.message);
             }
-          })
-          .catch(err => {
-            showLoader(false);
-            alert("Server Error: " + err.message);
-          });
+
+            applyFilterAndRender();
+          }
+        } catch (err) {
+          showLoader(false);
+          alert("Server Error: " + err.message);
+        }
       }
 
       document.addEventListener("DOMContentLoaded", function() {
