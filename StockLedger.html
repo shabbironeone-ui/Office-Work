@@ -3,9 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Al Meezan ERP - Category & Dynamic Stock Ledger</title>
-  <!-- Supabase SDK & Dual Backend Connector -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="erp-backend.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -248,21 +245,23 @@
       return dateString;
     }
 
-    async function fetchStockData() {
+    function loadStockData() {
       document.body.style.cursor = 'wait';
-      try {
-        const response = await erpApi.getStockLedger();
-        document.body.style.cursor = 'default';
-        if (response && response.success) {
-          globalStockData = response.data || [];
-          applyFilters();
-        } else {
-          alert("Error loading data: " + (response ? response.error : "Unknown error"));
-        }
-      } catch (err) {
-        document.body.style.cursor = 'default';
-        alert("Server error: " + err.message);
-      }
+      fetch(SCRIPT_URL + "?action=getStockLedgerRecords")
+        .then(r => r.json())
+        .then(function(response) {
+          document.body.style.cursor = 'default';
+          if (response.success) {
+            globalStockData = response.data;
+            applyFilters();
+          } else {
+            alert("Error loading data: " + response.error);
+          }
+        })
+        .catch(function(err) {
+          document.body.style.cursor = 'default';
+          alert("Server error: " + err.message);
+        });
     }
 
     function applyFilters() {

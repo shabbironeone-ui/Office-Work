@@ -2,10 +2,6 @@
 <html>
 <head>
   <base target="_top">
-  <title>Daily Recovery Report</title>
-  <!-- Supabase SDK & Dual Backend Connector -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="erp-backend.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     body {
@@ -328,7 +324,10 @@
   <script>
     let globalData = null;
 
-    async function fetchAndFilterData() {
+    // Google Apps Script Web App URL integrated
+    let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
+
+    function fetchAndFilterData() {
       if (globalData !== null) {
         applySearchFilter();
         return;
@@ -337,28 +336,21 @@
       document.getElementById('loadingContainer').style.display = 'block';
       document.getElementById('loadingMsg').innerText = "Fetching records... Please wait.";
 
-      try {
-        const response = await erpApi.getRecentReceipts();
-        document.getElementById('loadingContainer').style.display = 'none';
-        if (response && response.success) {
-          globalData = (response.data || []).map(r => {
-            let mode = String(r.paymentHead || '').toLowerCase();
-            let isCash = !mode.includes('bank') && !mode.includes('online') && !mode.includes('cheque');
-            let dateObj = r.date ? new Date(r.date) : null;
-            return {
-              ...r,
-              isCash: isCash,
-              dateObj: dateObj
-            };
-          });
-          applySearchFilter();
-        } else {
-          alert("Error: " + (response ? response.error : "Unknown error"));
-        }
-      } catch (err) {
-        document.getElementById('loadingContainer').style.display = 'none';
-        alert("Fetch Failure: " + err.message);
-      }
+      fetch(`${SCRIPT_URL}?action=getAllReceiptsForReport`)
+        .then(res => res.json())
+        .then(response => {
+          document.getElementById('loadingContainer').style.display = 'none';
+          if (response && response.success) {
+            globalData = response.data;
+            applySearchFilter();
+          } else {
+            alert("Error: " + (response ? response.error : "Unknown error"));
+          }
+        })
+        .catch(err => {
+          document.getElementById('loadingContainer').style.display = 'none';
+          alert("Fetch Failure: " + err.message);
+        });
     }
 
     function applySearchFilter() {
@@ -526,6 +518,28 @@
     function openReceiptForm() {
       window.open('receipts.html', '_blank');
     }
+  
+    // ===== Deployment URL config (auto-added) =====
+    function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      var box = document.getElementById('configBox');
+      if (box) box.classList.add('show');
+    }
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
+    });
 
     // ================= UNIVERSAL MIC INPUT (auto-added) =================
     (function() {

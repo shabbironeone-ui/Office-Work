@@ -2,10 +2,6 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Executive ERP Dashboard</title>
-  <!-- Supabase SDK & Dual Backend Connector -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="erp-backend.js"></script>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
@@ -105,55 +101,77 @@
       loadDashboard();
     }
 
-    async function loadDashboard() {
+    function loadDashboard() {
       document.getElementById('loading').style.display = 'block';
       document.getElementById('dashboardContent').style.display = 'none';
 
-      try {
-        const res = await erpApi.getDashboardKPIs();
-        document.getElementById('loading').style.display = 'none';
+      fetch(SCRIPT_URL + "?action=getDashboardMetrics")
+        .then(res => res.json())
+        .then(res => {
+          document.getElementById('loading').style.display = 'none';
+          if (res.success) {
+            let m = res.metrics;
+            document.getElementById('dashboardContent').style.display = 'block';
 
-        if (res && res.success) {
-          let m = res.data || res.metrics;
-          document.getElementById('dashboardContent').style.display = 'block';
+            document.getElementById('mSalesVol').textContent = "Rs " + m.totalSalesAmount.toLocaleString();
+            document.getElementById('mCollections').textContent = "Rs " + m.totalCollections.toLocaleString();
+            document.getElementById('mReceivable').textContent = "Rs " + m.totalReceivable.toLocaleString();
+            document.getElementById('mNetCash').textContent = "Rs " + m.netCashBalance.toLocaleString();
 
-          let totalSales = Number(m.totalSalesVolume || m.totalSalesAmount || 0);
-          let totalCol = Number(m.totalCollections || 0);
-          let totalRec = Number(m.totalOutstandingReceivable || m.totalReceivable || 0);
-          let netCash = Number(m.cashCollections || m.netCashBalance || 0);
+            let rows = [
+              ["Total Sales Contracts", m.totalSalesCount.toLocaleString()],
+              ["Total Active Customers", m.totalActiveCustomers.toLocaleString()],
+              ["Cash Collections (Receipts)", "Rs " + m.cashCollections.toLocaleString()],
+              ["Bank / Cheque Collections", "Rs " + m.bankCollections.toLocaleString()],
+              ["Processing Fee Total (PROS)", "Rs " + m.processingFeeTotal.toLocaleString()],
+              ["Advance Total (ADV)", "Rs " + m.advanceTotal.toLocaleString()],
+              ["Total Expense Outflows", "Rs " + m.totalExpenses.toLocaleString()],
+              ["Total Receipt Entries Count", m.totalReceiptCount.toLocaleString()]
+            ];
 
-          document.getElementById('mSalesVol').textContent = "Rs " + totalSales.toLocaleString();
-          document.getElementById('mCollections').textContent = "Rs " + totalCol.toLocaleString();
-          document.getElementById('mReceivable').textContent = "Rs " + totalRec.toLocaleString();
-          document.getElementById('mNetCash').textContent = "Rs " + netCash.toLocaleString();
-
-          let rows = [
-            ["Total Sales Contracts", (m.totalSalesContracts || m.totalSalesCount || 0).toLocaleString()],
-            ["Total Active Customers", (m.totalActiveCustomers || 0).toLocaleString()],
-            ["Cash Collections (Receipts)", "Rs " + (Number(m.cashCollections) || 0).toLocaleString()],
-            ["Bank / Cheque Collections", "Rs " + (Number(m.bankCollections) || 0).toLocaleString()],
-            ["Processing Fee Total (PROS)", "Rs " + (Number(m.processingFeeTotal) || 0).toLocaleString()],
-            ["Advance Total (ADV)", "Rs " + (Number(m.advanceTotal) || 0).toLocaleString()],
-            ["Total Receipt Entries Count", (m.totalReceiptEntries || m.totalReceiptCount || 0).toLocaleString()]
-          ];
-
-          let tbody = document.getElementById('breakdownTableBody');
-          tbody.innerHTML = '';
-          rows.forEach(r => {
-            tbody.innerHTML += `<tr><td>${r[0]}</td><td class="number"><b>${r[1]}</b></td></tr>`;
-          });
-        } else {
-          alert("Error loading metrics: " + (res ? res.error : "Unknown error"));
-        }
-      } catch (err) {
-        document.getElementById('loading').style.display = 'none';
-        alert("Server Error: " + err.message);
-      }
+            let tbody = document.getElementById('breakdownTableBody');
+            tbody.innerHTML = '';
+            rows.forEach(r => {
+              tbody.innerHTML += `<tr><td>${r[0]}</td><td class="number"><b>${r[1]}</b></td></tr>`;
+            });
+          } else {
+            alert("Error loading metrics: " + res.error);
+          }
+        })
+        .catch(err => {
+          document.getElementById('loading').style.display = 'none';
+          alert("Server Error: " + err.message);
+        });
     }
 
     window.onload = function() {
+      if (!localStorage.getItem('erp_script_url')) {
+        // hardcoded default already set, config box sirf tab dikhega agar user manually change karna chahe
+      }
       loadDashboard();
     };
+  
+    // ===== Deployment URL config (auto-added) =====
+    function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      var box = document.getElementById('configBox');
+      if (box) box.classList.add('show');
+    }
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
+    });
 
     // ================= UNIVERSAL MIC INPUT (auto-added) =================
     (function() {
