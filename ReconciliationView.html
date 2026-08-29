@@ -284,6 +284,15 @@
       renderLedgerTable(currentLedgerData);
     }
 
+    function formatDMY(dateStr) {
+      let d = new Date(dateStr);
+      if (isNaN(d.getTime())) return String(dateStr);
+      let day = d.getDate();
+      let month = d.getMonth() + 1;
+      let year = String(d.getFullYear()).slice(-2);
+      return day + '/' + month + '/' + year;
+    }
+
     function renderLedgerTable(data) {
       if (!data || data.length === 0) {
         document.getElementById('ledgerContainer').innerHTML = '<p style="text-align:center; color:#64748b;">No entries found for this date range.</p>';
@@ -327,7 +336,7 @@
         <tbody>`;
 
       data.forEach(function(tx) {
-        let formattedDate = tx.date ? new Date(tx.date).toLocaleDateString() : '';
+        let formattedDate = tx.date ? formatDMY(tx.date) : '';
         html += `<tr>
           <td>${formattedDate}</td>
           <td>${tx.voucher || ''}</td>
