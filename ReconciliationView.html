@@ -290,6 +290,27 @@
         return;
       }
 
+      let totalReceipts = 0, totalPayments = 0;
+      data.forEach(function(tx) {
+        totalReceipts += Number(tx.receipts) || 0;
+        totalPayments += Number(tx.payments) || 0;
+      });
+      // Closing balance = akhri (last) row ka balance, sum nahi
+      let closingBalance = Number(data[data.length - 1].balance) || 0;
+
+      let totalsBarHtml = `<table style="margin-bottom:0;">
+        <tr>
+          <td style="border:none; padding:4px 15px; visibility:hidden;">Date</td>
+          <td style="border:none; padding:4px 15px; visibility:hidden;">Voucher No</td>
+          <td style="border:none; padding:4px 15px; visibility:hidden;">Type</td>
+          <td style="border:none; padding:4px 15px; visibility:hidden;">Account Title</td>
+          <td class="text-right" style="border:none; padding:4px 15px; font-weight:bold; color:#059669;">${totalReceipts.toLocaleString()}</td>
+          <td class="text-right" style="border:none; padding:4px 15px; font-weight:bold; color:#dc2626;">${totalPayments.toLocaleString()}</td>
+          <td class="text-right" style="border:none; padding:4px 15px; font-weight:bold; color:#2563eb;">${closingBalance.toLocaleString()}</td>
+          <td style="border:none; padding:4px 15px; visibility:hidden;">Status</td>
+        </tr>
+      </table>`;
+
       let html = `<table>
         <thead>
           <tr>
@@ -320,7 +341,7 @@
       });
 
       html += `</tbody></table>`;
-      document.getElementById('ledgerContainer').innerHTML = html;
+      document.getElementById('ledgerContainer').innerHTML = totalsBarHtml + html;
     }
   
     // ===== Deployment URL config (auto-added) =====
