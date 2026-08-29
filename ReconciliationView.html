@@ -153,6 +153,11 @@
     <!-- Detailed Ledger Card -->
     <div class="card" id="ledgerCard" style="display:none;">
       <h3 id="ledgerTitle" style="margin-top: 0; color: #1e293b;">Account Ledger</h3>
+      <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">
+        <label style="font-size: 13px; font-weight: 600; color: #475569;">From: <input type="date" id="ledgerFromDate" onchange="applyLedgerDateFilter()" style="margin-left:6px; padding:5px 8px; border:1px solid var(--border); border-radius:4px;"></label>
+        <label style="font-size: 13px; font-weight: 600; color: #475569;">To: <input type="date" id="ledgerToDate" onchange="applyLedgerDateFilter()" style="margin-left:6px; padding:5px 8px; border:1px solid var(--border); border-radius:4px;"></label>
+        <button class="btn" style="padding: 6px 12px; font-size: 12px; background:#546e7a;" onclick="resetLedgerDateFilter()">Reset</button>
+      </div>
       <div id="ledgerContainer"></div>
     </div>
   </div>
@@ -222,61 +227,100 @@
         });
     }
 
+    let currentLedgerData = [];
+
     function viewLedger(payMode) {
       document.getElementById('ledgerCard').style.display = 'block';
       document.getElementById('ledgerTitle').innerText = 'Ledger Details: ' + payMode;
       document.getElementById('ledgerContainer').innerHTML = '<div class="loading">Loading ledger entries...</div>';
+      document.getElementById('ledgerFromDate').value = '';
+      document.getElementById('ledgerToDate').value = '';
 
       fetch(SCRIPT_URL + "?action=getAccountLedgerDetails&payMode=" + encodeURIComponent(payMode))
         .then(res => res.json())
         .then(response => {
           if (!response || !response.success) {
             document.getElementById('ledgerContainer').innerHTML = `<p style="color:red; text-align:center;">Error: ${response ? response.error : 'Unknown error'}</p>`;
+            currentLedgerData = [];
             return;
           }
 
-          let data = response.data;
-          if (!data || data.length === 0) {
-            document.getElementById('ledgerContainer').innerHTML = '<p style="text-align:center; color:#64748b;">No entries found for this account.</p>';
-            return;
-          }
-
-          let html = `<table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Voucher No</th>
-                <th>Type</th>
-                <th>Account Title</th>
-                <th class="text-right">Receipts</th>
-                <th class="text-right">Payments</th>
-                <th class="text-right">Balance</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>`;
-
-          data.forEach(function(tx) {
-            let formattedDate = tx.date ? new Date(tx.date).toLocaleDateString() : '';
-            html += `<tr>
-              <td>${formattedDate}</td>
-              <td>${tx.voucher || ''}</td>
-              <td>${tx.type || ''}</td>
-              <td>${tx.accTitle || ''}</td>
-              <td class="text-right" style="color: #059669;">${tx.receipts ? Number(tx.receipts).toLocaleString() : '-'}</td>
-              <td class="text-right" style="color: #dc2626;">${tx.payments ? Number(tx.payments).toLocaleString() : '-'}</td>
-              <td class="text-right"><b>${tx.balance ? Number(tx.balance).toLocaleString() : '0'}</b></td>
-              <td><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px;">${tx.status || 'Pending'}</span></td>
-            </tr>`;
-          });
-
-          html += `</tbody></table>`;
-          document.getElementById('ledgerContainer').innerHTML = html;
+          currentLedgerData = response.data || [];
+          renderLedgerTable(currentLedgerData);
           document.getElementById('ledgerCard').scrollIntoView({ behavior: 'smooth' });
         })
         .catch(err => {
           document.getElementById('ledgerContainer').innerHTML = `<p style="color:red; text-align:center;">Script Error: ${err.message}</p>`;
+          currentLedgerData = [];
         });
+    }
+
+    function applyLedgerDateFilter() {
+      let fromVal = document.getElementById('ledgerFromDate').value;
+      let toVal = document.getElementById('ledgerToDate').value;
+
+      if (!fromVal) {
+        // Koi From date nahi hai, poora data dikhayein
+        renderLedgerTable(currentLedgerData);
+        return;
+      }
+
+      // Sirf From date select hui hai (To khaali) -> usi ek din ka data
+      // From aur To dono hain -> us range ka data
+      let effectiveTo = toVal || fromVal;
+
+      let filtered = currentLedgerData.filter(function(tx) {
+        if (!tx.date) return false;
+        let txDateStr = String(tx.date).split('T')[0];
+        return txDateStr >= fromVal && txDateStr <= effectiveTo;
+      });
+
+      renderLedgerTable(filtered);
+    }
+
+    function resetLedgerDateFilter() {
+      document.getElementById('ledgerFromDate').value = '';
+      document.getElementById('ledgerToDate').value = '';
+      renderLedgerTable(currentLedgerData);
+    }
+
+    function renderLedgerTable(data) {
+      if (!data || data.length === 0) {
+        document.getElementById('ledgerContainer').innerHTML = '<p style="text-align:center; color:#64748b;">No entries found for this date range.</p>';
+        return;
+      }
+
+      let html = `<table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Voucher No</th>
+            <th>Type</th>
+            <th>Account Title</th>
+            <th class="text-right">Receipts</th>
+            <th class="text-right">Payments</th>
+            <th class="text-right">Balance</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      data.forEach(function(tx) {
+        let formattedDate = tx.date ? new Date(tx.date).toLocaleDateString() : '';
+        html += `<tr>
+          <td>${formattedDate}</td>
+          <td>${tx.voucher || ''}</td>
+          <td>${tx.type || ''}</td>
+          <td>${tx.accTitle || ''}</td>
+          <td class="text-right" style="color: #059669;">${tx.receipts ? Number(tx.receipts).toLocaleString() : '-'}</td>
+          <td class="text-right" style="color: #dc2626;">${tx.payments ? Number(tx.payments).toLocaleString() : '-'}</td>
+          <td class="text-right"><b>${tx.balance ? Number(tx.balance).toLocaleString() : '0'}</b></td>
+          <td><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px;">${tx.status || 'Pending'}</span></td>
+        </tr>`;
+      });
+
+      html += `</tbody></table>`;
+      document.getElementById('ledgerContainer').innerHTML = html;
     }
   
     // ===== Deployment URL config (auto-added) =====
