@@ -28,7 +28,7 @@
     }
     .filters-grid {
       display: grid;
-      grid-template-columns: 1.1fr 1.1fr 2fr 1.5fr 1.5fr auto;
+      grid-template-columns: 1fr 1fr 1.2fr 1.8fr 1.2fr 1.2fr auto;
       gap: 6px;
       align-items: end;
       margin-bottom: 8px;
@@ -135,15 +135,15 @@
       font-weight: bold !important;
     }
     
-    /* Fixed Column Widths (Total 17 columns) */
+    /* Adjusted Column Widths */
     th.col-1, td.col-1 { width: 44px; }   /* Account No */
-    th.col-2, td.col-2 { width: 95px; }   /* Accunt Title */
+    th.col-2, td.col-2 { width: 95px; }   /* Account Title */
     th.col-3, td.col-3 { width: 68px; }   /* Approved By */
     th.col-4, td.col-4 { width: 36px; }   /* CRO */
     th.col-5, td.col-5 { width: 78px; }   /* Mobile NO */
     th.col-6, td.col-6 { width: 46px; }   /* M Inst */
     th.col-7, td.col-7 { width: 65px; }   /* Remarks */
-    th.col-8, td.col-8 { width: 130px; }  /* Product */
+    th.col-8, td.col-8 { width: 110px; }  /* Product (Expanded for full name) */
     th.col-9, td.col-9 { width: 30px; }   /* Plan(M) */
     th.col-10, td.col-10 { width: 56px; } /* Total Sale */
     th.col-11, td.col-11 { width: 56px; } /* Total Paid */
@@ -419,9 +419,39 @@
         font-size: 10px !important;
       }
     }
-  </style>
+  
+    .config-box { background: #fff3cd; border: 1px solid #ffe69c; padding: 10px 14px; border-radius: 6px; margin-bottom: 10px; font-size: 12px; display: none; }
+    .config-box.show { display: block; }
+    .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
+    .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .change-url-link { text-align: right; font-size: 10px; color: #64748b; margin-bottom: 4px; cursor: pointer; text-decoration: underline; }
+
+    .auto-mic-wrap { position: relative; display: inline-block; width: 100%; }
+    .auto-mic-btn {
+      position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+      width: 20px; height: 20px; padding: 0; border: none; background: transparent;
+      cursor: pointer; font-size: 12px; line-height: 1; z-index: 5; opacity: 0.55;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .auto-mic-btn:hover { opacity: 1; }
+    .auto-mic-btn.listening {
+      background: #c62828; border-radius: 50%; color: #fff; opacity: 1;
+      animation: autoMicPulse 1s infinite;
+    }
+    @keyframes autoMicPulse {
+      0% { box-shadow: 0 0 0 0 rgba(198,40,40,0.5); }
+      70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
+      100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
+    }
+</style>
 </head>
 <body>
+  <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
+  <div id="configBox" class="config-box">
+    <b>Setup:</b> Apna Apps Script Deployment URL neeche daal kar Save karein.
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+    <button onclick="saveScriptUrl()">Save URL</button>
+  </div>
 
   <div class="container">
     <h2>Al-Meezan Electronics - Customer Aging Report</h2>
@@ -436,8 +466,12 @@
         <input type="date" id="endDateInput">
       </div>
       <div class="input-group">
-        <label>SEARCH ACCOUNT / NAME</label>
-        <input type="text" id="searchAccInput" placeholder="Acc No or Name...">
+        <label>ACCOUNT NO</label>
+        <input type="text" id="searchAccInput" placeholder="Acc No...">
+      </div>
+      <div class="input-group">
+        <label>ACCOUNT TITLE / NAME</label>
+        <input type="text" id="searchTitleInput" placeholder="Name / Title...">
       </div>
       <div class="input-group">
         <label>MOBILE NO</label>
@@ -448,7 +482,7 @@
         <input type="text" id="startFromAcctInput" placeholder="From Acct No...">
       </div>
       <div class="button-group">
-        <button onclick="fetchAndFilterData()" title="Search"><i class="fa fa-search"></i></button>
+        <button onclick="fetchAndFilterData(true)" title="Reload Data"><i class="fa fa-sync"></i></button>
         <button class="secondary" onclick="resetFilters()" title="Reset"><i class="fa fa-redo"></i></button>
         <button class="secondary" onclick="printReport()" title="Print"><i class="fa fa-print"></i></button>
       </div>
@@ -464,7 +498,7 @@
         <thead>
           <tr class="sticky-header" id="mainHeaderRow">
             <th class="col-1">Account No</th>
-            <th class="col-2">Accunt Title</th>
+            <th class="col-2">Account Title</th>
             <th class="col-3">Approved By</th>
             <th class="col-4">CRO</th>
             <th class="col-5">Mobile NO</th>
@@ -503,7 +537,7 @@
         </thead>
         <tbody id="tableBody">
           <tr>
-            <td colspan="17" style="text-align: center; color: #777; padding: 15px; font-weight: normal;">Please click search to load aging report.</td>
+            <td colspan="17" style="text-align: center; color: #777; padding: 15px; font-weight: normal;">Loading aging report...</td>
           </tr>
         </tbody>
       </table>
@@ -580,6 +614,9 @@
     let isDateCol = false;
     let popupAllUniqueValues = [];
 
+    // Permanent Web App URL
+    let WEB_APP_URL = localStorage.getItem('erp_script_url') || "";
+
     function formatDateDDMMYY(dateString) {
       if (!dateString) return '';
       let d = new Date(dateString);
@@ -592,8 +629,8 @@
       return `${day}-${month}-${year}`;
     }
 
-    function fetchAndFilterData() {
-      if (globalResponse !== null) {
+    function fetchAndFilterData(forceReload = false) {
+      if (globalResponse !== null && !forceReload) {
         applySearchFilter();
         return;
       }
@@ -601,67 +638,99 @@
       document.getElementById('loadingContainer').style.display = 'block';
       document.getElementById('loadingMsg').innerText = "Fetching aging records... Please wait.";
 
-      google.script.run
-        .withSuccessHandler(function(response) {
+      fetch(WEB_APP_URL + "?action=getAgingReportData")
+        .then(response => response.json())
+        .then(res => {
           document.getElementById('loadingContainer').style.display = 'none';
-          if (response && response.data) {
-            globalResponse = response;
+          if (res && res.data) {
+            globalResponse = res;
             applySearchFilter();
           } else {
-            alert("Error loading data.");
+            alert("Error loading data from sheet.");
           }
         })
-        .withFailureHandler(function(err) {
+        .catch(err => {
           document.getElementById('loadingContainer').style.display = 'none';
-          alert("Script Failure: " + err.message);
-        })
-        .getAgingReportData();
+          alert("Fetch Failure: " + err.message);
+        });
     }
 
-    // Strips PRD-XXXX IDs and displays pure Product details (Company, Category, Model)
-    function cleanProductText(rawVal) {
-      if (!rawVal) return '';
-      let str = String(rawVal);
-      let cleaned = str.split(',')
-        .map(item => item.replace(/PRD-\d+/gi, '').trim())
-        .filter(item => item !== '')
-        .join(', ');
-      return cleaned !== '' ? cleaned : str;
+    // Helper to format full product details (Company + Category + Model)
+    function formatProductTitle(row) {
+      if (row.productName && row.productName.trim() !== '') {
+        return row.productName;
+      }
+      
+      let parts = [];
+      if (row.companyName) parts.push(row.companyName);
+      if (row.category || row.productCategory) parts.push(row.category || row.productCategory);
+      if (row.model) parts.push(row.model);
+      
+      if (parts.length > 0) {
+        return parts.join(" ");
+      }
+      
+      // Fallback to row.product if no extra fields exist
+      return row.product || '';
+    }
+
+    // ADVANCED SCHEDULE-BASED CMD CALCULATION
+    function calculateCMD(row) {
+      let tBal = Number(row.balance) || 0;
+      if (tBal <= 0) return 0;
+
+      let inst = Number(row.monthlyInst) || 0;
+      let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
+
+      if (row.deliveryDate) {
+        let deliveryDate = new Date(row.deliveryDate);
+        if (!isNaN(deliveryDate.getTime())) {
+
+          let firstInstDate = new Date(deliveryDate);
+          firstInstDate.setMonth(firstInstDate.getMonth() + 1);
+
+          let expiryDate = new Date(deliveryDate);
+          expiryDate.setMonth(expiryDate.getMonth() + planMonths);
+
+          let currentDate = new Date(); 
+
+          if (currentDate > expiryDate) {
+            return tBal;
+          }
+
+          let elapsedMonths = 0;
+          if (currentDate >= firstInstDate) {
+            let yearsDiff = currentDate.getFullYear() - firstInstDate.getFullYear();
+            let monthsDiff = currentDate.getMonth() - firstInstDate.getMonth();
+            elapsedMonths = (yearsDiff * 12) + monthsDiff + 1;
+
+            if (currentDate.getDate() < firstInstDate.getDate()) {
+              elapsedMonths -= 1;
+            }
+          }
+
+          let monthsElapsedClamped = Math.min(Math.max(0, elapsedMonths), planMonths);
+          let expectedCumulativeInstDue = monthsElapsedClamped * inst;
+
+          let totalPaid = Number(row.totalPaid || row.totalReceived || 0);
+          let initialAdvanceAndFee = Number(row.advance || 0) + Number(row.processingFee || 0);
+          
+          let actualInstallmentsPaid = Math.max(0, totalPaid - initialAdvanceAndFee);
+
+          let currentDue = expectedCumulativeInstDue - actualInstallmentsPaid;
+
+          if (currentDue <= 0) return 0;
+          return Math.min(currentDue, tBal);
+        }
+      }
+      return Math.min(inst, tBal);
     }
 
     function getColumnValue(row, colName, monthHeaders) {
       if(colName === 'cmd') {
-        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
-        let cmdVal = 0;
-        let inst = Number(row.monthlyInst) || 0;
-        if (row.deliveryDate) {
-          let deliveryDate = new Date(row.deliveryDate);
-          if (!isNaN(deliveryDate.getTime())) {
-            let expiryDate = new Date(deliveryDate);
-            expiryDate.setMonth(expiryDate.getMonth() + planMonths);
-            let currentDate = new Date(); 
-            if (currentDate > expiryDate) {
-              cmdVal = Number(row.balance) || 0;
-            } else {
-              let yearsDiff = currentDate.getFullYear() - deliveryDate.getFullYear();
-              let monthsDiff = currentDate.getMonth() - deliveryDate.getMonth();
-              let totalMonthsPassed = (yearsDiff * 12) + monthsDiff;
-              if (currentDate.getDate() >= deliveryDate.getDate()) totalMonthsPassed += 1;
-              let maxExpectedInstallments = Math.min(totalMonthsPassed, planMonths);
-              let totalExpectedDue = maxExpectedInstallments * inst;
-              let effectiveReceived = Number(row.totalReceived || 0) - (Number(row.advance) || 0);
-              if (effectiveReceived < 0) effectiveReceived = 0;
-              cmdVal = totalExpectedDue - effectiveReceived;
-            }
-          } else {
-            cmdVal = inst;
-          }
-        } else {
-          cmdVal = inst;
-        }
-        return cmdVal;
+        return calculateCMD(row);
       } else if(colName === 'product') {
-        return cleanProductText(row.productName || row.product || '');
+        return formatProductTitle(row);
       } else if(colName === 'plan') {
         let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
         return planMonths ? planMonths + "M" : String(row.plan || '');
@@ -675,7 +744,7 @@
     function toggleExcelPopup(event, colName, isNumeric = false) {
       event.stopPropagation();
       if (!globalResponse || !globalResponse.data) {
-        alert("Please load the report first by searching!");
+        alert("Please wait until data is fully loaded!");
         return;
       }
 
@@ -854,6 +923,7 @@
       let startDate = document.getElementById('startDateInput').value;
       let endDate = document.getElementById('endDateInput').value;
       let accQuery = document.getElementById('searchAccInput').value.toLowerCase().trim();
+      let titleQuery = document.getElementById('searchTitleInput').value.toLowerCase().trim();
       let mobileQuery = document.getElementById('searchMobileInput').value.toLowerCase().trim();
       let startFromAcctQuery = document.getElementById('startFromAcctInput').value.toLowerCase().trim();
       
@@ -892,7 +962,12 @@
         
         let matchesAcc = true;
         if (accQuery) {
-          matchesAcc = acc.includes(accQuery) || title.includes(accQuery);
+          matchesAcc = acc.includes(accQuery);
+        }
+
+        let matchesTitle = true;
+        if (titleQuery) {
+          matchesTitle = title.includes(titleQuery);
         }
 
         let matchesMobile = true;
@@ -909,7 +984,7 @@
           }
         }
 
-        if (!matchesAcc || !matchesMobile || !matchesStartFromAcct) return false;
+        if (!matchesAcc || !matchesTitle || !matchesMobile || !matchesStartFromAcct) return false;
 
         for(let f of colFilters) {
           let rowValNum = Number(getColumnValue(row, f.col, globalResponse.monthHeaders)) || 0;
@@ -940,7 +1015,9 @@
             }
           } else {
             let allowedVals = new Set(f.rawVal.split('|').map(v => v.trim()));
-            if (!allowedVals.has(rowValStr)) {
+            if (allowedVals.size === 1 && !f.rawVal.includes('|')) {
+              if (!rowValStr.toLowerCase().includes(f.rawVal.toLowerCase())) return false;
+            } else if (!allowedVals.has(rowValStr)) {
               return false;
             }
           }
@@ -980,49 +1057,14 @@
         let m2 = Number(row.m2Received) || 0;
         let m1 = Number(row.m1Received) || 0;
         let inst = Number(row.monthlyInst) || 0;
-        let saleAdvance = Number(row.advance) || 0;
 
         let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
         let shortPlanStr = planMonths ? planMonths + "M" : (row.plan || '');
         let formattedDate = formatDateDDMMYY(row.deliveryDate);
-        let cmd = 0;
+        
+        let cmd = calculateCMD(row);
+        let fullProductName = formatProductTitle(row);
 
-        if (row.deliveryDate) {
-          let deliveryDate = new Date(row.deliveryDate);
-          if (!isNaN(deliveryDate.getTime())) {
-            let expiryDate = new Date(deliveryDate);
-            expiryDate.setMonth(expiryDate.getMonth() + planMonths);
-            
-            let currentDate = new Date(); 
-            
-            if (currentDate > expiryDate) {
-              cmd = tBal;
-            } else {
-              let yearsDiff = currentDate.getFullYear() - deliveryDate.getFullYear();
-              let monthsDiff = currentDate.getMonth() - deliveryDate.getMonth();
-              let totalMonthsPassed = (yearsDiff * 12) + monthsDiff;
-              
-              if (currentDate.getDate() >= deliveryDate.getDate()) {
-                totalMonthsPassed += 1;
-              }
-              
-              let maxExpectedInstallments = Math.min(totalMonthsPassed, planMonths);
-              let totalExpectedDue = maxExpectedInstallments * inst;
-              
-              let effectiveReceived = Number(row.totalReceived || 0) - saleAdvance;
-              if (effectiveReceived < 0) effectiveReceived = 0;
-
-              let overallPending = totalExpectedDue - effectiveReceived;
-              cmd = overallPending;
-            }
-          } else {
-            cmd = inst;
-          }
-        } else {
-          cmd = inst;
-        }
-
-        let fullProductTitle = cleanProductText(row.productName || row.product || '');
         let cmdStyle = cmd < 0 ? "text-align: right; background-color: #e3f2fd; color: #0d47a1;" : "text-align: right; background-color: #ffebee;";
 
         html += `<tr>
@@ -1035,10 +1077,10 @@
           <td class="col-5" title="${row.mobile || ''}">${row.mobile || ''}</td>
           <td class="col-6" style="text-align: right;" title="${inst.toLocaleString()}">${inst.toLocaleString()}</td>
           <td class="col-7" title="${row.remarks || ''}">${row.remarks || ''}</td>
-          <td class="col-8" title="${fullProductTitle}">${fullProductTitle}</td>
+          <td class="col-8" title="${fullProductName}">${fullProductName}</td>
           <td class="col-9" title="${row.plan || ''}">${shortPlanStr}</td>
           <td class="col-10" style="text-align: right;" title="${Number(row.totalSales || 0).toLocaleString()}">${Number(row.totalSales || 0).toLocaleString()}</td>
-          <td class="col-11" style="text-align: right;" title="${Number(row.totalReceived || 0).toLocaleString()}">${Number(row.totalReceived || 0).toLocaleString()}</td>
+          <td class="col-11" style="text-align: right;" title="${Number(row.totalPaid || row.totalReceived || 0).toLocaleString()}">${Number(row.totalPaid || row.totalReceived || 0).toLocaleString()}</td>
           <td class="col-12" style="text-align: right; color: #b71c1c;" title="${tBal.toLocaleString()}">${tBal.toLocaleString()}</td>
           <td class="col-13" title="${formattedDate}">${formattedDate}</td>
           <td class="col-14" style="text-align: right;" title="${m3.toLocaleString()}">${m3.toLocaleString()}</td>
@@ -1059,30 +1101,11 @@
         return;
       }
 
-      google.script.run
-        .withSuccessHandler(function(res) {
-          if (res && res.success && res.url) {
-            let a = document.createElement('a');
-            a.href = res.url;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          } else {
-            alert('Could not open customer ledger.');
-          }
-        })
-        .withFailureHandler(function(err) {
-          alert('Error opening ledger: ' + err.message);
-        })
-        .openCustomerLedgerModalDirect(accNo);
-    }
-
-    function triggerOpen(url) {
+      let directUrl = "LedgerView.html?accNo=" + encodeURIComponent(accNo);
       let a = document.createElement('a');
-      a.href = url;
+      a.href = directUrl;
       a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1100,13 +1123,21 @@
     });
   
     document.addEventListener('DOMContentLoaded', () => {
-      ['startDateInput', 'endDateInput', 'searchAccInput', 'searchMobileInput', 'startFromAcctInput'].forEach(id => {
+      fetchAndFilterData();
+
+      ['startDateInput', 'endDateInput', 'searchAccInput', 'searchTitleInput', 'searchMobileInput', 'startFromAcctInput'].forEach(id => {
         let el = document.getElementById(id);
         if(el) {
-          el.addEventListener('keypress', e => {
-            if(e.key === 'Enter') fetchAndFilterData();
+          el.addEventListener('input', () => {
+            applySearchFilter();
           });
         }
+      });
+
+      document.querySelectorAll('.col-filter').forEach(input => {
+        input.addEventListener('input', () => {
+          applySearchFilter();
+        });
       });
     });
 
@@ -1114,6 +1145,7 @@
       document.getElementById('startDateInput').value = '';
       document.getElementById('endDateInput').value = '';
       document.getElementById('searchAccInput').value = '';
+      document.getElementById('searchTitleInput').value = '';
       document.getElementById('searchMobileInput').value = '';
       document.getElementById('startFromAcctInput').value = '';
       document.querySelectorAll('.col-filter').forEach(input => {
@@ -1127,6 +1159,135 @@
     function printReport() {
       window.print();
     }
-  </script>
+  
+    function showUrlConfig() {
+      var inp = document.getElementById('scriptUrlInput');
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      var box = document.getElementById('configBox');
+      if (box) box.classList.add('show');
+    }
+    function saveScriptUrl() {
+      var inp = document.getElementById('scriptUrlInput');
+      var val = inp ? inp.value.trim() : '';
+      if (!val) { alert("URL enter karein"); return; }
+      localStorage.setItem('erp_script_url', val);
+      location.reload();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var savedUrl = localStorage.getItem('erp_script_url');
+      if (!savedUrl) {
+        var box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+      }
+    });
+
+    // ================= UNIVERSAL MIC INPUT =================
+    (function() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let activeRec = null, activeBtn = null, activeInput = null;
+
+      function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
+
+      function stopActiveMic() {
+        if (activeRec) {
+          activeRec.onend = null; activeRec.onresult = null;
+          try { activeRec.abort(); } catch (e) {}
+          activeRec = null;
+        }
+        if (activeBtn) activeBtn.classList.remove('listening');
+        if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
+        activeBtn = null; activeInput = null;
+      }
+
+      function toggleMic(input, btn) {
+        if (!SR) { alert('Ye browser voice input support nahi karta. Chrome use karein.'); return; }
+        const isNumeric = input.type === 'number';
+
+        if (btn.classList.contains('listening')) { stopActiveMic(); return; }
+        stopActiveMic();
+
+        const rec = new SR();
+        rec.lang = 'en-US';
+        rec.continuous = true;
+        rec.interimResults = true;
+        let finalText = '';
+
+        activeRec = rec; activeBtn = btn; activeInput = input;
+        btn.classList.add('listening');
+        input.dataset.origPh = input.placeholder || '';
+        input.placeholder = 'Sun raha hoon... rokne ke liye mic dobara dabayein';
+
+        rec.onresult = function(ev) {
+          let interim = '';
+          for (let i = ev.resultIndex; i < ev.results.length; i++) {
+            const t = ev.results[i][0].transcript;
+            if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
+          }
+          let text = (finalText + interim).trim();
+          if (isNumeric) text = cleanNumeric(text);
+          input.value = text;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        rec.onerror = function(ev) {
+          if (ev.error !== 'no-speech' && ev.error !== 'aborted') console.error('Mic error:', ev.error);
+        };
+        rec.onend = function() {
+          btn.classList.remove('listening');
+          input.placeholder = input.dataset.origPh || '';
+          if (isNumeric) input.value = cleanNumeric(input.value);
+          if (activeInput === input) { activeRec = null; activeBtn = null; activeInput = null; }
+        };
+        try { rec.start(); } catch (e) {}
+      }
+
+      function attachMic(input) {
+        if (!input || input.dataset.autoMic) return;
+        if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
+            input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
+        if (input.closest('#configBox')) return;
+        if (input.closest('.input-with-mic')) return; 
+        if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
+
+        input.dataset.autoMic = '1';
+
+        const wrap = document.createElement('span');
+        wrap.className = 'auto-mic-wrap';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+
+        input.style.paddingRight = '24px';
+        input.style.boxSizing = 'border-box';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'auto-mic-btn';
+        btn.title = 'Voice input';
+        btn.innerHTML = '&#127908;';
+        btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
+        wrap.appendChild(btn);
+      }
+
+      function scanAndAttach(root) {
+        root.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        scanAndAttach(document);
+      });
+
+      const mo = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          m.addedNodes.forEach(function(node) {
+            if (node.nodeType !== 1) return;
+            if (node.matches && (node.matches('input[type="text"]') || node.matches('input[type="number"]') || node.matches('input:not([type])'))) {
+              attachMic(node);
+            }
+            if (node.querySelectorAll) scanAndAttach(node);
+          });
+        });
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
+    })();
+</script>
 </body>
 </html>
