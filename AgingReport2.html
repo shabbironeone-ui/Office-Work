@@ -655,37 +655,49 @@
         });
     }
 
+    function calculateCMD(row) {
+      let tBal = Number(row.balance) || 0;
+      if (tBal <= 0) return 0;
+
+      let inst = Number(row.monthlyInst) || 0;
+      let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
+      
+      if (row.deliveryDate) {
+        let deliveryDate = new Date(row.deliveryDate);
+        if (!isNaN(deliveryDate.getTime())) {
+          let expiryDate = new Date(deliveryDate);
+          expiryDate.setMonth(expiryDate.getMonth() + planMonths);
+          
+          let currentDate = new Date(); 
+          
+          if (currentDate > expiryDate) {
+            return tBal;
+          } else {
+            let yearsDiff = currentDate.getFullYear() - deliveryDate.getFullYear();
+            let monthsDiff = currentDate.getMonth() - deliveryDate.getMonth();
+            let totalMonthsPassed = (yearsDiff * 12) + monthsDiff;
+            
+            if (currentDate.getDate() >= deliveryDate.getDate()) {
+              totalMonthsPassed += 1;
+            }
+            
+            let maxExpectedInstallments = Math.min(totalMonthsPassed, planMonths);
+            let totalExpectedDue = maxExpectedInstallments * inst;
+            
+            let totalReceived = Number(row.totalReceived || 0);
+            let overallPending = totalExpectedDue - totalReceived;
+            
+            if (overallPending <= 0) return 0;
+            return Math.min(overallPending, tBal);
+          }
+        }
+      }
+      return Math.min(inst, tBal);
+    }
+
     function getColumnValue(row, colName, monthHeaders) {
       if(colName === 'cmd') {
-        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
-        let cmdVal = 0;
-        let inst = Number(row.monthlyInst) || 0;
-        if (row.deliveryDate) {
-          let deliveryDate = new Date(row.deliveryDate);
-          if (!isNaN(deliveryDate.getTime())) {
-            let expiryDate = new Date(deliveryDate);
-            expiryDate.setMonth(expiryDate.getMonth() + planMonths);
-            let currentDate = new Date(); 
-            if (currentDate > expiryDate) {
-              cmdVal = Number(row.balance) || 0;
-            } else {
-              let yearsDiff = currentDate.getFullYear() - deliveryDate.getFullYear();
-              let monthsDiff = currentDate.getMonth() - deliveryDate.getMonth();
-              let totalMonthsPassed = (yearsDiff * 12) + monthsDiff;
-              if (currentDate.getDate() >= deliveryDate.getDate()) totalMonthsPassed += 1;
-              let maxExpectedInstallments = Math.min(totalMonthsPassed, planMonths);
-              let totalExpectedDue = maxExpectedInstallments * inst;
-              let effectiveReceived = Number(row.totalReceived || 0) - (Number(row.advance) || 0);
-              if (effectiveReceived < 0) effectiveReceived = 0;
-              cmdVal = totalExpectedDue - effectiveReceived;
-            }
-          } else {
-            cmdVal = inst;
-          }
-        } else {
-          cmdVal = inst;
-        }
-        return cmdVal;
+        return calculateCMD(row);
       } else if(colName === 'plan') {
         let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
         return planMonths ? planMonths + "M" : String(row.plan || '');
@@ -915,7 +927,6 @@
         let title = String(row.accTitle || '').toLowerCase();
         let mob = String(row.mobile || '').toLowerCase();
         
-        // Alag alag exact/partial search logic
         let matchesAcc = true;
         if (accQuery) {
           matchesAcc = acc.includes(accQuery);
@@ -1013,47 +1024,12 @@
         let m2 = Number(row.m2Received) || 0;
         let m1 = Number(row.m1Received) || 0;
         let inst = Number(row.monthlyInst) || 0;
-        let saleAdvance = Number(row.advance) || 0;
 
         let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
         let shortPlanStr = planMonths ? planMonths + "M" : (row.plan || '');
         let formattedDate = formatDateDDMMYY(row.deliveryDate);
-        let cmd = 0;
-
-        if (row.deliveryDate) {
-          let deliveryDate = new Date(row.deliveryDate);
-          if (!isNaN(deliveryDate.getTime())) {
-            let expiryDate = new Date(deliveryDate);
-            expiryDate.setMonth(expiryDate.getMonth() + planMonths);
-            
-            let currentDate = new Date(); 
-            
-            if (currentDate > expiryDate) {
-              cmd = tBal;
-            } else {
-              let yearsDiff = currentDate.getFullYear() - deliveryDate.getFullYear();
-              let monthsDiff = currentDate.getMonth() - deliveryDate.getMonth();
-              let totalMonthsPassed = (yearsDiff * 12) + monthsDiff;
-              
-              if (currentDate.getDate() >= deliveryDate.getDate()) {
-                totalMonthsPassed += 1;
-              }
-              
-              let maxExpectedInstallments = Math.min(totalMonthsPassed, planMonths);
-              let totalExpectedDue = maxExpectedInstallments * inst;
-              
-              let effectiveReceived = Number(row.totalReceived || 0) - saleAdvance;
-              if (effectiveReceived < 0) effectiveReceived = 0;
-
-              let overallPending = totalExpectedDue - effectiveReceived;
-              cmd = overallPending;
-            }
-          } else {
-            cmd = inst;
-          }
-        } else {
-          cmd = inst;
-        }
+        
+        let cmd = calculateCMD(row);
 
         let cmdStyle = cmd < 0 ? "text-align: right; background-color: #e3f2fd; color: #0d47a1;" : "text-align: right; background-color: #ffebee;";
 
