@@ -52,8 +52,10 @@
     .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px; box-sizing: border-box; }
     .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; }
 
+    .change-url-link { cursor: pointer; color: #1a73e8; font-size: 11px; margin-bottom: 6px; display: inline-block; }
+
     @media print {
-      .btn, .search-box-inline, .config-box { display: none; }
+      .btn, .search-box-inline, .config-box, .change-url-link { display: none; }
       body { background-color: #fff; margin: 0; max-width: 100%; }
       .table-container { max-height: none; box-shadow: none; }
     }
@@ -79,7 +81,7 @@
 </head>
 <body>
 
-    <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
+  <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
   <div id="configBox" class="config-box">
     <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
     <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
@@ -135,14 +137,6 @@
   <script>
     let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
 
-    function saveScriptUrl() {
-      const val = document.getElementById('scriptUrlInput').value.trim();
-      if (!val) { alert("URL enter karein"); return; }
-      SCRIPT_URL = val;
-      localStorage.setItem('erp_script_url', val);
-      document.getElementById('configBox').classList.remove('show');
-    }
-
     let urlParams = new URLSearchParams(window.location.search);
     let accNo = urlParams.get('accNo') || urlParams.get('acc') || "";
 
@@ -156,6 +150,7 @@
     function loadLedgerForAccount() {
       accNo = document.getElementById('accNoInput').value.trim();
       if (!accNo) {
+        document.getElementById('loading').style.display = 'block';
         document.getElementById('loading').innerHTML = '<span style="color:red;">Error: Account Number enter karein!</span>';
         return;
       }
@@ -186,7 +181,7 @@
       let parts = dateStr.split('-');
       if (parts.length === 3) {
         let monthIdx = parseInt(parts[1], 10) - 1;
-        let year = parts[2].slice(-2);
+        let year = parts[0].length === 4 ? parts[0].slice(-2) : parts[2].slice(-2);
         const monthsNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         if (monthIdx >= 0 && monthIdx < 12) {
           return monthsNames[monthIdx] + '-' + year;
@@ -199,10 +194,17 @@
       if (!startEntryDate || startEntryDate === '-' || !totalMonths || totalMonths <= 0) return '-';
       let parts = startEntryDate.split('-');
       if (parts.length === 3) {
-        let day = parseInt(parts[0], 10);
-        let month = parseInt(parts[1], 10) - 1; 
-        let year = parseInt(parts[2], 10);
-        if (year < 100) year += 2000; 
+        let day, month, year;
+        if (parts[0].length === 4) {
+          year = parseInt(parts[0], 10);
+          month = parseInt(parts[1], 10) - 1;
+          day = parseInt(parts[2], 10);
+        } else {
+          day = parseInt(parts[0], 10);
+          month = parseInt(parts[1], 10) - 1;
+          year = parseInt(parts[2], 10);
+          if (year < 100) year += 2000;
+        }
 
         let totalMonthsToAdd = parseInt(totalMonths, 10) - 1;
         let targetDate = new Date(year, month + totalMonthsToAdd, 1);
@@ -225,20 +227,15 @@
 
       let entries = data.entries || [];
       let startRaw = '-';
-      let totalAmount = 0;
 
       if (entries.length > 0) {
         startRaw = entries[0].date || '-';
-        entries.forEach(function(e) {
-          if (e.type === 'SALE') {
-            totalAmount += parseFloat(e.debit) || 0;
-          }
-        });
       }
 
       let totalMonthsVal = data.totalMonths ? parseInt(data.totalMonths, 10) : 0;
+      let totalAmountDisplay = data.grandTotalAmt ? parseFloat(data.grandTotalAmt) : 0;
 
-      document.getElementById('lblTotalAmount').textContent = totalAmount ? totalAmount.toLocaleString() : '0';
+      document.getElementById('lblTotalAmount').textContent = totalAmountDisplay ? totalAmountDisplay.toLocaleString() : '0';
       document.getElementById('lblTotalMonth').textContent = totalMonthsVal ? totalMonthsVal : '0';
       document.getElementById('lblPerMonthInst').textContent = data.perMonthInst ? parseFloat(data.perMonthInst).toLocaleString() : '0';
       document.getElementById('lblStartMonth').textContent = formatMonthYear(startRaw);
@@ -264,7 +261,7 @@
         let tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="col-date">${entry.date || ''}</td>
-          <td class="col-voucher"><b>${entry.receiptNo || entry.voucherNo || ''}</b></td>
+          <td class="col-voucher"><b>${entry.voucherNo || entry.receiptNo || ''}</b></td>
           <td class="col-type"><b>${entry.type || ''}</b></td>
           <td>${entry.particulars || ''}</td>
           <td class="number col-amount">${entry.debit ? parseFloat(entry.debit).toLocaleString() : ''}</td>
@@ -285,20 +282,26 @@
       tbody.appendChild(totalTr);
     }
   
-    // ===== Deployment URL config (auto-added) =====
+    // ===== Deployment URL config =====
     function showUrlConfig() {
       var inp = document.getElementById('scriptUrlInput');
-      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : '');
       var box = document.getElementById('configBox');
       if (box) box.classList.add('show');
     }
+
     function saveScriptUrl() {
       var inp = document.getElementById('scriptUrlInput');
       var val = inp ? inp.value.trim() : '';
       if (!val) { alert("URL enter karein"); return; }
+      SCRIPT_URL = val;
       localStorage.setItem('erp_script_url', val);
-      location.reload();
+      document.getElementById('configBox').classList.remove('show');
+      if (document.getElementById('accNoInput').value.trim()) {
+        loadLedgerForAccount();
+      }
     }
+
     document.addEventListener('DOMContentLoaded', function() {
       var savedUrl = localStorage.getItem('erp_script_url');
       if (!savedUrl) {
@@ -307,7 +310,7 @@
       }
     });
 
-    // ================= UNIVERSAL MIC INPUT (auto-added) =================
+    // ================= UNIVERSAL MIC INPUT =================
     (function() {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       let activeRec = null, activeBtn = null, activeInput = null;
@@ -371,7 +374,7 @@
         if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
             input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
         if (input.closest('#configBox')) return;
-        if (input.closest('.input-with-mic')) return; // already has a manual mic button
+        if (input.closest('.input-with-mic')) return; 
         if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
 
         input.dataset.autoMic = '1';
@@ -381,7 +384,6 @@
         input.parentNode.insertBefore(wrap, input);
         wrap.appendChild(input);
 
-        const curPad = window.getComputedStyle(input).paddingRight;
         input.style.paddingRight = '24px';
         input.style.boxSizing = 'border-box';
 
