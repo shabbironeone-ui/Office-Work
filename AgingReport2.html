@@ -28,7 +28,7 @@
     }
     .filters-grid {
       display: grid;
-      grid-template-columns: 1.1fr 1.1fr 2fr 1.5fr 1.5fr auto;
+      grid-template-columns: 1fr 1fr 1.2fr 1.8fr 1.2fr 1.2fr auto;
       gap: 6px;
       align-items: end;
       margin-bottom: 8px;
@@ -137,7 +137,7 @@
     
     /* Fixed Column Widths (Total 17 columns) */
     th.col-1, td.col-1 { width: 44px; }   /* Account No */
-    th.col-2, td.col-2 { width: 95px; }   /* Accunt Title */
+    th.col-2, td.col-2 { width: 95px; }   /* Account Title */
     th.col-3, td.col-3 { width: 68px; }   /* Approved By */
     th.col-4, td.col-4 { width: 36px; }   /* CRO */
     th.col-5, td.col-5 { width: 78px; }   /* Mobile NO */
@@ -466,8 +466,12 @@
         <input type="date" id="endDateInput">
       </div>
       <div class="input-group">
-        <label>SEARCH ACCOUNT / NAME</label>
-        <input type="text" id="searchAccInput" placeholder="Acc No or Name...">
+        <label>ACCOUNT NO</label>
+        <input type="text" id="searchAccInput" placeholder="Acc No...">
+      </div>
+      <div class="input-group">
+        <label>ACCOUNT TITLE / NAME</label>
+        <input type="text" id="searchTitleInput" placeholder="Name / Title...">
       </div>
       <div class="input-group">
         <label>MOBILE NO</label>
@@ -478,7 +482,7 @@
         <input type="text" id="startFromAcctInput" placeholder="From Acct No...">
       </div>
       <div class="button-group">
-        <button onclick="fetchAndFilterData()" title="Reload Data"><i class="fa fa-sync"></i></button>
+        <button onclick="fetchAndFilterData(true)" title="Reload Data"><i class="fa fa-sync"></i></button>
         <button class="secondary" onclick="resetFilters()" title="Reset"><i class="fa fa-redo"></i></button>
         <button class="secondary" onclick="printReport()" title="Print"><i class="fa fa-print"></i></button>
       </div>
@@ -494,7 +498,7 @@
         <thead>
           <tr class="sticky-header" id="mainHeaderRow">
             <th class="col-1">Account No</th>
-            <th class="col-2">Accunt Title</th>
+            <th class="col-2">Account Title</th>
             <th class="col-3">Approved By</th>
             <th class="col-4">CRO</th>
             <th class="col-5">Mobile NO</th>
@@ -874,6 +878,7 @@
       let startDate = document.getElementById('startDateInput').value;
       let endDate = document.getElementById('endDateInput').value;
       let accQuery = document.getElementById('searchAccInput').value.toLowerCase().trim();
+      let titleQuery = document.getElementById('searchTitleInput').value.toLowerCase().trim();
       let mobileQuery = document.getElementById('searchMobileInput').value.toLowerCase().trim();
       let startFromAcctQuery = document.getElementById('startFromAcctInput').value.toLowerCase().trim();
       
@@ -910,9 +915,15 @@
         let title = String(row.accTitle || '').toLowerCase();
         let mob = String(row.mobile || '').toLowerCase();
         
+        // Alag alag exact/partial search logic
         let matchesAcc = true;
         if (accQuery) {
-          matchesAcc = acc.includes(accQuery) || title.includes(accQuery);
+          matchesAcc = acc.includes(accQuery);
+        }
+
+        let matchesTitle = true;
+        if (titleQuery) {
+          matchesTitle = title.includes(titleQuery);
         }
 
         let matchesMobile = true;
@@ -929,7 +940,7 @@
           }
         }
 
-        if (!matchesAcc || !matchesMobile || !matchesStartFromAcct) return false;
+        if (!matchesAcc || !matchesTitle || !matchesMobile || !matchesStartFromAcct) return false;
 
         for(let f of colFilters) {
           let rowValNum = Number(getColumnValue(row, f.col, globalResponse.monthHeaders)) || 0;
@@ -961,7 +972,6 @@
           } else {
             let allowedVals = new Set(f.rawVal.split('|').map(v => v.trim()));
             if (allowedVals.size === 1 && !f.rawVal.includes('|')) {
-              // Allows partial string matching for header typing
               if (!rowValStr.toLowerCase().includes(f.rawVal.toLowerCase())) return false;
             } else if (!allowedVals.has(rowValStr)) {
               return false;
@@ -1103,11 +1113,11 @@
     });
   
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. Page load hone par khud-ba-khud fetch ho kar RAM mein load hona
+      // Automatic data fetch on load
       fetchAndFilterData();
 
-      // 2. Main Search inputs par real-time 'input' listener
-      ['startDateInput', 'endDateInput', 'searchAccInput', 'searchMobileInput', 'startFromAcctInput'].forEach(id => {
+      // Inputs par real-time 'input' listener
+      ['startDateInput', 'endDateInput', 'searchAccInput', 'searchTitleInput', 'searchMobileInput', 'startFromAcctInput'].forEach(id => {
         let el = document.getElementById(id);
         if(el) {
           el.addEventListener('input', () => {
@@ -1116,7 +1126,7 @@
         }
       });
 
-      // 3. Table Column Filters par real-time 'input' listener
+      // Table Header Column Filters par real-time 'input' listener
       document.querySelectorAll('.col-filter').forEach(input => {
         input.addEventListener('input', () => {
           applySearchFilter();
@@ -1128,6 +1138,7 @@
       document.getElementById('startDateInput').value = '';
       document.getElementById('endDateInput').value = '';
       document.getElementById('searchAccInput').value = '';
+      document.getElementById('searchTitleInput').value = '';
       document.getElementById('searchMobileInput').value = '';
       document.getElementById('startFromAcctInput').value = '';
       document.querySelectorAll('.col-filter').forEach(input => {
