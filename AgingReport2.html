@@ -137,13 +137,13 @@
     
     /* Fixed Column Widths (Total 17 columns) */
     th.col-1, td.col-1 { width: 44px; }   /* Account No */
-    th.col-2, td.col-2 { width: 95px; }   /* Account Title */
+    th.col-2, td.col-2 { width: 95px; }   /* Accunt Title */
     th.col-3, td.col-3 { width: 68px; }   /* Approved By */
     th.col-4, td.col-4 { width: 36px; }   /* CRO */
     th.col-5, td.col-5 { width: 78px; }   /* Mobile NO */
     th.col-6, td.col-6 { width: 46px; }   /* M Inst */
     th.col-7, td.col-7 { width: 65px; }   /* Remarks */
-    th.col-8, td.col-8 { width: 130px; }  /* Product Title */
+    th.col-8, td.col-8 { width: 130px; }  /* Product */
     th.col-9, td.col-9 { width: 30px; }   /* Plan(M) */
     th.col-10, td.col-10 { width: 56px; } /* Total Sale */
     th.col-11, td.col-11 { width: 56px; } /* Total Paid */
@@ -464,7 +464,7 @@
         <thead>
           <tr class="sticky-header" id="mainHeaderRow">
             <th class="col-1">Account No</th>
-            <th class="col-2">Account Title</th>
+            <th class="col-2">Accunt Title</th>
             <th class="col-3">Approved By</th>
             <th class="col-4">CRO</th>
             <th class="col-5">Mobile NO</th>
@@ -618,31 +618,15 @@
         .getAgingReportData();
     }
 
-    // Function to strip PRD-XXXX IDs completely and show only pure text details (Company, Category, Model)
-    function formatProductTitle(row) {
-      let parts = [];
-      let comp = row.companyName || row.company || '';
-      let cat  = row.category || row.productCategory || '';
-      let mdl  = row.model || row.productModel || '';
-
-      if (comp) parts.push(comp.trim());
-      if (cat)  parts.push(cat.trim());
-      if (mdl)  parts.push(mdl.trim());
-
-      if (parts.length > 0) {
-        return parts.join(" ");
-      }
-
-      let rawProduct = row.productName || row.product || '';
-      if (!rawProduct) return '';
-
-      // Strip any PRD-XXXX patterns
-      let cleaned = rawProduct.split(',')
+    // Strips PRD-XXXX IDs and displays pure Product details (Company, Category, Model)
+    function cleanProductText(rawVal) {
+      if (!rawVal) return '';
+      let str = String(rawVal);
+      let cleaned = str.split(',')
         .map(item => item.replace(/PRD-\d+/gi, '').trim())
         .filter(item => item !== '')
         .join(', ');
-
-      return cleaned !== '' ? cleaned : rawProduct;
+      return cleaned !== '' ? cleaned : str;
     }
 
     function getColumnValue(row, colName, monthHeaders) {
@@ -677,7 +661,7 @@
         }
         return cmdVal;
       } else if(colName === 'product') {
-        return formatProductTitle(row);
+        return cleanProductText(row.productName || row.product || '');
       } else if(colName === 'plan') {
         let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
         return planMonths ? planMonths + "M" : String(row.plan || '');
@@ -1038,7 +1022,7 @@
           cmd = inst;
         }
 
-        let fullProductTitle = formatProductTitle(row);
+        let fullProductTitle = cleanProductText(row.productName || row.product || '');
         let cmdStyle = cmd < 0 ? "text-align: right; background-color: #e3f2fd; color: #0d47a1;" : "text-align: right; background-color: #ffebee;";
 
         html += `<tr>
@@ -1069,7 +1053,7 @@
       document.getElementById('totalBalance').innerText = "Total Balance: Rs. " + totalBalSum.toLocaleString();
     }
 
-   function openLedgerNewTab(accNo) {
+    function openLedgerNewTab(accNo) {
       if (!accNo) {
         alert('Account number is missing!');
         return;
