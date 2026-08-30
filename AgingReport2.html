@@ -655,6 +655,7 @@
         });
     }
 
+    // ACCURATE CMD CALCULATION LOGIC
     function calculateCMD(row) {
       let tBal = Number(row.balance) || 0;
       if (tBal <= 0) return 0;
@@ -682,13 +683,22 @@
             }
             
             let maxExpectedInstallments = Math.min(totalMonthsPassed, planMonths);
-            let totalExpectedDue = maxExpectedInstallments * inst;
             
+            // Expected Cumulative Installments Due Amount
+            let totalExpectedInstDue = maxExpectedInstallments * inst;
+            
+            // Total Received (Is mein Pros Fee, Advance aur Tamam Payments Shamil Hain)
             let totalReceived = Number(row.totalReceived || 0);
-            let overallPending = totalExpectedDue - totalReceived;
+            let totalSales = Number(row.totalSales || 0);
             
-            if (overallPending <= 0) return 0;
-            return Math.min(overallPending, tBal);
+            // Net Installment Sales Amount (Subtracting initial fees/advances obligation)
+            let totalFeesAndAdvance = Number(row.advance || 0) + Number(row.processingFee || 0);
+            let netInstallmentPaymentsReceived = Math.max(0, totalReceived - totalFeesAndAdvance);
+
+            let pendingCMD = totalExpectedInstDue - netInstallmentPaymentsReceived;
+            
+            if (pendingCMD <= 0) return 0;
+            return Math.min(pendingCMD, tBal);
           }
         }
       }
