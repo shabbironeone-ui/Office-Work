@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Unified Voucher Entry</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,7 +13,7 @@
             color: #333;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1150px;
             background: #ffffff;
             padding: 20px;
             border-radius: 8px;
@@ -112,22 +113,70 @@
         .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
         .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
         
+        /* History & Filter Control Section */
         .history-section {
             margin-top: 25px;
             border-top: 2px solid #eee;
             padding-top: 15px;
         }
-        .history-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
+        .filter-bar {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .filter-item label {
+            font-size: 11px;
+            margin: 0;
+            color: #475569;
+        }
+        .filter-item input, .filter-item select {
+            padding: 4px 8px;
+            height: 32px;
+            font-size: 12px;
+        }
+        .filter-btn-group {
+            display: flex;
+            align-items: flex-end;
+            gap: 5px;
+            margin-top: auto;
+        }
+        .btn-icon {
+            height: 32px;
+            padding: 0 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+        }
+        .btn-search { background-color: #2563eb; }
+        .btn-search:hover { background-color: #1d4ed8; }
+        .btn-refresh { background-color: #059669; }
+        .btn-refresh:hover { background-color: #047857; }
+        .btn-reset { background-color: #475569; }
+        .btn-reset:hover { background-color: #334155; }
+
         .table-container {
-            max-height: 280px;
+            max-height: 350px;
             overflow-y: auto;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
+            position: relative;
         }
         table {
             width: 100%;
@@ -152,23 +201,48 @@
         tr:hover {
             background-color: #f9fafb;
         }
-    
-        .auto-mic-wrap { position: relative; display: inline-block; width: 100%; }
-        .auto-mic-btn {
-          position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
-          width: 20px; height: 20px; padding: 0; border: none; background: transparent;
-          cursor: pointer; font-size: 12px; line-height: 1; z-index: 5; opacity: 0.55;
-          display: flex; align-items: center; justify-content: center;
+
+        /* Spinner & Overlay */
+        #loadingSpinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 20;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
         }
-        .auto-mic-btn:hover { opacity: 1; }
-        .auto-mic-btn.listening {
-          background: #c62828; border-radius: 50%; color: #fff; opacity: 1;
-          animation: autoMicPulse 1s infinite;
+        .spinner-icon {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
-        @keyframes autoMicPulse {
-          0% { box-shadow: 0 0 0 0 rgba(198,40,40,0.5); }
-          70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
-          100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .badge-balanced {
+            background-color: #d1fae5;
+            color: #065f46;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .badge-imbalanced {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -177,12 +251,11 @@
     <div class="container">
         <div class="change-url-link" onclick="showUrlConfig()" style="cursor:pointer; color:#2563eb; font-size:12px; margin-bottom:5px;">&#9881; Change Deployment URL</div>
         <div id="configBox" class="config-box">
-            <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
+            <b>Setup:</b> Apps Script Deployment URL enter karein.
             <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
             <button onclick="saveScriptUrl()">Save URL</button>
         </div>
 
-        <!-- Header with Title and Date on Top Right Corner -->
         <div class="header-row">
             <h3 class="header-title">Unified Voucher Entry</h3>
             <div class="date-box">
@@ -192,8 +265,6 @@
         </div>
 
         <form id="voucherForm">
-            
-            <!-- All Input Boxes in 1 Single Line Grid Row -->
             <div class="row">
                 <div class="form-group col">
                     <label for="mainType">Transaction Flow</label>
@@ -232,7 +303,6 @@
                 </div>
             </div>
 
-            <!-- Remarks & Save Button in Next Line -->
             <div class="row">
                 <div class="form-group col" style="flex: 3;">
                     <label for="remarks">Remarks</label>
@@ -244,24 +314,62 @@
             </div>
         </form>
 
-        <!-- Ledger View Section for Selected Account Head -->
+        <!-- Dynamic History & Contra Ledger Section -->
         <div class="history-section" id="historySection" style="display: none;">
-            <div class="history-title"><i class="fas fa-file-invoice-dollar"></i> Ledger Statement for: <span id="selectedHeadName" style="color: #2563eb;">-</span></div>
+            <div class="filter-bar">
+                <div class="filter-item" style="flex: 1.5;">
+                    <label>SELECT CONTRA / ACCOUNT HEAD</label>
+                    <select id="ledgerHeadFilter">
+                        <option value="ALL_CONTRA">-- ALL CONTRA ACCOUNTS (Combined) --</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>FROM DATE</label>
+                    <input type="date" id="fromDateFilter">
+                </div>
+                <div class="filter-item">
+                    <label>TO DATE</label>
+                    <input type="date" id="toDateFilter">
+                </div>
+                <div class="filter-btn-group">
+                    <button class="btn-icon btn-search" onclick="applyLedgerFilter(true)" title="Search Records">
+                        <i class="fa fa-search"></i> Search
+                    </button>
+                    <button class="btn-icon btn-refresh" onclick="fetchBackendRecords()" title="Refresh Data">
+                        <i class="fa fa-sync"></i> Refresh
+                    </button>
+                    <button class="btn-icon btn-reset" onclick="resetLedgerFilters()" title="Reset Filters">
+                        <i class="fa fa-redo"></i> Reset
+                    </button>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 13px; font-weight: bold; color: #333;">
+                    &#128179; Statement for: <span id="selectedHeadName" style="color: #2563eb;">ALL CONTRA ACCOUNTS</span>
+                </span>
+                <span id="balanceCheckBadge"></span>
+            </div>
+
             <div class="table-container">
+                <div id="loadingSpinner">
+                    <div class="spinner-icon"></div>
+                    <div style="font-size: 12px; color: #2563eb; margin-top: 6px; font-weight: bold;">Loading Ledger Statements...</div>
+                </div>
                 <table>
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Bill / Voucher No</th>
-                            <th>Particulars / Description</th>
-                            <th style="text-align: right;">Debit (Paid)</th>
-                            <th style="text-align: right;">Credit (Purchase)</th>
-                            <th style="text-align: right;">Balance Due</th>
+                            <th>Voucher No</th>
+                            <th>Account Name / Leg</th>
+                            <th>Particulars / Flow Narration</th>
+                            <th style="text-align: right;">Amount IN (Debit)</th>
+                            <th style="text-align: right;">Amount OUT (Credit)</th>
+                            <th style="text-align: right;">Running Balance</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
                     <tbody id="historyTableBody">
-                        <!-- Loaded dynamically as a proper ledger -->
                     </tbody>
                 </table>
             </div>
@@ -270,6 +378,7 @@
 
     <script>
         let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
+        let globalBackendRecords = [];
 
         function saveScriptUrl() {
           const val = document.getElementById('scriptUrlInput').value.trim();
@@ -288,6 +397,7 @@
         const dateInput = document.getElementById('date');
         const voucherForm = document.getElementById('voucherForm');
         const submitBtn = document.getElementById('submitBtn');
+        const ledgerHeadFilter = document.getElementById('ledgerHeadFilter');
 
         let settingsData = { vendors: [], expenses: [], payables: [], investments: [], payModes: [] };
 
@@ -312,15 +422,23 @@
                                 }
                                 payModeSelect.appendChild(opt);
                             });
-                            if (!payModeSelect.value && payModeSelect.options.length > 0) {
-                                payModeSelect.selectedIndex = 0;
-                            }
-                        } else {
-                            payModeSelect.innerHTML = '<option value="" selected disabled>No Pay Modes found</option>';
                         }
+                        populateLedgerFilterDropdown();
                     }
                 })
                 .catch(err => console.error("Settings load error: ", err));
+        }
+
+        function populateLedgerFilterDropdown() {
+            ledgerHeadFilter.innerHTML = `<option value="ALL_CONTRA">-- ALL CONTRA ACCOUNTS (Combined) --</option>`;
+            if (settingsData.payModes && settingsData.payModes.length > 0) {
+                settingsData.payModes.forEach(mode => {
+                    const opt = document.createElement('option');
+                    opt.value = mode;
+                    opt.textContent = mode;
+                    ledgerHeadFilter.appendChild(opt);
+                });
+            }
         }
 
         window.addEventListener('load', function() {
@@ -332,7 +450,7 @@
             subType.disabled = false;
             accName.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
             accName.disabled = true;
-            document.getElementById('historySection').style.display = 'none';
+            document.getElementById('historySection').style.display = 'block';
 
             if (this.value === 'Payments') {
                 subType.innerHTML += `
@@ -353,12 +471,12 @@
                     <option value="BankToBank">Bank to Bank Transfer</option>
                 `;
             }
+            fetchBackendRecords();
         });
 
         subType.addEventListener('change', function() {
             accName.disabled = false;
             accName.innerHTML = '<option value="" selected disabled>-- Select Name / Head --</option>';
-            document.getElementById('historySection').style.display = 'none';
             
             let listToUse = [];
 
@@ -400,55 +518,125 @@
                 .catch(err => console.error("Voucher No error:", err));
         });
 
-        // Fetch and display full ledger statement for the selected account head with flexible key matching
-        accName.addEventListener('change', function() {
-            const selectedHead = this.value.trim().toLowerCase();
-            if (!selectedHead) return;
-
-            document.getElementById('selectedHeadName').textContent = this.value;
-            document.getElementById('historySection').style.display = 'block';
-            const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#6b7280;">Loading ledger statement...</td></tr>`;
-
+        function fetchBackendRecords() {
+            if(!SCRIPT_URL) return;
+            showSpinner(true);
             fetch(SCRIPT_URL + "?action=getVendorLedgerRecords")
                 .then(res => res.json())
                 .then(res => {
-                    tbody.innerHTML = "";
-                    const allData = res && res.data ? res.data : (Array.isArray(res) ? res : []);
-                    
-                    // Flexible filtering across potential property names for account/vendor name
-                    const headData = allData.filter(item => {
-                        const vName = (item.vendor_name || item.account_name || item.name || item.head || item.party || "").trim().toLowerCase();
-                        return vName === selectedHead;
-                    });
-
-                    if (headData.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#6b7280;">No ledger records found for this account head.</td></tr>`;
-                        return;
-                    }
-
-                    let runningBal = 0;
-                    headData.forEach(row => {
-                        let d = Number(row.debit || row.paid || 0) || 0;
-                        let c = Number(row.credit || row.amount || 0) || 0;
-                        runningBal = runningBal + c - d;
-
-                        let tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${row.date || '-'}</td>
-                            <td>${row.bill_no || row.voucherNo || '-'}</td>
-                            <td>${row.particulars || row.subType || '-'}</td>
-                            <td style="text-align: right; color: ${d > 0 ? '#16a34a' : '#6b7280'};">${d > 0 ? d.toLocaleString() : '-'}</td>
-                            <td style="text-align: right; color: ${c > 0 ? '#dc2626' : '#6b7280'}; font-weight: ${c > 0 ? 'bold' : 'normal'};">${c > 0 ? c.toLocaleString() : '-'}</td>
-                            <td style="text-align: right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
-                            <td style="font-style: italic; color: #4b5563;">${row.remarks || '-'}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+                    globalBackendRecords = res && res.data ? res.data : (Array.isArray(res) ? res : []);
+                    applyLedgerFilter(false);
                 })
                 .catch(err => {
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Failed to load ledger statement.</td></tr>`;
+                    showSpinner(false);
+                    console.error("Fetch Error:", err);
                 });
+        }
+
+        function applyLedgerFilter(withLoadingAnimation = true) {
+            if (withLoadingAnimation) {
+                showSpinner(true);
+                setTimeout(() => { renderFilteredTable(); }, 250);
+            } else {
+                renderFilteredTable();
+            }
+        }
+
+        function renderFilteredTable() {
+            const selectedHead = ledgerHeadFilter.value;
+            const fromDate = document.getElementById('fromDateFilter').value;
+            const toDate = document.getElementById('toDateFilter').value;
+            const tbody = document.getElementById('historyTableBody');
+            const badgeBox = document.getElementById('balanceCheckBadge');
+
+            document.getElementById('selectedHeadName').textContent = 
+                selectedHead === 'ALL_CONTRA' ? 'ALL CONTRA ACCOUNTS' : selectedHead;
+
+            let filtered = globalBackendRecords.filter(item => {
+                // STRICT CONTRA FILTERING: ALL_CONTRA or Contra Flow strictly gets 'Contra' sheet entries only
+                if (selectedHead === 'ALL_CONTRA' || mainType.value === 'Contra') {
+                    if (item.sheetSource !== 'Contra') return false;
+                }
+                
+                if (selectedHead !== 'ALL_CONTRA') {
+                    const acc = (item.account_name || item.vendor_name || "").trim().toLowerCase();
+                    if (acc !== selectedHead.trim().toLowerCase()) return false;
+                }
+
+                if (fromDate || toDate) {
+                    if (!item.date || item.date === '-') return false;
+                    let rowDate = new Date(item.date);
+                    if (fromDate && rowDate < new Date(fromDate)) return false;
+                    if (toDate && rowDate > new Date(toDate)) return false;
+                }
+                return true;
+            });
+
+            tbody.innerHTML = "";
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#6b7280; padding:15px;">No matching ledger records found.</td></tr>`;
+                badgeBox.innerHTML = "";
+                showSpinner(false);
+                return;
+            }
+
+            let totalIn = 0;
+            let totalOut = 0;
+            let runningBal = 0;
+
+            filtered.forEach(row => {
+                let amtIn = Number(row.credit || 0);  // Amount IN
+                let amtOut = Number(row.debit || 0);  // Amount OUT
+                
+                totalIn += amtIn;
+                totalOut += amtOut;
+                runningBal = runningBal + amtIn - amtOut;
+
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.date || '-'}</td>
+                    <td><b>${row.voucherNo || '-'}</b></td>
+                    <td><b>${row.account_name || '-'}</b></td>
+                    <td>${row.particulars || '-'}</td>
+                    <td style="text-align: right; color: ${amtIn > 0 ? '#16a34a' : '#9ca3af'}; font-weight: ${amtIn > 0 ? 'bold' : 'normal'};">${amtIn > 0 ? amtIn.toLocaleString() : '-'}</td>
+                    <td style="text-align: right; color: ${amtOut > 0 ? '#dc2626' : '#9ca3af'}; font-weight: ${amtOut > 0 ? 'bold' : 'normal'};">${amtOut > 0 ? amtOut.toLocaleString() : '-'}</td>
+                    <td style="text-align: right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
+                    <td style="font-style: italic; color: #4b5563;">${row.remarks || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (selectedHead === 'ALL_CONTRA' || mainType.value === 'Contra') {
+                let diff = Math.abs(totalIn - totalOut);
+                if (diff === 0) {
+                    badgeBox.innerHTML = `<span class="badge-balanced">✓ Balanced (Diff: 0.00)</span>`;
+                } else {
+                    badgeBox.innerHTML = `<span class="badge-imbalanced">⚠ Imbalanced! Diff: ${diff.toLocaleString()}</span>`;
+                }
+            } else {
+                badgeBox.innerHTML = "";
+            }
+
+            showSpinner(false);
+        }
+
+        function resetLedgerFilters() {
+            document.getElementById('fromDateFilter').value = '';
+            document.getElementById('toDateFilter').value = '';
+            ledgerHeadFilter.value = 'ALL_CONTRA';
+            applyLedgerFilter(true);
+        }
+
+        function showSpinner(show) {
+            document.getElementById('loadingSpinner').style.display = show ? 'flex' : 'none';
+        }
+
+        accName.addEventListener('change', function() {
+            if(this.value) {
+                ledgerHeadFilter.value = this.value;
+                applyLedgerFilter(true);
+            }
         });
 
         voucherForm.addEventListener('submit', function(e) {
@@ -471,7 +659,7 @@
                 date: document.getElementById('date').value,
                 voucherNo: document.getElementById('voucherNo').value,
                 payMode: document.getElementById('payMode').value,
-                accName: document.getElementById('accName').value,
+                accName: accName.value,
                 amount: document.getElementById('amount').value,
                 remarks: document.getElementById('remarks').value
             };
@@ -486,13 +674,9 @@
                         alert(response.message);
                         voucherForm.reset();
                         dateInput.valueAsDate = new Date();
-                        subType.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
-                        subType.disabled = true;
-                        accName.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
-                        accName.disabled = true;
-                        document.getElementById('historySection').style.display = 'none';
                         submitBtn.disabled = false;
                         submitBtn.innerText = "Save Voucher";
+                        fetchBackendRecords(); // Auto refresh history records
                     } else {
                         alert("Error: " + (response ? response.message : "Unknown error"));
                         submitBtn.disabled = false;
@@ -505,8 +689,7 @@
                     submitBtn.innerText = "Save Voucher";
                 });
         });
-    
-        // ===== Deployment URL config =====
+
         function showUrlConfig() {
           var inp = document.getElementById('scriptUrlInput');
           if (inp) inp.value = SCRIPT_URL;
@@ -520,89 +703,6 @@
             if (box) box.classList.add('show');
           }
         });
-
-        // ================= UNIVERSAL MIC INPUT =================
-        (function() {
-          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-          let activeRec = null, activeBtn = null, activeInput = null;
-
-          function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
-
-          function stopActiveMic() {
-            if (activeRec) {
-              activeRec.onend = null; activeRec.onresult = null;
-              try { activeRec.abort(); } catch (e) {}
-              activeRec = null;
-            }
-            if (activeBtn) activeBtn.classList.remove('listening');
-            if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
-            activeBtn = null; activeInput = null;
-          }
-
-          function toggleMic(input, btn) {
-            if (!SR) { alert('Ye browser voice input support nahi karta.'); return; }
-            const isNumeric = input.type === 'number';
-
-            if (btn.classList.contains('listening')) { stopActiveMic(); return; }
-            stopActiveMic();
-
-            const rec = new SR();
-            rec.lang = 'en-US';
-            rec.continuous = true;
-            rec.interimResults = true;
-            let finalText = '';
-
-            activeRec = rec; activeBtn = btn; activeInput = input;
-            btn.classList.add('listening');
-            input.dataset.origPh = input.placeholder || '';
-            input.placeholder = 'Sun raha hoon...';
-
-            rec.onresult = function(ev) {
-              let interim = '';
-              for (let i = ev.resultIndex; i < ev.results.length; i++) {
-                const t = ev.results[i][0].transcript;
-                if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
-              }
-              let text = (finalText + interim).trim();
-              if (isNumeric) text = cleanNumeric(text);
-              input.value = text;
-              input.dispatchEvent(new Event('input', { bubbles: true }));
-            };
-            rec.onend = function() {
-              btn.classList.remove('listening');
-              input.placeholder = input.dataset.origPh || '';
-              if (isNumeric) input.value = cleanNumeric(input.value);
-            };
-            try { rec.start(); } catch (e) {}
-          }
-
-          function attachMic(input) {
-            if (!input || input.dataset.autoMic) return;
-            if (input.type === 'date' || input.type === 'hidden' || input.readOnly || input.disabled) return;
-            if (input.closest('#configBox')) return;
-
-            input.dataset.autoMic = '1';
-            const wrap = document.createElement('span');
-            wrap.className = 'auto-mic-wrap';
-            input.parentNode.insertBefore(wrap, input);
-            wrap.appendChild(input);
-
-            input.style.paddingRight = '24px';
-            input.style.boxSizing = 'border-box';
-
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'auto-mic-btn';
-            btn.title = 'Voice input';
-            btn.innerHTML = '&#127908;';
-            btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
-            wrap.appendChild(btn);
-          }
-
-          document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
-          });
-        })();
     </script>
 </body>
 </html>
