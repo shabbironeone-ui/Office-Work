@@ -22,7 +22,7 @@
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1250px;
       margin: 0 auto;
     }
 
@@ -54,9 +54,7 @@
       font-size: 13px;
     }
 
-    .btn:hover {
-      opacity: 0.9;
-    }
+    .btn:hover { opacity: 0.9; }
 
     .card {
       background: var(--card-bg);
@@ -83,15 +81,20 @@
       background-color: #f8fafc;
       color: #475569;
       font-weight: 600;
+      user-select: none;
     }
 
-    tr:hover {
-      background-color: #f8fafc;
+    th.sortable {
+      cursor: pointer;
     }
 
-    .text-right {
-      text-align: right;
+    th.sortable:hover {
+      background-color: #f1f5f9;
+      color: #1e293b;
     }
+
+    tr:hover { background-color: #f8fafc; }
+    .text-right { text-align: right; }
 
     .loading {
       text-align: center;
@@ -104,7 +107,64 @@
     .config-box.show { display: block; }
     .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
     .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
-  
+
+    .reconcile-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      padding: 12px 18px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      border: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .status-btn {
+      padding: 5px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .status-cleared {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+    .status-cleared:hover { background-color: #a7f3d0; }
+
+    .status-pending {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .status-pending:hover { background-color: #fde68a; }
+
+    .sort-icon {
+      font-size: 11px;
+      color: #2563eb;
+      margin-left: 3px;
+    }
+
+    .filter-checkbox-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #d97706;
+      background: #fef3c7;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #fcd34d;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+      user-select: none;
+    }
+
     .auto-mic-wrap { position: relative; display: inline-block; width: 100%; }
     .auto-mic-btn {
       position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
@@ -127,9 +187,9 @@
 <body>
 
   <div class="container">
-      <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
-  <div id="configBox" class="config-box">
-      <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
+    <div class="change-url-link" onclick="showUrlConfig()" style="cursor:pointer; color:#2563eb; font-size:12px; margin-bottom:5px;">&#9881; Change Deployment URL</div>
+    <div id="configBox" class="config-box">
+      <b>Setup:</b> Apps Script Deployment URL enter karein.
       <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
       <button onclick="saveScriptUrl()">Save URL</button>
     </div>
@@ -157,6 +217,12 @@
         <label style="font-size: 13px; font-weight: 600; color: #475569;">From: <input type="date" id="ledgerFromDate" onchange="applyLedgerDateFilter()" style="margin-left:6px; padding:5px 8px; border:1px solid var(--border); border-radius:4px;"></label>
         <label style="font-size: 13px; font-weight: 600; color: #475569;">To: <input type="date" id="ledgerToDate" onchange="applyLedgerDateFilter()" style="margin-left:6px; padding:5px 8px; border:1px solid var(--border); border-radius:4px;"></label>
         <button class="btn" style="padding: 6px 12px; font-size: 12px; background:#546e7a;" onclick="resetLedgerDateFilter()">Reset</button>
+        
+        <!-- Checkbox for Filtering Pending Entries Only -->
+        <label class="filter-checkbox-label">
+          <input type="checkbox" id="showPendingOnlyCheckbox" onchange="applyLedgerDateFilter()" style="cursor:pointer; accent-color:#d97706;">
+          ⏳ Show Pending Only
+        </label>
       </div>
       <div id="ledgerContainer"></div>
     </div>
@@ -164,6 +230,25 @@
 
   <script>
     let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
+    let currentLedgerData = [];
+    let currentSortColumn = '';
+    let isAscending = true;
+    let currentPayMode = "";
+    const AUG_2026_CUTOFF = new Date("2026-08-01").getTime();
+
+    function getSavedStatuses() {
+      try {
+        return JSON.parse(localStorage.getItem('erp_reconciled_statuses') || '{}');
+      } catch(e) {
+        return {};
+      }
+    }
+
+    function saveStatusToStorage(key, status) {
+      let saved = getSavedStatuses();
+      saved[key] = status;
+      localStorage.setItem('erp_reconciled_statuses', JSON.stringify(saved));
+    }
 
     function saveScriptUrl() {
       const val = document.getElementById('scriptUrlInput').value.trim();
@@ -179,13 +264,14 @@
     });
 
     function loadSummary() {
+      if(!SCRIPT_URL) return;
       document.getElementById('summaryContainer').innerHTML = '<div class="loading">Loading accounts summary...</div>';
 
       fetch(SCRIPT_URL + "?action=getReconciliationSummary")
         .then(res => res.json())
         .then(response => {
           if (!response || !response.success) {
-            document.getElementById('summaryContainer').innerHTML = `<p style="color:red; text-align:center;">Error: ${response ? response.error : 'Unknown error occurred'}</p>`;
+            document.getElementById('summaryContainer').innerHTML = `<p style="color:red; text-align:center;">Error: ${response ? response.error : 'Unknown error'}</p>`;
             return;
           }
 
@@ -227,14 +313,17 @@
         });
     }
 
-    let currentLedgerData = [];
-
     function viewLedger(payMode) {
+      if(!SCRIPT_URL) return;
+      currentPayMode = payMode;
       document.getElementById('ledgerCard').style.display = 'block';
       document.getElementById('ledgerTitle').innerText = 'Ledger Details: ' + payMode;
       document.getElementById('ledgerContainer').innerHTML = '<div class="loading">Loading ledger entries...</div>';
       document.getElementById('ledgerFromDate').value = '';
       document.getElementById('ledgerToDate').value = '';
+      
+      let chk = document.getElementById('showPendingOnlyCheckbox');
+      if (chk) chk.checked = false;
 
       fetch(SCRIPT_URL + "?action=getAccountLedgerDetails&payMode=" + encodeURIComponent(payMode))
         .then(res => res.json())
@@ -245,7 +334,33 @@
             return;
           }
 
-          currentLedgerData = response.data || [];
+          let rawData = response.data || [];
+          let savedMap = getSavedStatuses();
+          
+          currentLedgerData = rawData.map((item, idx) => {
+            let itemTime = item.date ? new Date(item.date).getTime() : 0;
+            let defaultStatus = (itemTime < AUG_2026_CUTOFF) ? 'Cleared' : 'Pending';
+            let uniqueKey = (payMode + "_" + (item.voucher || "novouch") + "_" + item.date + "_" + idx).toLowerCase();
+
+            let persistentStatus = savedMap[uniqueKey] || defaultStatus;
+
+            // Method 2: Methodical Clean Title override on frontend
+            let rawTitle = String(item.accTitle || '').trim();
+            let displayTitle = rawTitle;
+
+            if (!displayTitle || displayTitle.toLowerCase().includes("grouped voucher") || displayTitle.toLowerCase().includes("grouped entry")) {
+              displayTitle = item.voucher ? ("Grouped Batch (#" + item.voucher + ")") : "Combined Entry Batch";
+            }
+
+            return {
+              ...item,
+              accTitle: displayTitle,
+              id: 'row_' + idx,
+              uniqueKey: uniqueKey,
+              status: persistentStatus
+            };
+          });
+
           renderLedgerTable(currentLedgerData);
           document.getElementById('ledgerCard').scrollIntoView({ behavior: 'smooth' });
         })
@@ -258,21 +373,21 @@
     function applyLedgerDateFilter() {
       let fromVal = document.getElementById('ledgerFromDate').value;
       let toVal = document.getElementById('ledgerToDate').value;
-
-      if (!fromVal) {
-        // Koi From date nahi hai, poora data dikhayein
-        renderLedgerTable(currentLedgerData);
-        return;
-      }
-
-      // Sirf From date select hui hai (To khaali) -> usi ek din ka data
-      // From aur To dono hain -> us range ka data
-      let effectiveTo = toVal || fromVal;
+      let pendingOnly = document.getElementById('showPendingOnlyCheckbox').checked;
 
       let filtered = currentLedgerData.filter(function(tx) {
-        if (!tx.date) return false;
-        let txDateStr = String(tx.date).split('T')[0];
-        return txDateStr >= fromVal && txDateStr <= effectiveTo;
+        if (pendingOnly && tx.status !== 'Pending') {
+          return false;
+        }
+
+        if (fromVal) {
+          if (!tx.date) return false;
+          let effectiveTo = toVal || fromVal;
+          let txDateStr = String(tx.date).split('T')[0];
+          if (txDateStr < fromVal || txDateStr > effectiveTo) return false;
+        }
+
+        return true;
       });
 
       renderLedgerTable(filtered);
@@ -281,6 +396,7 @@
     function resetLedgerDateFilter() {
       document.getElementById('ledgerFromDate').value = '';
       document.getElementById('ledgerToDate').value = '';
+      document.getElementById('showPendingOnlyCheckbox').checked = false;
       renderLedgerTable(currentLedgerData);
     }
 
@@ -295,17 +411,44 @@
 
     function renderLedgerTable(data) {
       if (!data || data.length === 0) {
-        document.getElementById('ledgerContainer').innerHTML = '<p style="text-align:center; color:#64748b;">No entries found for this date range.</p>';
+        document.getElementById('ledgerContainer').innerHTML = '<p style="text-align:center; color:#64748b;">No entries found for the selected criteria.</p>';
         return;
       }
 
       let totalReceipts = 0, totalPayments = 0;
+      let clearedCount = 0, pendingCount = 0;
+      let clearedReceipts = 0, clearedPayments = 0;
+
       data.forEach(function(tx) {
-        totalReceipts += Number(tx.receipts) || 0;
-        totalPayments += Number(tx.payments) || 0;
+        let r = Number(tx.receipts) || 0;
+        let p = Number(tx.payments) || 0;
+        
+        totalReceipts += r;
+        totalPayments += p;
+
+        if (tx.status === 'Cleared') {
+          clearedCount++;
+          clearedReceipts += r;
+          clearedPayments += p;
+        } else {
+          pendingCount++;
+        }
       });
-      // Closing balance = akhri (last) row ka balance, sum nahi
+
       let closingBalance = Number(data[data.length - 1].balance) || 0;
+      let reconciledBankBalance = clearedReceipts - clearedPayments;
+
+      let summaryHeaderHtml = `
+        <div class="reconcile-bar">
+          <div>
+            <span style="font-size:12px; font-weight:bold; color:#059669; margin-right:15px;">✓ Cleared Entries: ${clearedCount}</span>
+            <span style="font-size:12px; font-weight:bold; color:#d97706; margin-right:15px;">⏳ Pending Entries: ${pendingCount}</span>
+          </div>
+          <div style="font-size:12px; font-weight:600; color:#475569;">
+            Reconciled Statement Balance: <b style="color:#059669;">Rs. ${reconciledBankBalance.toLocaleString()}</b> 
+            | System Ledger Balance: <b style="color:#2563eb;">Rs. ${closingBalance.toLocaleString()}</b>
+          </div>
+        </div>`;
 
       let totalsBarHtml = `<table style="margin-bottom:0;">
         <tr>
@@ -316,57 +459,107 @@
           <td class="text-right" style="border:none; padding:4px 15px; font-weight:bold; color:#059669;">${totalReceipts.toLocaleString()}</td>
           <td class="text-right" style="border:none; padding:4px 15px; font-weight:bold; color:#dc2626;">${totalPayments.toLocaleString()}</td>
           <td class="text-right" style="border:none; padding:4px 15px; font-weight:bold; color:#2563eb;">${closingBalance.toLocaleString()}</td>
-          <td style="border:none; padding:4px 15px; visibility:hidden;">Status</td>
+          <td style="border:none; padding:4px 15px; visibility:hidden;">Action</td>
         </tr>
       </table>`;
+
+      let getIcon = (col) => (currentSortColumn === col ? (isAscending ? ' ▲' : ' ▼') : ' ⇅');
 
       let html = `<table>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Voucher No</th>
-            <th>Type</th>
-            <th>Account Title</th>
-            <th class="text-right">Receipts</th>
-            <th class="text-right">Payments</th>
-            <th class="text-right">Balance</th>
-            <th>Status</th>
+            <th class="sortable" onclick="sortDataBy('date')">Date<span class="sort-icon">${getIcon('date')}</span></th>
+            <th class="sortable" onclick="sortDataBy('voucher')">Voucher No<span class="sort-icon">${getIcon('voucher')}</span></th>
+            <th class="sortable" onclick="sortDataBy('type')">Type<span class="sort-icon">${getIcon('type')}</span></th>
+            <th class="sortable" onclick="sortDataBy('accTitle')">Account Title<span class="sort-icon">${getIcon('accTitle')}</span></th>
+            <th class="sortable text-right" onclick="sortDataBy('receipts')">Receipts<span class="sort-icon">${getIcon('receipts')}</span></th>
+            <th class="sortable text-right" onclick="sortDataBy('payments')">Payments<span class="sort-icon">${getIcon('payments')}</span></th>
+            <th class="sortable text-right" onclick="sortDataBy('balance')">Balance<span class="sort-icon">${getIcon('balance')}</span></th>
+            <th class="sortable" style="text-align: center;" onclick="sortDataBy('status')">
+              Reconcile Action<span class="sort-icon">${getIcon('status')}</span>
+            </th>
           </tr>
         </thead>
         <tbody>`;
 
       data.forEach(function(tx) {
         let formattedDate = tx.date ? formatDMY(tx.date) : '';
+        let isCleared = (tx.status === 'Cleared');
+
         html += `<tr>
           <td>${formattedDate}</td>
-          <td>${tx.voucher || ''}</td>
+          <td><b>${tx.voucher || ''}</b></td>
           <td>${tx.type || ''}</td>
           <td>${tx.accTitle || ''}</td>
           <td class="text-right" style="color: #059669;">${tx.receipts ? Number(tx.receipts).toLocaleString() : '-'}</td>
           <td class="text-right" style="color: #dc2626;">${tx.payments ? Number(tx.payments).toLocaleString() : '-'}</td>
           <td class="text-right"><b>${tx.balance ? Number(tx.balance).toLocaleString() : '0'}</b></td>
-          <td><span style="background:#e2e8f0; padding:3px 8px; border-radius:4px; font-size:11px;">${tx.status || 'Pending'}</span></td>
+          <td style="text-align: center;">
+            <button class="status-btn ${isCleared ? 'status-cleared' : 'status-pending'}" 
+                    onclick="toggleFrontendStatus('${tx.id}')">
+              ${isCleared ? '✓ Cleared' : '⏳ Pending'}
+            </button>
+          </td>
         </tr>`;
       });
 
       html += `</tbody></table>`;
-      document.getElementById('ledgerContainer').innerHTML = totalsBarHtml + html;
+      document.getElementById('ledgerContainer').innerHTML = summaryHeaderHtml + totalsBarHtml + html;
     }
-  
-    // ===== Deployment URL config (auto-added) =====
+
+    function toggleFrontendStatus(rowId) {
+      let item = currentLedgerData.find(x => x.id === rowId);
+      if (item) {
+        item.status = (item.status === 'Cleared') ? 'Pending' : 'Cleared';
+        saveStatusToStorage(item.uniqueKey, item.status);
+        applyLedgerDateFilter();
+      }
+    }
+
+    function sortDataBy(columnKey) {
+      if (currentSortColumn === columnKey) {
+        isAscending = !isAscending;
+      } else {
+        currentSortColumn = columnKey;
+        isAscending = true;
+      }
+
+      currentLedgerData.sort((a, b) => {
+        let valA = a[columnKey];
+        let valB = b[columnKey];
+
+        if (columnKey === 'date') {
+          valA = a.rawDate || new Date(a.date).getTime() || 0;
+          valB = b.rawDate || new Date(b.date).getTime() || 0;
+        }
+
+        if (columnKey === 'status') {
+          valA = a.status === 'Pending' ? 0 : 1;
+          valB = b.status === 'Pending' ? 0 : 1;
+        }
+
+        if (typeof valA === 'number' && typeof valB === 'number') {
+          return isAscending ? valA - valB : valB - valA;
+        }
+
+        valA = String(valA || '').toLowerCase();
+        valB = String(valB || '').toLowerCase();
+
+        if (valA < valB) return isAscending ? -1 : 1;
+        if (valA > valB) return isAscending ? 1 : -1;
+        return 0;
+      });
+
+      applyLedgerDateFilter();
+    }
+
     function showUrlConfig() {
       var inp = document.getElementById('scriptUrlInput');
-      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
+      if (inp) inp.value = SCRIPT_URL;
       var box = document.getElementById('configBox');
       if (box) box.classList.add('show');
     }
-    function saveScriptUrl() {
-      var inp = document.getElementById('scriptUrlInput');
-      var val = inp ? inp.value.trim() : '';
-      if (!val) { alert("URL enter karein"); return; }
-      localStorage.setItem('erp_script_url', val);
-      location.reload();
-    }
+
     document.addEventListener('DOMContentLoaded', function() {
       var savedUrl = localStorage.getItem('erp_script_url');
       if (!savedUrl) {
@@ -375,7 +568,7 @@
       }
     });
 
-    // ================= UNIVERSAL MIC INPUT (auto-added) =================
+    // Universal Mic Input
     (function() {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       let activeRec = null, activeBtn = null, activeInput = null;
@@ -394,7 +587,7 @@
       }
 
       function toggleMic(input, btn) {
-        if (!SR) { alert('Ye browser voice input support nahi karta. Chrome use karein.'); return; }
+        if (!SR) { alert('Ye browser voice input support nahi karta.'); return; }
         const isNumeric = input.type === 'number';
 
         if (btn.classList.contains('listening')) { stopActiveMic(); return; }
@@ -409,7 +602,7 @@
         activeRec = rec; activeBtn = btn; activeInput = input;
         btn.classList.add('listening');
         input.dataset.origPh = input.placeholder || '';
-        input.placeholder = 'Sun raha hoon... rokne ke liye mic dobara dabayein';
+        input.placeholder = 'Listening...';
 
         rec.onresult = function(ev) {
           let interim = '';
@@ -422,34 +615,25 @@
           input.value = text;
           input.dispatchEvent(new Event('input', { bubbles: true }));
         };
-        rec.onerror = function(ev) {
-          if (ev.error !== 'no-speech' && ev.error !== 'aborted') console.error('Mic error:', ev.error);
-        };
         rec.onend = function() {
           btn.classList.remove('listening');
           input.placeholder = input.dataset.origPh || '';
           if (isNumeric) input.value = cleanNumeric(input.value);
-          if (activeInput === input) { activeRec = null; activeBtn = null; activeInput = null; }
         };
         try { rec.start(); } catch (e) {}
       }
 
       function attachMic(input) {
         if (!input || input.dataset.autoMic) return;
-        if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
-            input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
+        if (input.type === 'date' || input.type === 'hidden' || input.readOnly || input.disabled) return;
         if (input.closest('#configBox')) return;
-        if (input.closest('.input-with-mic')) return; // already has a manual mic button
-        if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
 
         input.dataset.autoMic = '1';
-
         const wrap = document.createElement('span');
         wrap.className = 'auto-mic-wrap';
         input.parentNode.insertBefore(wrap, input);
         wrap.appendChild(input);
 
-        const curPad = window.getComputedStyle(input).paddingRight;
         input.style.paddingRight = '24px';
         input.style.boxSizing = 'border-box';
 
@@ -462,26 +646,9 @@
         wrap.appendChild(btn);
       }
 
-      function scanAndAttach(root) {
-        root.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
-      }
-
       document.addEventListener('DOMContentLoaded', function() {
-        scanAndAttach(document);
+        document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
       });
-
-      const mo = new MutationObserver(function(mutations) {
-        mutations.forEach(function(m) {
-          m.addedNodes.forEach(function(node) {
-            if (node.nodeType !== 1) return;
-            if (node.matches && (node.matches('input[type="text"]') || node.matches('input[type="number"]') || node.matches('input:not([type])'))) {
-              attachMic(node);
-            }
-            if (node.querySelectorAll) scanAndAttach(node);
-          });
-        });
-      });
-      mo.observe(document.body, { childList: true, subtree: true });
     })();
 </script>
 </body>
