@@ -670,7 +670,6 @@
       var rawProduct = String(row.productName || row.product || "").trim();
       if (!rawProduct) return "";
 
-      // Cleanup PRD-XXXX patterns if raw string contains them
       var cleaned = rawProduct.split(",")
         .map(function(item) { return item.replace(/PRD-\d+/gi, "").trim(); })
         .filter(function(item) { return item !== ""; })
@@ -679,60 +678,79 @@
       return cleaned !== "" ? cleaned : rawProduct;
     }
 
-    // ADVANCED SCHEDULE-BASED CMD CALCULATION
+    // ADVANCED SCHEDULE-BASED CMD CALCULATION (CORRECTED MONTH COUNT USING NEXT INST MONTH)
     function calculateCMD(row) {
       let tBal = Number(row.balance) || 0;
       if (tBal <= 0) return 0;
 
       let inst = Number(row.monthlyInst) || 0;
-      let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
+      let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 12;
 
-      if (row.deliveryDate) {
-        let deliveryDate = new Date(row.deliveryDate);
-        if (!isNaN(deliveryDate.getTime())) {
+      // Selected End Date or Current Date
+      let endDateVal = document.getElementById('endDateInput') ? document.getElementById('endDateInput').value : '';
+      let referenceDate = endDateVal ? new Date(endDateVal) : new Date();
+      if (isNaN(referenceDate.getTime())) {
+        referenceDate = new Date();
+      }
 
-          let firstInstDate = new Date(deliveryDate);
-          firstInstDate.setMonth(firstInstDate.getMonth() + 1);
+      let firstInstDate = null;
 
-          let expiryDate = new Date(deliveryDate);
-          expiryDate.setMonth(expiryDate.getMonth() + planMonths);
-
-          let endDateVal = document.getElementById('endDateInput') ? document.getElementById('endDateInput').value : '';
-          let referenceDate = endDateVal ? new Date(endDateVal) : new Date();
-          if (isNaN(referenceDate.getTime())) {
-            referenceDate = new Date();
-          }
-
-          if (referenceDate > expiryDate) {
-            return tBal;
-          }
-
-          let elapsedMonths = 0;
-          if (referenceDate >= firstInstDate) {
-            let yearsDiff = referenceDate.getFullYear() - firstInstDate.getFullYear();
-            let monthsDiff = referenceDate.getMonth() - firstInstDate.getMonth();
-            elapsedMonths = (yearsDiff * 12) + monthsDiff + 1;
-
-            if (referenceDate.getDate() < firstInstDate.getDate()) {
-              elapsedMonths -= 1;
+      // 1. Parse Next Inst Month (Col Q)
+      let nextInstStr = String(row.nextInstMonth || row.nextInst || '').trim();
+      if (nextInstStr) {
+        let parsedDate = new Date(nextInstStr);
+        if (!isNaN(parsedDate.getTime())) {
+          firstInstDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), 1);
+        } else {
+          let parts = nextInstStr.split(/[\s\-]+/);
+          if (parts.length >= 2) {
+            let mStr = parts[0];
+            let yStr = parts[1];
+            let dummyD = new Date(mStr + " 1, " + (yStr.length === 2 ? "20" + yStr : yStr));
+            if (!isNaN(dummyD.getTime())) {
+              firstInstDate = new Date(dummyD.getFullYear(), dummyD.getMonth(), 1);
             }
           }
-
-          let monthsElapsedClamped = Math.min(Math.max(0, elapsedMonths), planMonths);
-          let expectedCumulativeInstDue = monthsElapsedClamped * inst;
-
-          let totalPaid = Number(row.totalPaid || row.totalReceived || 0);
-          let initialAdvanceAndFee = Number(row.advance || 0) + Number(row.processingFee || 0);
-          
-          let actualInstallmentsPaid = Math.max(0, totalPaid - initialAdvanceAndFee);
-
-          let currentDue = expectedCumulativeInstDue - actualInstallmentsPaid;
-
-          if (currentDue <= 0) return 0;
-          return Math.min(currentDue, tBal);
         }
       }
-      return Math.min(inst, tBal);
+
+      // 2. Fallback: Delivery Date + 1 Month
+      if (!firstInstDate && row.deliveryDate) {
+        let deliveryDate = new Date(row.deliveryDate);
+        if (!isNaN(deliveryDate.getTime())) {
+          firstInstDate = new Date(deliveryDate.getFullYear(), deliveryDate.getMonth() + 1, 1);
+        }
+      }
+
+      if (!firstInstDate) {
+        return Math.min(inst, tBal);
+      }
+
+      // 3. Compare Months strictly by Year & Month Index
+      let refYear = referenceDate.getFullYear();
+      let refMonth = referenceDate.getMonth();
+      let startYear = firstInstDate.getFullYear();
+      let startMonth = firstInstDate.getMonth();
+
+      // Total months elapsed up to selected End Date (inclusive of starting month)
+      let monthsElapsed = ((refYear - startYear) * 12) + (refMonth - startMonth) + 1;
+
+      if (monthsElapsed <= 0) {
+        return 0; // End date is before next installment month
+      }
+
+      let monthsElapsedClamped = Math.min(monthsElapsed, planMonths);
+      let expectedCumulativeInstDue = monthsElapsedClamped * inst;
+
+      // Subtract payments made AFTER initial advance/processing fee
+      let totalPaid = Number(row.totalPaid || row.totalReceived || 0);
+      let initialAdvanceAndFee = Number(row.advance || 0) + Number(row.processingFee || 0);
+      let actualInstallmentsPaid = Math.max(0, totalPaid - initialAdvanceAndFee);
+
+      let currentDue = expectedCumulativeInstDue - actualInstallmentsPaid;
+
+      if (currentDue <= 0) return 0;
+      return Math.min(currentDue, tBal);
     }
 
     function getColumnValue(row, colName, monthHeaders) {
@@ -741,7 +759,7 @@
       } else if(colName === 'product') {
         return formatProductTitle(row);
       } else if(colName === 'plan') {
-        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
+        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 12;
         return planMonths ? planMonths + "M" : String(row.plan || '');
       } else if(colName === 'deliveryDate') {
         return formatDateDDMMYY(row[colName]);
@@ -1067,7 +1085,7 @@
         let m1 = Number(row.m1Received) || 0;
         let inst = Number(row.monthlyInst) || 0;
 
-        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 18;
+        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 12;
         let shortPlanStr = planMonths ? planMonths + "M" : (row.plan || '');
         let formattedDate = formatDateDDMMYY(row.deliveryDate);
         
@@ -1147,7 +1165,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       fetchAndFilterData();
 
-      // Date fields use 'change' event so filter triggers only when full date is selected/entered
       ['startDateInput', 'endDateInput'].forEach(id => {
         let el = document.getElementById(id);
         if (el) {
@@ -1157,7 +1174,6 @@
         }
       });
 
-      // Text Search fields use debounced 'input' event for real-time typing without lag
       ['searchAccInput', 'searchTitleInput', 'searchMobileInput', 'startFromAcctInput'].forEach(id => {
         let el = document.getElementById(id);
         if (el) {
@@ -1165,7 +1181,6 @@
         }
       });
 
-      // Column filters
       document.querySelectorAll('.col-filter').forEach(input => {
         input.addEventListener('input', debouncedApplyFilter);
       });
