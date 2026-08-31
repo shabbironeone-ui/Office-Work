@@ -218,6 +218,24 @@
       return '-';
     }
 
+    // Helper to format short product text (Company 4 chars, Category 4 chars, Model)
+    function cleanFormattedProduct(productStr) {
+      if (!productStr) return "";
+      
+      // If object or array passed
+      if (Array.isArray(productStr)) productStr = productStr.join(", ");
+      
+      return String(productStr).split(",")
+        .map(p => {
+          let str = p.trim();
+          // Remove PRD-XXXX raw codes if present
+          str = str.replace(/PRD-\d+/gi, "").trim();
+          return str;
+        })
+        .filter(p => p !== "")
+        .join(", ");
+    }
+
     function renderLedger(data) {
       document.getElementById('lblAccNo').textContent = data.accNo || '';
       document.getElementById('lblAccTitle').textContent = data.accTitle || '';
@@ -254,16 +272,41 @@
       let totalDebit = 0;
       let totalCredit = 0;
 
+      // Extract best product description from data object
+      let mainProductDesc = data.productFormatted || data.product || data.productName || data.products || "";
+      if (typeof mainProductDesc === 'object') {
+        if (Array.isArray(mainProductDesc)) mainProductDesc = mainProductDesc.join(", ");
+        else mainProductDesc = cleanFormattedProduct(mainProductDesc);
+      }
+
       entries.forEach(function(entry) {
         totalDebit += parseFloat(entry.debit) || 0;
         totalCredit += parseFloat(entry.credit) || 0;
+
+        let particularText = entry.particulars || '';
+
+        // If particularText is PRD code or contains PRD-XXXX, replace with formatted product text
+        if (/^PRD-\d+/i.test(particularText.trim()) || particularText.trim() === '') {
+          if (entry.productFormatted) {
+            particularText = entry.productFormatted;
+          } else if (entry.companyName || entry.model) {
+            let comp = entry.companyName || "";
+            let cat = entry.category || entry.productCategory || "";
+            let mdl = entry.model || "";
+            let cShort = comp.length > 4 ? comp.substring(0, 4) : comp;
+            let catShort = cat.length > 4 ? cat.substring(0, 4) : cat;
+            particularText = [cShort, catShort, mdl].filter(Boolean).join(", ");
+          } else if (mainProductDesc) {
+            particularText = cleanFormattedProduct(mainProductDesc);
+          }
+        }
 
         let tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="col-date">${entry.date || ''}</td>
           <td class="col-voucher"><b>${entry.voucherNo || entry.receiptNo || ''}</b></td>
           <td class="col-type"><b>${entry.type || ''}</b></td>
-          <td>${entry.particulars || ''}</td>
+          <td>${particularText}</td>
           <td class="number col-amount">${entry.debit ? parseFloat(entry.debit).toLocaleString() : ''}</td>
           <td class="number col-amount">${entry.credit ? parseFloat(entry.credit).toLocaleString() : ''}</td>
           <td class="number col-amount"><b>${entry.balance !== undefined ? parseFloat(entry.balance).toLocaleString() : ''}</b></td>
@@ -281,7 +324,7 @@
       `;
       tbody.appendChild(totalTr);
     }
-  
+    
     // ===== Deployment URL config =====
     function showUrlConfig() {
       var inp = document.getElementById('scriptUrlInput');
