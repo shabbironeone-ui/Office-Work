@@ -143,7 +143,7 @@
     th.col-5, td.col-5 { width: 78px; }   /* Mobile NO */
     th.col-6, td.col-6 { width: 46px; }   /* M Inst */
     th.col-7, td.col-7 { width: 65px; }   /* Remarks */
-    th.col-8, td.col-8 { width: 110px; }  /* Product (Expanded for full name) */
+    th.col-8, td.col-8 { width: 130px; }  /* Product Title */
     th.col-9, td.col-9 { width: 30px; }   /* Plan(M) */
     th.col-10, td.col-10 { width: 56px; } /* Total Sale */
     th.col-11, td.col-11 { width: 56px; } /* Total Paid */
@@ -655,23 +655,28 @@
         });
     }
 
-    // Helper to format full product details (Company + Category + Model)
+    // Short format function for Product Title ("DAWL, AC, ENERCON X T3 30")
     function formatProductTitle(row) {
-      if (row.productName && row.productName.trim() !== '') {
-        return row.productName;
+      var comp = String(row.companyName || row.company || "").trim();
+      var cat  = String(row.category || row.productCategory || "").trim();
+      var mdl  = String(row.model || row.productModel || "").trim();
+
+      if (comp || cat || mdl) {
+        var compShort = comp.length > 4 ? comp.substring(0, 4) : comp;
+        var catShort  = cat.length > 4 ? cat.substring(0, 4) : cat;
+        return [compShort, catShort, mdl].filter(Boolean).join(", ");
       }
-      
-      let parts = [];
-      if (row.companyName) parts.push(row.companyName);
-      if (row.category || row.productCategory) parts.push(row.category || row.productCategory);
-      if (row.model) parts.push(row.model);
-      
-      if (parts.length > 0) {
-        return parts.join(" ");
-      }
-      
-      // Fallback to row.product if no extra fields exist
-      return row.product || '';
+
+      var rawProduct = String(row.productName || row.product || "").trim();
+      if (!rawProduct) return "";
+
+      // Cleanup PRD-XXXX patterns if raw string contains them
+      var cleaned = rawProduct.split(",")
+        .map(function(item) { return item.replace(/PRD-\d+/gi, "").trim(); })
+        .filter(function(item) { return item !== ""; })
+        .join(", ");
+
+      return cleaned !== "" ? cleaned : rawProduct;
     }
 
     // ADVANCED SCHEDULE-BASED CMD CALCULATION
@@ -692,19 +697,23 @@
           let expiryDate = new Date(deliveryDate);
           expiryDate.setMonth(expiryDate.getMonth() + planMonths);
 
-          let currentDate = new Date(); 
+          let endDateVal = document.getElementById('endDateInput') ? document.getElementById('endDateInput').value : '';
+          let referenceDate = endDateVal ? new Date(endDateVal) : new Date();
+          if (isNaN(referenceDate.getTime())) {
+            referenceDate = new Date();
+          }
 
-          if (currentDate > expiryDate) {
+          if (referenceDate > expiryDate) {
             return tBal;
           }
 
           let elapsedMonths = 0;
-          if (currentDate >= firstInstDate) {
-            let yearsDiff = currentDate.getFullYear() - firstInstDate.getFullYear();
-            let monthsDiff = currentDate.getMonth() - firstInstDate.getMonth();
+          if (referenceDate >= firstInstDate) {
+            let yearsDiff = referenceDate.getFullYear() - firstInstDate.getFullYear();
+            let monthsDiff = referenceDate.getMonth() - firstInstDate.getMonth();
             elapsedMonths = (yearsDiff * 12) + monthsDiff + 1;
 
-            if (currentDate.getDate() < firstInstDate.getDate()) {
+            if (referenceDate.getDate() < firstInstDate.getDate()) {
               elapsedMonths -= 1;
             }
           }
@@ -1121,23 +1130,44 @@
         modal.style.display = 'none';
       }
     });
-  
+
+    // ================= DEBOUNCE LOGIC FOR TEXT INPUTS =================
+    function debounce(func, delay = 300) {
+      let timer;
+      return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, delay);
+      };
+    }
+
+    const debouncedApplyFilter = debounce(() => {
+      applySearchFilter();
+    }, 300);
+
     document.addEventListener('DOMContentLoaded', () => {
       fetchAndFilterData();
 
-      ['startDateInput', 'endDateInput', 'searchAccInput', 'searchTitleInput', 'searchMobileInput', 'startFromAcctInput'].forEach(id => {
+      // Date fields use 'change' event so filter triggers only when full date is selected/entered
+      ['startDateInput', 'endDateInput'].forEach(id => {
         let el = document.getElementById(id);
-        if(el) {
-          el.addEventListener('input', () => {
+        if (el) {
+          el.addEventListener('change', () => {
             applySearchFilter();
           });
         }
       });
 
+      // Text Search fields use debounced 'input' event for real-time typing without lag
+      ['searchAccInput', 'searchTitleInput', 'searchMobileInput', 'startFromAcctInput'].forEach(id => {
+        let el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', debouncedApplyFilter);
+        }
+      });
+
+      // Column filters
       document.querySelectorAll('.col-filter').forEach(input => {
-        input.addEventListener('input', () => {
-          applySearchFilter();
-        });
+        input.addEventListener('input', debouncedApplyFilter);
       });
     });
 
