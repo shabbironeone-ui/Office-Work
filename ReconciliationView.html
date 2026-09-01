@@ -13,41 +13,46 @@
       --border: #e2e8f0;
     }
 
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: var(--bg-main);
       color: var(--text-main);
-      padding: 20px;
+      padding: 15px;
     }
 
     .container {
-      max-width: 1450px;
+      max-width: 100%;
       margin: 0 auto;
     }
 
     .header-card {
       background: var(--card-bg);
-      padding: 20px 30px;
+      padding: 15px 20px;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
 
-    .header-card h2 { margin: 0; color: var(--primary); font-size: 22px; }
+    .header-card h2 { margin: 0; color: var(--primary); font-size: 20px; }
 
     .btn {
       background-color: var(--accent);
       color: white;
       border: none;
-      padding: 9px 16px;
+      padding: 7px 14px;
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 13px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
     .btn:hover { opacity: 0.9; }
 
@@ -59,32 +64,38 @@
       background: var(--card-bg);
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      padding: 20px;
-      margin-bottom: 20px;
+      padding: 15px;
+      margin-bottom: 15px;
     }
 
+    /* STRICT FIT TO WINDOW TABLES (NO OVERFLOW) */
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 0;
+      table-layout: fixed;
     }
 
     th, td {
-      padding: 8px 10px;
+      padding: 6px 4px;
       text-align: left;
       border-bottom: 1px solid var(--border);
-      font-size: 13px;
-      height: 42px;
+      font-size: 11px;
+      height: 38px;
       box-sizing: border-box;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     th {
       background-color: #f8fafc;
       color: #475569;
-      font-weight: 600;
+      font-weight: 700;
       user-select: none;
+      cursor: pointer;
     }
+    th:hover { background-color: #e2e8f0; }
 
     tr:hover { background-color: #f8fafc; }
     .text-right { text-align: right; }
@@ -100,18 +111,18 @@
       justify-content: space-between;
       align-items: center;
       background: #f8fafc;
-      padding: 12px 18px;
+      padding: 8px 14px;
       border-radius: 6px;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       border: 1px solid #e2e8f0;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 10px;
     }
 
     .status-badge {
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
       font-weight: bold;
       display: inline-block;
       white-space: nowrap;
@@ -122,10 +133,10 @@
     .status-missing { background-color: #fee2e2; color: #991b1b; }
 
     .total-label-badge {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 6px;
+      padding: 3px 8px;
+      border-radius: 5px;
       display: inline-block;
     }
     .total-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
@@ -133,28 +144,51 @@
 
     .reconcile-split-container {
       display: flex;
-      gap: 15px;
+      gap: 10px;
     }
     .split-col {
       flex: 1;
       background: #ffffff;
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 12px;
-      overflow-x: auto;
+      padding: 10px;
+      overflow: hidden;
+    }
+    .split-col-header {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 6px;
+      margin-bottom: 6px;
     }
     .split-col-title {
       font-weight: 700;
-      font-size: 14px;
-      padding-bottom: 8px;
-      margin-bottom: 8px;
-      border-bottom: 2px solid var(--border);
+      font-size: 13px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 6px;
+    }
+    .side-filter-box {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      background: #f8fafc;
+      padding: 4px 6px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+    .side-filter-box label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+    }
+    .side-filter-box input[type="date"] {
+      padding: 2px 4px;
+      font-size: 11px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
     }
 
-    /* Modal Styles with Frozen Sticky Headers */
+    /* Modal Styles */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -218,7 +252,7 @@
     <div class="header-card">
       <div>
         <h2>🏦 Cash & Bank Reconciliation Dashboard</h2>
-        <p style="margin: 5px 0 0 0; color: #64748b; font-size: 13px;">Cloud Sheet Connected Reconciliation Engine</p>
+        <p style="margin: 3px 0 0 0; color: #64748b; font-size: 12px;">Cloud Sheet Connected Reconciliation Engine</p>
       </div>
       <div>
         <button class="btn btn-blue" onclick="openAddModal()">➕ Add Bank Statement Entries</button>
@@ -235,44 +269,46 @@
 
     <div class="card" id="ledgerCard" style="display:none;">
       <h3 id="ledgerTitle" style="margin-top: 0; color: #1e293b;">Account Ledger</h3>
-      <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">
-        <label style="font-size: 13px; font-weight: 600; color: #475569;">From: <input type="date" id="ledgerFromDate" onchange="applyLedgerDateFilter()" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px;"></label>
-        <label style="font-size: 13px; font-weight: 600; color: #475569;">To: <input type="date" id="ledgerToDate" onchange="applyLedgerDateFilter()" style="padding:5px 8px; border:1px solid var(--border); border-radius:4px;"></label>
-        <button class="btn btn-gray" style="padding: 6px 12px; font-size: 12px;" onclick="resetLedgerDateFilter()">Reset Filter</button>
-        
-        <div style="margin-left: auto; display: flex; gap: 10px;">
-          <label style="font-size: 13px; font-weight: 600; color: #d97706; background: #fef3c7; padding: 6px 12px; border-radius: 6px; border: 1px solid #fcd34d; cursor: pointer;">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="display: flex; gap: 10px;">
+          <label style="font-size: 12px; font-weight: 600; color: #d97706; background: #fef3c7; padding: 5px 10px; border-radius: 6px; border: 1px solid #fcd34d; cursor: pointer;">
             <input type="checkbox" id="showPendingOnlyCheckbox" onchange="applyLedgerDateFilter()" style="accent-color:#d97706;"> ⏳ Show Un-cleared
           </label>
-          <label style="font-size: 13px; font-weight: 600; color: #059669; background: #ecfdf5; padding: 6px 12px; border-radius: 6px; border: 1px solid #a7f3d0; cursor: pointer;">
-            <input type="checkbox" id="toggleSplitView" onchange="applyLedgerDateFilter()" style="accent-color:#059669;"> 🏦 Show Bank Statement
+          <label style="font-size: 12px; font-weight: 600; color: #059669; background: #ecfdf5; padding: 5px 10px; border-radius: 6px; border: 1px solid #a7f3d0; cursor: pointer;">
+            <input type="checkbox" id="toggleSplitView" onchange="applyLedgerDateFilter()" checked style="accent-color:#059669;"> 🏦 Show Bank Statement
           </label>
         </div>
+        <button class="btn btn-gray" onclick="resetAllFilters()">Reset All Filters</button>
       </div>
       
       <div id="ledgerContainer"></div>
     </div>
   </div>
 
-  <!-- POPUP MODAL WITH FREEZE HEADER -->
+  <!-- POPUP MODAL WITH DATE RANGE FILTER & SMART SYNC -->
   <div class="modal-overlay" id="bankModal">
     <div class="modal-card">
       <div class="modal-header-sticky">
         <div class="modal-header">
           <div>
-            <h3>🏦 Add Bank Statement Entries</h3>
-            <div style="margin-top: 6px;">
+            <h3>🏦 Add Bank Statement Entries (Smart Sync)</h3>
+            <div style="margin-top: 6px; display: flex; gap: 12px; align-items: center;">
               <span class="total-label-badge total-green">Total Amount: Rs. <span id="modalLiveTotal">0</span></span>
             </div>
           </div>
           <span class="close-btn" onclick="closeAddModal()">&times;</span>
         </div>
-        <p style="font-size: 12px; color: #64748b; margin: 8px 0 0 0;">
-          💡 Amount enter karke <b>Enter</b> press karein to direct agli row ke Amount box par jump karega.
-        </p>
+
+        <!-- Date Range Filter in Popup -->
+        <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
+          <label style="font-size: 11px; font-weight: 600; color: #475569;">From: <input type="date" id="popupFromDate" onchange="fetchPopupDataByDate()"></label>
+          <label style="font-size: 11px; font-weight: 600; color: #475569;">To: <input type="date" id="popupToDate" onchange="fetchPopupDataByDate()"></label>
+          <button class="btn btn-blue" style="padding: 3px 8px; font-size: 11px;" onclick="fetchPopupDataByDate()">🔍 Load Range</button>
+        </div>
       </div>
       
-      <table class="modal-table">
+      <table class="modal-table" style="table-layout:auto; margin-top: 10px;">
         <thead class="modal-table-header-sticky">
           <tr>
             <th style="width: 150px;">Date</th>
@@ -288,8 +324,8 @@
       <div style="margin-top: 15px; display: flex; justify-content: space-between;">
         <button class="btn btn-gray" onclick="addModalRow(true)">➕ Add More Rows</button>
         <div>
-          <button class="btn btn-danger" onclick="clearBankEntries()" style="margin-right: 8px;">🗑️ Clear Entries</button>
-          <button class="btn btn-blue" id="btnSaveCloud" onclick="saveBankModalEntries()">💾 Save Entries</button>
+          <button class="btn btn-danger" onclick="clearPopupFormOnly()" style="margin-right: 8px;">🔄 Clear Form</button>
+          <button class="btn btn-blue" id="btnSaveCloud" onclick="saveBankModalEntries()">💾 Sync & Save</button>
         </div>
       </div>
     </div>
@@ -301,6 +337,10 @@
     let bankStatementData = [];
     let currentPayMode = "";
     const AUG_2026_CUTOFF = new Date("2026-08-01").getTime();
+
+    // Unified Sorting State
+    let currentSortKey = 'date';
+    let currentSortAsc = true;
 
     function formatShortDate(dateStr) {
       if (!dateStr) return '';
@@ -342,7 +382,7 @@
           }
 
           let data = response.data || [];
-          let html = `<table><thead><tr><th>Cash / Bank Name</th><th class="text-right">Total Receipts (+)</th><th class="text-right">Total Payments (-)</th><th class="text-right">Net Balance</th><th style="text-align: center;">Action</th></tr></thead><tbody>`;
+          let html = `<table style="table-layout:auto;"><thead><tr><th>Cash / Bank Name</th><th class="text-right">Total Receipts (+)</th><th class="text-right">Total Payments (-)</th><th class="text-right">Net Balance</th><th style="text-align: center;">Action</th></tr></thead><tbody>`;
 
           data.forEach(function(row) {
             html += `<tr>
@@ -351,7 +391,7 @@
               <td class="text-right" style="color: #dc2626;">${Number(row.totalPayments).toLocaleString()}</td>
               <td class="text-right"><b>${Number(row.netBalance).toLocaleString()}</b></td>
               <td style="text-align: center;">
-                <button class="btn" style="padding: 5px 12px; font-size: 12px;" onclick="viewLedger('${row.payMode}')">View & Reconcile</button>
+                <button class="btn" style="padding: 4px 10px; font-size: 11px;" onclick="viewLedger('${row.payMode}')">View & Reconcile</button>
               </td>
             </tr>`;
           });
@@ -365,9 +405,8 @@
       currentPayMode = payMode;
       document.getElementById('ledgerCard').style.display = 'block';
       document.getElementById('ledgerTitle').innerText = 'Ledger Details: ' + payMode;
-      document.getElementById('ledgerContainer').innerHTML = '<div class="loading">Loading ledger details from Google Sheet...</div>';
+      document.getElementById('ledgerContainer').innerHTML = '<div class="loading">Loading ledger details...</div>';
 
-      // Fetch Direct Cloud Sheet Data
       Promise.all([
         fetch(SCRIPT_URL + "?action=getAccountLedgerDetails&payMode=" + encodeURIComponent(payMode)).then(r => r.json()),
         fetch(SCRIPT_URL + "?action=getBankEntries&payMode=" + encodeURIComponent(payMode)).then(r => r.json()).catch(() => null)
@@ -386,29 +425,51 @@
       });
     }
 
+    // POPUP FUNCTIONS WITH DATE RANGE FILTER
     function openAddModal() {
       document.getElementById('bankModal').style.display = 'flex';
-      renderModalRows();
-      calculateModalLiveTotal();
+      
+      if (!document.getElementById('popupFromDate').value) {
+        document.getElementById('popupFromDate').value = '2026-08-01';
+      }
+      if (!document.getElementById('popupToDate').value) {
+        document.getElementById('popupToDate').value = '2026-08-31';
+      }
+
+      fetchPopupDataByDate();
     }
+
     function closeAddModal() {
       document.getElementById('bankModal').style.display = 'none';
     }
 
-    function calculateModalLiveTotal() {
-      let tot = 0;
-      bankStatementData.forEach(r => { tot += Number(r.amount || 0); });
-      document.getElementById('modalLiveTotal').innerText = tot.toLocaleString();
+    function fetchPopupDataByDate() {
+      let fromDate = document.getElementById('popupFromDate').value;
+      let toDate = document.getElementById('popupToDate').value;
+
+      let filtered = bankStatementData.filter(b => {
+        if (!b.date) return false;
+        let d = String(b.date).split('T')[0];
+        if (fromDate && d < fromDate) return false;
+        if (toDate && d > toDate) return false;
+        return true;
+      });
+
+      renderModalRows(filtered);
     }
 
-    function renderModalRows() {
+    function renderModalRows(dataList) {
       let tbody = document.getElementById('bankModalRows');
       tbody.innerHTML = '';
-      if (bankStatementData.length === 0) {
-        bankStatementData.push({ date: '2026-08-01', amount: '', remarks: '' });
+
+      let listToRender = dataList || bankStatementData;
+
+      if (listToRender.length === 0) {
+        let defaultDate = document.getElementById('popupFromDate').value || '2026-08-01';
+        listToRender.push({ date: defaultDate, amount: '', remarks: '' });
       }
 
-      bankStatementData.forEach((row, idx) => {
+      listToRender.forEach((row, idx) => {
         tbody.innerHTML += `<tr>
           <td>
             <input type="date" id="date_${idx}" value="${row.date || ''}" 
@@ -430,43 +491,76 @@
           </td>
         </tr>`;
       });
-      calculateModalLiveTotal();
+      calculateModalLiveTotal(listToRender);
+    }
+
+    function calculateModalLiveTotal(list) {
+      let tot = 0;
+      let targetList = list || bankStatementData;
+      targetList.forEach(r => { tot += Number(r.amount || 0); });
+      document.getElementById('modalLiveTotal').innerText = tot.toLocaleString();
     }
 
     function updateBankRow(idx, key, val) { 
-      bankStatementData[idx][key] = val; 
-      if (key === 'amount') calculateModalLiveTotal();
+      let inputs = document.querySelectorAll('#bankModalRows tr');
+      if (inputs[idx]) {
+        if (key === 'amount') calculateModalLiveTotalFromDOM();
+      }
     }
 
     function addModalRow(focusNew = false) {
-      let lastDate = '2026-08-01';
-      if (bankStatementData.length > 0) {
-        lastDate = bankStatementData[bankStatementData.length - 1].date || lastDate;
-      }
-      bankStatementData.push({ date: lastDate, amount: '', remarks: '' });
-      renderModalRows();
+      let defaultDate = document.getElementById('popupFromDate').value || '2026-08-01';
+      let tbody = document.getElementById('bankModalRows');
+      let newIdx = tbody.querySelectorAll('tr').length;
+
+      let tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <input type="date" id="date_${newIdx}" value="${defaultDate}" 
+                 onkeydown="handleEnterNavigation(event, ${newIdx}, 'date')">
+        </td>
+        <td>
+          <input type="number" id="amt_${newIdx}" placeholder="Amount" 
+                 oninput="calculateModalLiveTotalFromDOM()" 
+                 onkeydown="handleEnterNavigation(event, ${newIdx}, 'amount')">
+        </td>
+        <td>
+          <input type="text" id="rem_${newIdx}" placeholder="Remarks / Description" 
+                 onkeydown="handleEnterNavigation(event, ${newIdx}, 'remarks')">
+        </td>
+        <td>
+          <button class="btn btn-danger" style="padding: 4px 8px;" onclick="tr.remove(); calculateModalLiveTotalFromDOM();">&times;</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
 
       if (focusNew) {
         setTimeout(() => {
-          let newIdx = bankStatementData.length - 1;
           let targetInput = document.getElementById(`amt_${newIdx}`);
           if (targetInput) targetInput.focus();
         }, 50);
       }
     }
 
-    function removeModalRow(idx) { 
-      bankStatementData.splice(idx, 1); 
-      renderModalRows(); 
+    function calculateModalLiveTotalFromDOM() {
+      let tot = 0;
+      let rowInputs = document.querySelectorAll('#bankModalRows tr');
+      rowInputs.forEach((tr) => {
+        let a = tr.querySelector(`input[type="number"]`) ? tr.querySelector(`input[type="number"]`).value : 0;
+        tot += Number(a || 0);
+      });
+      document.getElementById('modalLiveTotal').innerText = tot.toLocaleString();
     }
 
     function handleEnterNavigation(e, idx, field) {
       if (e.key === 'Enter') {
         e.preventDefault();
         if (field === 'date') {
-          document.getElementById(`amt_${idx}`).focus();
+          let amtInp = document.getElementById(`amt_${idx}`);
+          if (amtInp) amtInp.focus();
         } else if (field === 'amount' || field === 'remarks') {
-          if (idx === bankStatementData.length - 1) {
+          let totalRows = document.querySelectorAll('#bankModalRows tr').length;
+          if (idx === totalRows - 1) {
             addModalRow(true);
           } else {
             let nextAmt = document.getElementById(`amt_${idx + 1}`);
@@ -476,117 +570,207 @@
       }
     }
 
-    /* DIRECT GOOGLE SHEET SAVING */
+    function clearPopupFormOnly() {
+      let defaultDate = document.getElementById('popupFromDate').value || '2026-08-01';
+      document.getElementById('bankModalRows').innerHTML = '';
+      addModalRow(true);
+      calculateModalLiveTotalFromDOM();
+    }
+
     function saveBankModalEntries() {
-      bankStatementData = bankStatementData.filter(r => r.date || r.amount || r.remarks);
+      let fromDate = document.getElementById('popupFromDate').value;
+      let toDate = document.getElementById('popupToDate').value;
+
+      let currentRows = [];
+      let rowInputs = document.querySelectorAll('#bankModalRows tr');
+      
+      rowInputs.forEach((tr) => {
+        let d = tr.querySelector(`input[type="date"]`) ? tr.querySelector(`input[type="date"]`).value : '';
+        let a = tr.querySelector(`input[type="number"]`) ? tr.querySelector(`input[type="number"]`).value : '';
+        let r = tr.querySelector(`input[type="text"]`) ? tr.querySelector(`input[type="text"]`).value : '';
+
+        if (d && a) {
+          currentRows.push({ date: d, amount: a, remarks: r });
+        }
+      });
 
       let btn = document.getElementById('btnSaveCloud');
       if (btn) {
-        btn.innerText = "⏳ Google Sheet main Save ho raha hy...";
+        btn.innerText = "⏳ Syncing...";
         btn.disabled = true;
       }
 
-      let entriesString = encodeURIComponent(JSON.stringify(bankStatementData));
+      let entriesString = encodeURIComponent(JSON.stringify(currentRows));
       let modeString = encodeURIComponent(currentPayMode);
-      let saveUrl = SCRIPT_URL + "?action=saveBankEntries&payMode=" + modeString + "&entries=" + entriesString;
+      let saveUrl = SCRIPT_URL + "?action=saveBankEntries&payMode=" + modeString + 
+                    "&entries=" + entriesString + 
+                    "&startDate=" + encodeURIComponent(fromDate) + 
+                    "&endDate=" + encodeURIComponent(toDate);
 
       fetch(saveUrl)
         .then(res => res.json())
         .then(response => {
           if (btn) {
-            btn.innerText = "💾 Save Entries";
+            btn.innerText = "💾 Sync & Save";
             btn.disabled = false;
           }
           if (response && response.success) {
-            alert("✅ Data Google Sheet (BANK_STATEMENTS) main successfully save ho gaya hy!");
+            alert("✅ Backend Sheet ke sath data successful sync ho gaya hy!");
+            viewLedger(currentPayMode);
+            closeAddModal();
           } else {
-            alert("⚠️ Sheet Error: " + (response ? response.error : "Unknown error"));
+            alert("⚠️ Sync Error: " + (response ? response.error : "Unknown Error"));
           }
-          closeAddModal();
-          applyLedgerDateFilter();
         })
         .catch(err => {
           if (btn) {
-            btn.innerText = "💾 Save Entries";
+            btn.innerText = "💾 Sync & Save";
             btn.disabled = false;
           }
-          alert("⚠️ Network Error saving to Sheet!");
-          closeAddModal();
-          applyLedgerDateFilter();
+          alert("⚠️ Network Error saving!");
         });
     }
 
-    function clearBankEntries() {
-      if(confirm("Google Sheet se Bank Statement entries clear kar dein?")) {
-        bankStatementData = [];
-        saveBankModalEntries();
-      }
+    // HEADING SORTING
+    function handleHeaderSort(key) {
+      if (currentSortKey === key) currentSortAsc = !currentSortAsc;
+      else { currentSortKey = key; currentSortAsc = true; }
+      applyLedgerDateFilter();
     }
 
-    /* Alignment & Sorting Engine */
     function applyLedgerDateFilter() {
-      let fromVal = document.getElementById('ledgerFromDate').value;
-      let toVal = document.getElementById('ledgerToDate').value;
+      let sysFrom = document.getElementById('sysFromDate') ? document.getElementById('sysFromDate').value : '';
+      let sysTo = document.getElementById('sysToDate') ? document.getElementById('sysToDate').value : '';
+
+      let bankFrom = document.getElementById('bankFromDate') ? document.getElementById('bankFromDate').value : '';
+      let bankTo = document.getElementById('bankToDate') ? document.getElementById('bankToDate').value : '';
+
       let pendingOnly = document.getElementById('showPendingOnlyCheckbox').checked;
 
+      // 1. Filter System Ledger
       let filteredSystem = currentLedgerData.filter(tx => {
         if (!tx.date) return false;
         let txDate = String(tx.date).split('T')[0];
-        if (fromVal && txDate < fromVal) return false;
-        if (toVal && txDate > toVal) return false;
+        if (sysFrom && txDate < sysFrom) return false;
+        if (sysTo && txDate > sysTo) return false;
         return true;
       });
 
+      // 2. Filter Bank Statement
       let filteredBank = bankStatementData.filter(b => {
-        if (fromVal && b.date < fromVal) return false;
-        if (toVal && b.date > toVal) return false;
+        if (!b.date) return false;
+        let bDate = String(b.date).split('T')[0];
+        if (bankFrom && bDate < bankFrom) return false;
+        if (bankTo && bDate > bankTo) return false;
         return true;
       });
 
+      // Sort system entries chronologically before matching
+      filteredSystem.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      // 3. STRICT CHRONOLOGICAL & DATE-PROXIMITY RECONCILIATION MATCHING
       let matchedBankIndices = new Set();
       let alignedRows = [];
 
       filteredSystem.forEach(sys => {
         let sysTime = sys.date ? new Date(sys.date).getTime() : 0;
-        
+        let sysAmt = Number(sys.receipts || 0) || Number(sys.payments || 0);
+
         if (sysTime < AUG_2026_CUTOFF) {
-          alignedRows.push({ sys: sys, bank: null, isCleared: true, sortTime: sysTime });
+          alignedRows.push({ sys: sys, bank: null, isCleared: true, sortTime: sysTime, amount: sysAmt });
           return;
         }
 
-        let sysAmt = Number(sys.receipts || 0) || Number(sys.payments || 0);
-        let matchIdx = filteredBank.findIndex((b, bIdx) => {
-          if (matchedBankIndices.has(bIdx)) return false;
-          let bAmt = Number(b.amount || 0);
-          return Math.abs(sysAmt - bAmt) < 0.01;
+        let bestMatchIdx = -1;
+        let minDiff = Infinity;
+
+        // Phase 1: Search Exact Date + Amount Match
+        filteredBank.forEach((b, bIdx) => {
+          if (!matchedBankIndices.has(bIdx)) {
+            let bAmt = Number(b.amount || 0);
+            let bTime = b.date ? new Date(b.date).getTime() : 0;
+            let dateDiffDays = Math.abs(sysTime - bTime) / (1000 * 3600 * 24);
+
+            if (Math.abs(sysAmt - bAmt) < 0.01 && dateDiffDays === 0) {
+              bestMatchIdx = bIdx;
+              minDiff = 0;
+            }
+          }
         });
 
-        if (matchIdx !== -1) {
-          matchedBankIndices.add(matchIdx);
-          alignedRows.push({ sys: sys, bank: filteredBank[matchIdx], isCleared: true, sortTime: sysTime });
+        // Phase 2: Search Nearest Date (+/- 3 days) Amount Match
+        if (bestMatchIdx === -1) {
+          filteredBank.forEach((b, bIdx) => {
+            if (!matchedBankIndices.has(bIdx)) {
+              let bAmt = Number(b.amount || 0);
+              let bTime = b.date ? new Date(b.date).getTime() : 0;
+              let dateDiffDays = Math.abs(sysTime - bTime) / (1000 * 3600 * 24);
+
+              if (Math.abs(sysAmt - bAmt) < 0.01 && dateDiffDays <= 3 && dateDiffDays < minDiff) {
+                bestMatchIdx = bIdx;
+                minDiff = dateDiffDays;
+              }
+            }
+          });
+        }
+
+        if (bestMatchIdx !== -1) {
+          matchedBankIndices.add(bestMatchIdx);
+          alignedRows.push({ sys: sys, bank: filteredBank[bestMatchIdx], isCleared: true, sortTime: sysTime, amount: sysAmt });
         } else {
-          alignedRows.push({ sys: sys, bank: null, isCleared: false, sortTime: sysTime });
+          // ERP me hy par Bank me us date ke kareeb nahi hy -> Explicit Pending for THIS date
+          alignedRows.push({ sys: sys, bank: null, isCleared: false, sortTime: sysTime, amount: sysAmt });
         }
       });
 
+      // Unmatched Bank Entries -> Missing in ERP
       filteredBank.forEach((b, bIdx) => {
         if (!matchedBankIndices.has(bIdx)) {
           let bTime = b.date ? new Date(b.date).getTime() : 0;
-          alignedRows.push({ sys: null, bank: b, isCleared: false, sortTime: bTime });
+          let bAmt = Number(b.amount || 0);
+          alignedRows.push({ sys: null, bank: b, isCleared: false, sortTime: bTime, amount: bAmt });
         }
       });
 
-      // Sort Chronologically by Date to place missing Bank Entries exactly inline with dates
-      alignedRows.sort((a, b) => a.sortTime - b.sortTime);
+      // 4. UNIFIED SORTING (PERFORMS PROPER ROW PAIR ALIGNMENT)
+      alignedRows.sort((a, b) => {
+        let valA, valB;
+
+        if (currentSortKey === 'receipt' || currentSortKey === 'amount' || currentSortKey === 'payment') {
+          valA = a.amount;
+          valB = b.amount;
+        } else if (currentSortKey === 'voucher') {
+          valA = a.sys ? String(a.sys.voucher || '') : '';
+          valB = b.sys ? String(b.sys.voucher || '') : '';
+        } else if (currentSortKey === 'title' || currentSortKey === 'remarks') {
+          valA = a.sys ? String(a.sys.accTitle || '') : (a.bank ? String(a.bank.remarks || '') : '');
+          valB = b.sys ? String(b.sys.accTitle || '') : (b.bank ? String(b.bank.remarks || '') : '');
+        } else if (currentSortKey === 'status' || currentSortKey === 'matching') {
+          valA = a.isCleared ? 1 : 0;
+          valB = b.isCleared ? 1 : 0;
+        } else {
+          valA = a.sortTime;
+          valB = b.sortTime;
+        }
+
+        if (valA < valB) return currentSortAsc ? -1 : 1;
+        if (valA > valB) return currentSortAsc ? 1 : -1;
+        return 0;
+      });
 
       if (pendingOnly) {
         alignedRows = alignedRows.filter(r => !r.isCleared);
       }
 
-      renderSplitView(alignedRows);
+      renderSplitView(alignedRows, sysFrom, sysTo, bankFrom, bankTo);
     }
 
-    function renderSplitView(alignedRows) {
+    function getSortIcon(key) {
+      if (currentSortKey !== key) return ' ↕';
+      return currentSortAsc ? ' ▲' : ' ▼';
+    }
+
+    function renderSplitView(alignedRows, sysFrom, sysTo, bankFrom, bankTo) {
       let isSplitView = document.getElementById('toggleSplitView').checked;
 
       let clearedCount = alignedRows.filter(r => r.isCleared).length;
@@ -603,7 +787,6 @@
 
       let html = ``;
       
-      // Only show reconcile bar if Split View is ON
       if (isSplitView) {
         html += `
         <div class="reconcile-bar">
@@ -616,19 +799,27 @@
         <div class="reconcile-split-container">
           <!-- LEFT: SYSTEM LEDGER -->
           <div class="split-col">
-            <div class="split-col-title" style="color:#2563eb;">
-              <span>💻 System ERP Ledger</span>
-              <span class="total-label-badge total-blue">Total: Rs. ${systemTotalAmt.toLocaleString()}</span>
+            <div class="split-col-header">
+              <div class="split-col-title" style="color:#2563eb;">
+                <span>💻 System ERP Ledger</span>
+                <span class="total-label-badge total-blue">Total: Rs. ${systemTotalAmt.toLocaleString()}</span>
+              </div>
+              <div class="side-filter-box">
+                <label>From: <input type="date" id="sysFromDate" value="${sysFrom || ''}" onchange="applyLedgerDateFilter()"></label>
+                <label>To: <input type="date" id="sysToDate" value="${sysTo || ''}" onchange="applyLedgerDateFilter()"></label>
+                <button class="btn btn-gray" style="padding:2px 6px; font-size:10px;" onclick="resetSysFilter()">Reset</button>
+              </div>
             </div>
+
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Voucher</th>
-                  <th>Title</th>
-                  <th class="text-right">Receipt</th>
-                  <th class="text-right">Payment</th>
-                  <th style="text-align:center;">Status</th>
+                  <th style="width: 16%;" onclick="handleHeaderSort('date')">Date${getSortIcon('date')}</th>
+                  <th style="width: 14%;" onclick="handleHeaderSort('voucher')">Voucher${getSortIcon('voucher')}</th>
+                  <th style="width: 32%;" onclick="handleHeaderSort('title')">Title${getSortIcon('title')}</th>
+                  <th style="width: 13%;" class="text-right" onclick="handleHeaderSort('receipt')">Receipt${getSortIcon('receipt')}</th>
+                  <th style="width: 12%;" class="text-right" onclick="handleHeaderSort('payment')">Pay${getSortIcon('payment')}</th>
+                  <th style="width: 13%; text-align:center;" onclick="handleHeaderSort('status')">Status${getSortIcon('status')}</th>
                 </tr>
               </thead>
               <tbody>`;
@@ -638,8 +829,8 @@
             let rowClass = (!r.isCleared && r.sortTime >= AUG_2026_CUTOFF) ? 'row-unmatched' : '';
             html += `<tr class="${rowClass}">
               <td style="white-space:nowrap;">${formatShortDate(r.sys.date)}</td>
-              <td><b>${r.sys.voucher || ''}</b></td>
-              <td>${r.sys.accTitle || ''}</td>
+              <td title="${r.sys.voucher || ''}"><b>${r.sys.voucher || ''}</b></td>
+              <td title="${r.sys.accTitle || ''}">${r.sys.accTitle || ''}</td>
               <td class="text-right" style="color:#059669;">${r.sys.receipts ? Number(r.sys.receipts).toLocaleString() : '-'}</td>
               <td class="text-right" style="color:#dc2626;">${r.sys.payments ? Number(r.sys.payments).toLocaleString() : '-'}</td>
               <td style="text-align:center;">
@@ -649,32 +840,44 @@
               </td>
             </tr>`;
           } else {
-            // Spacer for unmatched Bank Statement Entry - Highlighted Red in System Column
+            // Khali ERP Row Jab Entry Bank Me Ho Lekin ERP Me Na Ho
             html += `<tr class="row-unmatched">
-              <td>-</td><td>-</td><td style="color:#dc2626; font-weight:bold;">[No ERP Entry]</td>
-              <td class="text-right">-</td><td class="text-right">-</td><td style="text-align:center;">-</td>
+              <td>-</td><td>-</td><td style="color:#dc2626; font-weight:bold;">[Missing in ERP]</td>
+              <td class="text-right">-</td><td class="text-right">-</td>
+              <td style="text-align:center;"><span class="status-badge status-missing">⚠️ Missing</span></td>
             </tr>`;
           }
         });
 
+        if(alignedRows.length === 0) {
+          html += `<tr><td colspan="6" style="text-align:center; color:#64748b;">No entries to display.</td></tr>`;
+        }
         html += `</tbody></table></div>
 
           <!-- RIGHT: BANK STATEMENT -->
           <div class="split-col">
-            <div class="split-col-title" style="color:#059669;">
-              <span>🏦 Bank Statement Entries</span>
-              <div>
-                <span class="total-label-badge total-green" style="margin-right:8px;">Total: Rs. ${bankTotalAmt.toLocaleString()}</span>
-                <button class="btn btn-blue" style="padding:3px 8px; font-size:11px;" onclick="openAddModal()">Edit Entries</button>
+            <div class="split-col-header">
+              <div class="split-col-title" style="color:#059669;">
+                <span>🏦 Bank Statement Entries</span>
+                <div>
+                  <span class="total-label-badge total-green" style="margin-right:8px;">Total: Rs. ${bankTotalAmt.toLocaleString()}</span>
+                  <button class="btn btn-blue" style="padding:3px 8px; font-size:11px;" onclick="openAddModal()">Edit Entries</button>
+                </div>
+              </div>
+              <div class="side-filter-box">
+                <label>From: <input type="date" id="bankFromDate" value="${bankFrom || ''}" onchange="applyLedgerDateFilter()"></label>
+                <label>To: <input type="date" id="bankToDate" value="${bankTo || ''}" onchange="applyLedgerDateFilter()"></label>
+                <button class="btn btn-gray" style="padding:2px 6px; font-size:10px;" onclick="resetBankFilter()">Reset</button>
               </div>
             </div>
+
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Remarks</th>
-                  <th class="text-right">Amount</th>
-                  <th style="text-align:center;">Matching</th>
+                  <th style="width: 20%;" onclick="handleHeaderSort('date')">Date${getSortIcon('date')}</th>
+                  <th style="width: 40%;" onclick="handleHeaderSort('remarks')">Remarks${getSortIcon('remarks')}</th>
+                  <th style="width: 20%;" class="text-right" onclick="handleHeaderSort('amount')">Amount${getSortIcon('amount')}</th>
+                  <th style="width: 20%; text-align:center;" onclick="handleHeaderSort('matching')">Matching${getSortIcon('matching')}</th>
                 </tr>
               </thead>
               <tbody>`;
@@ -685,7 +888,7 @@
             let bgStyle = r.isCleared ? 'background:#f0fdf4;' : '';
             html += `<tr class="${rowClass}" style="${bgStyle}">
               <td style="white-space:nowrap;">${formatShortDate(r.bank.date)}</td>
-              <td>${r.bank.remarks || 'Bank Entry'}</td>
+              <td title="${r.bank.remarks || 'Bank Entry'}">${r.bank.remarks || 'Bank Entry'}</td>
               <td class="text-right" style="color:${r.isCleared ? '#059669' : '#dc2626'}; font-weight:bold;">${r.bank.amount ? Number(r.bank.amount).toLocaleString() : '-'}</td>
               <td style="text-align:center;">
                 <span class="status-badge ${r.isCleared ? 'status-cleared' : 'status-missing'}">
@@ -694,9 +897,11 @@
               </td>
             </tr>`;
           } else {
-            // Spacer for unmatched System Entry
+            // Khali Bank Row Jab Entry ERP Me Ho Lekin Bank Stmt Me Na Ho
             html += `<tr class="row-unmatched">
-              <td>-</td><td style="color:#dc2626; font-weight:bold;">[Not in Bank Stmt]</td><td class="text-right">-</td><td style="text-align:center;">-</td>
+              <td>-</td><td style="color:#dc2626; font-weight:bold;">[Missing in Bank Stmt]</td>
+              <td class="text-right">-</td>
+              <td style="text-align:center;"><span class="status-badge status-pending">⏳ Pending</span></td>
             </tr>`;
           }
         });
@@ -707,42 +912,49 @@
         html += `</tbody></table></div></div>`;
       } 
       else {
-        // SINGLE FULL VIEW - When Checkbox is Unchecked
+        // SINGLE FULL VIEW
         html += `
         <div style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: #fff;">
-          <div style="padding: 15px; color: #2563eb; background: #f8fafc; font-weight: 700; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+          <div style="padding: 12px 15px; color: #2563eb; background: #f8fafc; font-weight: 700; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
             <span>💻 System ERP Ledger</span>
             <span class="total-label-badge total-blue">Total: Rs. ${systemTotalAmt.toLocaleString()}</span>
           </div>
+          
+          <div style="padding: 8px 15px; background: #f8fafc; border-bottom: 1px solid var(--border);">
+            <div class="side-filter-box">
+              <label>From: <input type="date" id="sysFromDate" value="${sysFrom || ''}" onchange="applyLedgerDateFilter()"></label>
+              <label>To: <input type="date" id="sysToDate" value="${sysTo || ''}" onchange="applyLedgerDateFilter()"></label>
+              <button class="btn btn-gray" style="padding:2px 6px; font-size:10px;" onclick="resetSysFilter()">Reset</button>
+            </div>
+          </div>
+
           <table style="margin: 0;">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Voucher</th>
-                <th>Title</th>
-                <th class="text-right">Receipt</th>
-                <th class="text-right">Payment</th>
-                <th style="text-align:center;">Status</th>
+                <th style="width: 15%;" onclick="handleHeaderSort('date')">Date${getSortIcon('date')}</th>
+                <th style="width: 15%;" onclick="handleHeaderSort('voucher')">Voucher${getSortIcon('voucher')}</th>
+                <th style="width: 35%;" onclick="handleHeaderSort('title')">Title${getSortIcon('title')}</th>
+                <th style="width: 12%;" class="text-right" onclick="handleHeaderSort('receipt')">Receipt${getSortIcon('receipt')}</th>
+                <th style="width: 11%;" class="text-right" onclick="handleHeaderSort('payment')">Payment${getSortIcon('payment')}</th>
+                <th style="width: 12%; text-align:center;" onclick="handleHeaderSort('status')">Status${getSortIcon('status')}</th>
               </tr>
             </thead>
             <tbody>`;
         
-        alignedRows.forEach(r => {
-          if (r.sys) {
-            let rowClass = (!r.isCleared && r.sortTime >= AUG_2026_CUTOFF) ? 'row-unmatched' : '';
-            html += `<tr class="${rowClass}">
-              <td style="white-space:nowrap;">${formatShortDate(r.sys.date)}</td>
-              <td><b>${r.sys.voucher || ''}</b></td>
-              <td>${r.sys.accTitle || ''}</td>
-              <td class="text-right" style="color:#059669;">${r.sys.receipts ? Number(r.sys.receipts).toLocaleString() : '-'}</td>
-              <td class="text-right" style="color:#dc2626;">${r.sys.payments ? Number(r.sys.payments).toLocaleString() : '-'}</td>
-              <td style="text-align:center;">
-                <span class="status-badge ${r.isCleared ? 'status-cleared' : 'status-pending'}">
-                  ${r.isCleared ? '✓ Cleared' : '⏳ Pending'}
-                </span>
-              </td>
-            </tr>`;
-          }
+        alignedRows.filter(r => r.sys).forEach(r => {
+          let rowClass = (!r.isCleared && r.sortTime >= AUG_2026_CUTOFF) ? 'row-unmatched' : '';
+          html += `<tr class="${rowClass}">
+            <td style="white-space:nowrap;">${formatShortDate(r.sys.date)}</td>
+            <td><b>${r.sys.voucher || ''}</b></td>
+            <td>${r.sys.accTitle || ''}</td>
+            <td class="text-right" style="color:#059669;">${r.sys.receipts ? Number(r.sys.receipts).toLocaleString() : '-'}</td>
+            <td class="text-right" style="color:#dc2626;">${r.sys.payments ? Number(r.sys.payments).toLocaleString() : '-'}</td>
+            <td style="text-align:center;">
+              <span class="status-badge ${r.isCleared ? 'status-cleared' : 'status-pending'}">
+                ${r.isCleared ? '✓ Cleared' : '⏳ Pending'}
+              </span>
+            </td>
+          </tr>`;
         });
         
         if (alignedRows.filter(r => r.sys).length === 0) {
@@ -754,9 +966,25 @@
       document.getElementById('ledgerContainer').innerHTML = html;
     }
 
-    function resetLedgerDateFilter() {
-      document.getElementById('ledgerFromDate').value = '';
-      document.getElementById('ledgerToDate').value = '';
+    function resetSysFilter() {
+      if (document.getElementById('sysFromDate')) document.getElementById('sysFromDate').value = '';
+      if (document.getElementById('sysToDate')) document.getElementById('sysToDate').value = '';
+      currentSortKey = 'date';
+      currentSortAsc = true;
+      applyLedgerDateFilter();
+    }
+
+    function resetBankFilter() {
+      if (document.getElementById('bankFromDate')) document.getElementById('bankFromDate').value = '';
+      if (document.getElementById('bankToDate')) document.getElementById('bankToDate').value = '';
+      currentSortKey = 'date';
+      currentSortAsc = true;
+      applyLedgerDateFilter();
+    }
+
+    function resetAllFilters() {
+      resetSysFilter();
+      resetBankFilter();
       document.getElementById('showPendingOnlyCheckbox').checked = false;
       applyLedgerDateFilter();
     }
