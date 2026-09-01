@@ -80,6 +80,12 @@
     button.secondary:hover {
       background-color: #263238;
     }
+    button.excel-btn {
+      background-color: #1f7246;
+    }
+    button.excel-btn:hover {
+      background-color: #155734;
+    }
 
     #loadingContainer {
       display: none;
@@ -121,12 +127,12 @@
     }
     
     th, td {
-      padding: 1px 2px;
+      padding: 2px 4px;
       border: 1px solid #bbb !important;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 10pt; 
+      font-size: 9.5pt; 
       font-weight: normal; 
       line-height: 1.1;
     }
@@ -135,24 +141,27 @@
       font-weight: bold !important;
     }
     
-    /* Adjusted Column Widths */
-    th.col-1, td.col-1 { width: 44px; }   /* Account No */
+    th.col-1, td.col-1 { width: 55px; }   /* Account No */
     th.col-2, td.col-2 { width: 95px; }   /* Account Title */
-    th.col-3, td.col-3 { width: 68px; }   /* Approved By */
-    th.col-4, td.col-4 { width: 36px; }   /* CRO */
-    th.col-5, td.col-5 { width: 78px; }   /* Mobile NO */
-    th.col-6, td.col-6 { width: 46px; }   /* M Inst */
-    th.col-7, td.col-7 { width: 65px; }   /* Remarks */
-    th.col-8, td.col-8 { width: 130px; }  /* Product Title */
+    th.col-3, td.col-3 { width: 55px; }   /* Approved By */
+    th.col-4, td.col-4 { width: 32px; }   /* CRO */
+    th.col-5, td.col-5 { width: 75px; }   /* Mobile NO */
+    th.col-6, td.col-6 { width: 50px; }   /* M Inst */
+    th.col-7, td.col-7 { width: 50px; }   /* Adv */
+    th.col-8, td.col-8 { width: 50px; }   /* Pros */
     th.col-9, td.col-9 { width: 30px; }   /* Plan(M) */
-    th.col-10, td.col-10 { width: 56px; } /* Total Sale */
-    th.col-11, td.col-11 { width: 56px; } /* Total Paid */
-    th.col-12, td.col-12 { width: 52px; } /* T Balance */
+    th.col-10, td.col-10 { width: 60px; } /* Total Sale */
+    th.col-11, td.col-11 { width: 60px; } /* Total Paid */
+    th.col-12, td.col-12 { width: 55px; } /* T Balance */
     th.col-13, td.col-13 { width: 55px; } /* Delivery Date */
-    th.col-14, td.col-14 { width: 38px; } /* M-3 */
-    th.col-15, td.col-15 { width: 38px; } /* M-2 */
-    th.col-16, td.col-16 { width: 38px; } /* M-1 */
-    th.col-17, td.col-17 { width: 44px; } /* CMD */
+    th.col-14, td.col-14 { width: 55px; } /* LPD */
+    th.col-15, td.col-15 { width: 55px; } /* L.PAmnt */
+    th.col-16, td.col-16 { width: 65px; } /* Next Inst Month */
+    th.col-17, td.col-17 { width: 50px; } /* End */
+    th.col-18, td.col-18 { width: 50px; } /* M-3 */
+    th.col-19, td.col-19 { width: 50px; } /* M-2 */
+    th.col-20, td.col-20 { width: 50px; } /* M-1 */
+    th.col-21, td.col-21 { width: 55px; } /* CMD */
 
     .sticky-header {
       background-color: #1b5e20 !important;
@@ -162,20 +171,20 @@
       z-index: 2;
       font-weight: bold;
       text-align: center;
-      font-size: 10pt;
-      letter-spacing: 0.3px;
+      font-size: 9.5pt;
+      letter-spacing: 0.2px;
     }
     .sticky-header th {
-      padding: 3px 1px;
+      padding: 4px 2px;
     }
     .filter-header-row {
       background-color: #f1f8e9 !important;
       position: sticky;
-      top: 23px;
+      top: 25px;
       z-index: 2;
     }
     .filter-header-row th {
-      padding: 1px 1px;
+      padding: 1px 2px;
       background-color: #f1f8e9;
     }
     .filter-cell-wrapper {
@@ -273,7 +282,6 @@
       justify-content: center;
     }
 
-    /* Ledger Modal Styles */
     .ledger-modal {
       display: none;
       position: fixed;
@@ -377,7 +385,7 @@
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      button, .filters-grid, .filter-header-row, #loadingContainer, .excel-popup, .ledger-modal { 
+      button, .filters-grid, .filter-header-row, #loadingContainer, .excel-popup, .ledger-modal, .summary-box { 
         display: none !important; 
       }
       .container { 
@@ -397,26 +405,21 @@
       th {
         background-color: #1b5e20 !important;
         color: white !important;
-        font-size: 10pt !important;
+        font-size: 9.5pt !important;
         font-weight: bold !important;
-        padding: 2px 2px !important;
+        padding: 3px 2px !important;
         border: 1px solid #000 !important;
         -webkit-print-color-adjust: exact;
       }
       td {
         border: 1px solid #000 !important;
-        padding: 1px 2px !important;
-        font-size: 10pt !important;
+        padding: 2px 4px !important;
+        font-size: 9.5pt !important;
         font-weight: normal !important;
         line-height: 1.1 !important;
       }
       .sticky-header {
         position: static !important;
-      }
-      .summary-box {
-        background: #e8f5e9 !important;
-        border: 1px solid #000 !important;
-        font-size: 10px !important;
       }
     }
   
@@ -425,25 +428,7 @@
     .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
     .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
     .change-url-link { text-align: right; font-size: 10px; color: #64748b; margin-bottom: 4px; cursor: pointer; text-decoration: underline; }
-
-    .auto-mic-wrap { position: relative; display: inline-block; width: 100%; }
-    .auto-mic-btn {
-      position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
-      width: 20px; height: 20px; padding: 0; border: none; background: transparent;
-      cursor: pointer; font-size: 12px; line-height: 1; z-index: 5; opacity: 0.55;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .auto-mic-btn:hover { opacity: 1; }
-    .auto-mic-btn.listening {
-      background: #c62828; border-radius: 50%; color: #fff; opacity: 1;
-      animation: autoMicPulse 1s infinite;
-    }
-    @keyframes autoMicPulse {
-      0% { box-shadow: 0 0 0 0 rgba(198,40,40,0.5); }
-      70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
-      100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
-    }
-</style>
+  </style>
 </head>
 <body>
   <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
@@ -479,11 +464,12 @@
       </div>
       <div class="input-group">
         <label>START FROM ACCT</label>
-        <input type="text" id="startFromAcctInput" placeholder="From Acct No...">
+        <input type="text" id="startFromAcctInput" placeholder="From Acc No...">
       </div>
       <div class="button-group">
         <button onclick="fetchAndFilterData(true)" title="Reload Data"><i class="fa fa-sync"></i></button>
         <button class="secondary" onclick="resetFilters()" title="Reset"><i class="fa fa-redo"></i></button>
+        <button class="excel-btn" onclick="exportToExcel()" title="Export to Excel"><i class="fa fa-file-excel"></i></button>
         <button class="secondary" onclick="printReport()" title="Print"><i class="fa fa-print"></i></button>
       </div>
     </div>
@@ -503,17 +489,21 @@
             <th class="col-4">CRO</th>
             <th class="col-5">Mobile NO</th>
             <th class="col-6">M Inst</th>
-            <th class="col-7">Remarks</th>
-            <th class="col-8">Product</th>
+            <th class="col-7">Adv</th>
+            <th class="col-8">Pros</th>
             <th class="col-9">Plan(M)</th>
             <th class="col-10">Total Sale</th>
             <th class="col-11">Total Paid</th>
             <th class="col-12">T Balance</th>
             <th class="col-13">Delivery Date</th>
-            <th class="col-14" id="thM3">M-3</th>
-            <th class="col-15" id="thM2">M-2</th>
-            <th class="col-16" id="thM1">M-1</th>
-            <th class="col-17">CMD</th>
+            <th class="col-14">LPD</th>
+            <th class="col-15">L.PAmnt</th>
+            <th class="col-16">Next Inst Month</th>
+            <th class="col-17">End</th>
+            <th class="col-18" id="thM3">M-3</th>
+            <th class="col-19" id="thM2">M-2</th>
+            <th class="col-20" id="thM1">M-1</th>
+            <th class="col-21">CMD</th>
           </tr>
           <tr class="filter-header-row">
             <th class="col-1"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="accNo" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'accNo')"><i class="fa fa-filter"></i></button></div></th>
@@ -522,22 +512,26 @@
             <th class="col-4"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="cro" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'cro')"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-5"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="mobile" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'mobile')"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-6"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="monthlyInst" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'monthlyInst', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-7"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="remarks" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'remarks')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-8"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="product" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'product')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-7"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="advance" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'advance', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-8"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="processingFee" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'processingFee', true)"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-9"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="plan" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'plan')"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-10"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="totalSales" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'totalSales', true)"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-11"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="totalReceived" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'totalReceived', true)"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-12"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="balance" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'balance', true)"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-13"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="deliveryDate" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'deliveryDate')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-14"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m3Received" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'm3Received', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-15"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m2Received" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'm2Received', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-16"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m1Received" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'm1Received', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-17"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="cmd" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'cmd', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-14"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="lpd" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'lpd')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-15"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="lpAmount" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'lpAmount', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-16"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="nextInst" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'nextInst')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-17"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="endingMonth" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'endingMonth')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-18"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m3Received" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'm3Received', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-19"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m2Received" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'm2Received', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-20"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m1Received" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'm1Received', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-21"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="cmd" placeholder="Filter..."><button class="excel-filter-btn" onclick="toggleExcelPopup(event, 'cmd', true)"><i class="fa fa-filter"></i></button></div></th>
           </tr>
         </thead>
         <tbody id="tableBody">
           <tr>
-            <td colspan="17" style="text-align: center; color: #777; padding: 15px; font-weight: normal;">Loading aging report...</td>
+            <td colspan="21" style="text-align: center; color: #777; padding: 15px; font-weight: normal;">Loading aging report...</td>
           </tr>
         </tbody>
       </table>
@@ -549,7 +543,6 @@
     </div>
   </div>
 
-  <!-- Excel Filter Popup Box -->
   <div id="excelPopupBox" class="excel-popup">
     <div id="numericFilterSection" style="display:none;">
       <label style="font-size:10px; font-weight:bold; color:#555; display:block; margin-bottom:2px;">Condition:</label>
@@ -580,7 +573,6 @@
     </div>
   </div>
 
-  <!-- Ledger Modal HTML -->
   <div id="ledgerModal" class="ledger-modal">
     <div class="ledger-modal-content">
       <div class="ledger-header">
@@ -599,7 +591,6 @@
             </tr>
           </thead>
           <tbody id="ledgerTableBody">
-            <!-- Dynamic Ledger Rows -->
           </tbody>
         </table>
       </div>
@@ -614,19 +605,82 @@
     let isDateCol = false;
     let popupAllUniqueValues = [];
 
-    // Permanent Web App URL
     let WEB_APP_URL = localStorage.getItem('erp_script_url') || "";
 
-    function formatDateDDMMYY(dateString) {
-      if (!dateString) return '';
-      let d = new Date(dateString);
-      if (isNaN(d.getTime())) {
-        return String(dateString);
+    // --- Enhanced Date Parser to handle "August 26", "July 26", "Aug-26" correctly ---
+    function parseCustomDate(dateString) {
+      if (!dateString) return null;
+      if (dateString instanceof Date) return isNaN(dateString.getTime()) ? null : dateString;
+      
+      let str = String(dateString).trim();
+      if (!str) return null;
+
+      // 1. Check for Month Name + 2-digit/4-digit Year (e.g., "August 26", "July 26", "Aug-26", "Sep-26", "August 2026")
+      let monthYearMatch = str.match(/^([A-Za-z]+)[\s\-\/]+(\d{2}|\d{4})$/);
+      if (monthYearMatch) {
+        let mStr = monthYearMatch[1].toLowerCase();
+        let yNum = parseInt(monthYearMatch[2], 10);
+        let year = yNum < 100 ? (yNum >= 50 ? 1900 + yNum : 2000 + yNum) : yNum;
+        
+        let months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+        let monthIdx = months.findIndex(m => mStr.startsWith(m));
+        if (monthIdx !== -1) {
+          return new Date(year, monthIdx, 1);
+        }
       }
+
+      // 2. Check for 2-digit/4-digit Year + Month Name (e.g., "26-August", "2026-Aug")
+      let yearMonthMatch = str.match(/^(\d{2}|\d{4})[\s\-\/]+([A-Za-z]+)$/);
+      if (yearMonthMatch) {
+        let yNum = parseInt(yearMonthMatch[1], 10);
+        let year = yNum < 100 ? (yNum >= 50 ? 1900 + yNum : 2000 + yNum) : yNum;
+        let mStr = yearMonthMatch[2].toLowerCase();
+        let months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+        let monthIdx = months.findIndex(m => mStr.startsWith(m));
+        if (monthIdx !== -1) {
+          return new Date(year, monthIdx, 1);
+        }
+      }
+
+      // 3. Standard DD/MM/YYYY or DD-MM-YYYY or YYYY-MM-DD formats
+      let parts = str.split(/[\/\-]/);
+      if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+        let p1 = parseInt(parts[0], 10);
+        let p2 = parseInt(parts[1], 10) - 1;
+        let p3 = parseInt(parts[2], 10);
+        
+        let year = p3 < 100 ? (p3 >= 50 ? 1900 + p3 : 2000 + p3) : p3;
+        if (p1 > 31) {
+          return new Date(p1, p2, p3);
+        } else {
+          return new Date(year, p2, p1);
+        }
+      }
+
+      // 4. Standard JS Date parsing for full date strings (e.g. "Wed Aug 25 2026...")
+      let d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        return d;
+      }
+
+      return null;
+    }
+
+    function formatDateDDMMYY(dateString) {
+      let d = parseCustomDate(dateString);
+      if (!d) return String(dateString || '');
       let day = String(d.getDate()).padStart(2, '0');
       let month = String(d.getMonth() + 1).padStart(2, '0');
       let year = String(d.getFullYear()).slice(-2);
       return `${day}-${month}-${year}`;
+    }
+
+    function formatMonthYearName(dateObj) {
+      if (!dateObj || isNaN(dateObj.getTime())) return '';
+      let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      let m = months[dateObj.getMonth()];
+      let y = String(dateObj.getFullYear()).slice(-2);
+      return `${m}-${y}`;
     }
 
     function fetchAndFilterData(forceReload = false) {
@@ -635,134 +689,160 @@
         return;
       }
 
-      document.getElementById('loadingContainer').style.display = 'block';
-      document.getElementById('loadingMsg').innerText = "Fetching aging records... Please wait.";
+      let loadingContainer = document.getElementById('loadingContainer');
+      let loadingMsg = document.getElementById('loadingMsg');
+      if (loadingContainer) loadingContainer.style.display = 'block';
+      if (loadingMsg) loadingMsg.innerText = "Fetching aging records... Please wait.";
 
-      fetch(WEB_APP_URL + "?action=getAgingReportData")
+      let targetUrl = WEB_APP_URL ? (WEB_APP_URL + "?action=getAgingReportData") : "?action=getAgingReportData";
+
+      fetch(targetUrl)
         .then(response => response.json())
         .then(res => {
-          document.getElementById('loadingContainer').style.display = 'none';
-          if (res && res.data) {
+          if (loadingContainer) loadingContainer.style.display = 'none';
+          if (res && res.success && res.data) {
+            globalResponse = res;
+            applySearchFilter();
+          } else if (res && res.data) {
             globalResponse = res;
             applySearchFilter();
           } else {
-            alert("Error loading data from sheet.");
+            let tbody = document.getElementById('tableBody');
+            if (tbody) tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: #d32f2f; padding: 15px;">Error: ${res.error || "Could not load data from sheet."}</td></tr>`;
           }
         })
         .catch(err => {
-          document.getElementById('loadingContainer').style.display = 'none';
-          alert("Fetch Failure: " + err.message);
+          if (loadingContainer) loadingContainer.style.display = 'none';
+          let tbody = document.getElementById('tableBody');
+          if (tbody) tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: #d32f2f; padding: 15px;">Fetch Failure: ${err.message}. Please check Deployment URL.</td></tr>`;
         });
     }
 
-    // Short format function for Product Title ("DAWL, AC, ENERCON X T3 30")
-    function formatProductTitle(row) {
-      var comp = String(row.companyName || row.company || "").trim();
-      var cat  = String(row.category || row.productCategory || "").trim();
-      var mdl  = String(row.model || row.productModel || "").trim();
-
-      if (comp || cat || mdl) {
-        var compShort = comp.length > 4 ? comp.substring(0, 4) : comp;
-        var catShort  = cat.length > 4 ? cat.substring(0, 4) : cat;
-        return [compShort, catShort, mdl].filter(Boolean).join(", ");
-      }
-
-      var rawProduct = String(row.productName || row.product || "").trim();
-      if (!rawProduct) return "";
-
-      var cleaned = rawProduct.split(",")
-        .map(function(item) { return item.replace(/PRD-\d+/gi, "").trim(); })
-        .filter(function(item) { return item !== ""; })
-        .join(", ");
-
-      return cleaned !== "" ? cleaned : rawProduct;
+    function getPlanMonthsCount(row) {
+      let planStr = String(row.plan || '').trim();
+      let num = parseInt(planStr.replace(/\D/g, ''), 10);
+      return isNaN(num) || num <= 0 ? 12 : num;
     }
 
-    // ADVANCED SCHEDULE-BASED CMD CALCULATION (CORRECTED MONTH COUNT USING NEXT INST MONTH)
-    function calculateCMD(row) {
+    function calculateEndingMonthObject(row) {
+      let nextInstStr = row.nextInst !== undefined && row.nextInst !== null ? row.nextInst : (row.nextInstMonth || row['Next Inst Month'] || '');
+      let nextDate = null;
+      if (nextInstStr) {
+        nextDate = parseCustomDate(nextInstStr);
+      }
+
+      let baseDate = null;
+      if (nextDate && !isNaN(nextDate.getTime())) {
+        baseDate = new Date(nextDate.getFullYear(), nextDate.getMonth(), 1);
+        let totalReceived = Number(row.totalReceived || row.totalPaid) || 0;
+        let adv = Number(row.advance || row.adv) || 0;
+        let pros = Number(row.processingFee || row.processingfee || row.pros) || 0;
+        let monthlyInst = calculateMonthlyInstallment(row);
+        let paymentsAboveExtras = totalReceived - (adv + pros);
+
+        if (paymentsAboveExtras >= monthlyInst) {
+          baseDate.setMonth(baseDate.getMonth() - 1);
+        }
+      } else {
+        let dStr = row.deliveryDate || row['Delivery Date'] || '';
+        baseDate = parseCustomDate(dStr);
+      }
+
+      if (!baseDate || isNaN(baseDate.getTime())) return null;
+
+      let planMonths = getPlanMonthsCount(row);
+      let endDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+      endDate.setMonth(endDate.getMonth() + (planMonths - 1));
+      return endDate;
+    }
+
+    function calculateEndingMonth(row) {
+      let endDate = calculateEndingMonthObject(row);
+      if (!endDate) return String(row.endingMonth || row.end || '');
+      return formatMonthYearName(endDate);
+    }
+
+    function calculateMonthlyInstallment(row) {
+      let totalSale = Number(row.totalSales) || 0;
+      let advVal = Number(row.advance !== undefined ? row.advance : row.adv) || 0;
+      let prosVal = Number(row.processingFee !== undefined ? row.processingFee : row.processingfee || row.pros) || 0;
+      let planMonths = getPlanMonthsCount(row);
+
+      let netPrincipal = totalSale - advVal - prosVal;
+      if (planMonths <= 0) return Number(row.monthlyInst) || 0;
+      return Math.round(netPrincipal / planMonths);
+    }
+
+    function getBenchmarkDate() {
+      let endDateVal = document.getElementById('endDateInput') ? document.getElementById('endDateInput').value : '';
+      if (endDateVal) {
+        let d = parseCustomDate(endDateVal);
+        if (d && !isNaN(d.getTime())) {
+          return new Date(d.getFullYear(), d.getMonth(), 1);
+        }
+      }
+      let now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    // --- Exact Formula for CMD Calculation ---
+    function calculateCMD(row, monthHeaders) {
       let tBal = Number(row.balance) || 0;
       if (tBal <= 0) return 0;
 
-      let inst = Number(row.monthlyInst) || 0;
-      let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 12;
+      let inst = calculateMonthlyInstallment(row);
+      if (inst <= 0) return tBal;
 
-      // Selected End Date or Current Date
-      let endDateVal = document.getElementById('endDateInput') ? document.getElementById('endDateInput').value : '';
-      let referenceDate = endDateVal ? new Date(endDateVal) : new Date();
-      if (isNaN(referenceDate.getTime())) {
-        referenceDate = new Date();
-      }
+      let benchDate = getBenchmarkDate();
+      let endDt = calculateEndingMonthObject(row);
 
-      let firstInstDate = null;
-
-      // 1. Parse Next Inst Month (Col Q)
-      let nextInstStr = String(row.nextInstMonth || row.nextInst || '').trim();
-      if (nextInstStr) {
-        let parsedDate = new Date(nextInstStr);
-        if (!isNaN(parsedDate.getTime())) {
-          firstInstDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), 1);
-        } else {
-          let parts = nextInstStr.split(/[\s\-]+/);
-          if (parts.length >= 2) {
-            let mStr = parts[0];
-            let yStr = parts[1];
-            let dummyD = new Date(mStr + " 1, " + (yStr.length === 2 ? "20" + yStr : yStr));
-            if (!isNaN(dummyD.getTime())) {
-              firstInstDate = new Date(dummyD.getFullYear(), dummyD.getMonth(), 1);
-            }
-          }
-        }
-      }
-
-      // 2. Fallback: Delivery Date + 1 Month
-      if (!firstInstDate && row.deliveryDate) {
-        let deliveryDate = new Date(row.deliveryDate);
-        if (!isNaN(deliveryDate.getTime())) {
-          firstInstDate = new Date(deliveryDate.getFullYear(), deliveryDate.getMonth() + 1, 1);
-        }
-      }
-
-      if (!firstInstDate) {
+      if (!endDt) {
         return Math.min(inst, tBal);
       }
 
-      // 3. Compare Months strictly by Year & Month Index
-      let refYear = referenceDate.getFullYear();
-      let refMonth = referenceDate.getMonth();
-      let startYear = firstInstDate.getFullYear();
-      let startMonth = firstInstDate.getMonth();
+      // Total remaining months from benchmark date to ending date inclusive
+      let diffYears = endDt.getFullYear() - benchDate.getFullYear();
+      let diffMonths = endDt.getMonth() - benchDate.getMonth();
+      let remainingMonths = (diffYears * 12) + diffMonths + 1;
 
-      // Total months elapsed up to selected End Date (inclusive of starting month)
-      let monthsElapsed = ((refYear - startYear) * 12) + (refMonth - startMonth) + 1;
-
-      if (monthsElapsed <= 0) {
-        return 0; // End date is before next installment month
+      if (remainingMonths <= 1) {
+        return tBal;
       }
 
-      let monthsElapsedClamped = Math.min(monthsElapsed, planMonths);
-      let expectedCumulativeInstDue = monthsElapsedClamped * inst;
+      // Future months after current benchmark month = remainingMonths - 1
+      let futureMonths = remainingMonths - 1;
+      let futureInstTotal = inst * futureMonths;
+      
+      // CMD = Total Balance minus future standard installments total
+      let cmd = tBal - futureInstTotal;
 
-      // Subtract payments made AFTER initial advance/processing fee
-      let totalPaid = Number(row.totalPaid || row.totalReceived || 0);
-      let initialAdvanceAndFee = Number(row.advance || 0) + Number(row.processingFee || 0);
-      let actualInstallmentsPaid = Math.max(0, totalPaid - initialAdvanceAndFee);
-
-      let currentDue = expectedCumulativeInstDue - actualInstallmentsPaid;
-
-      if (currentDue <= 0) return 0;
-      return Math.min(currentDue, tBal);
+      return cmd;
     }
 
     function getColumnValue(row, colName, monthHeaders) {
       if(colName === 'cmd') {
-        return calculateCMD(row);
-      } else if(colName === 'product') {
-        return formatProductTitle(row);
+        return calculateCMD(row, monthHeaders);
       } else if(colName === 'plan') {
-        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 12;
-        return planMonths ? planMonths + "M" : String(row.plan || '');
+        return getPlanMonthsCount(row) + "M";
       } else if(colName === 'deliveryDate') {
         return formatDateDDMMYY(row[colName]);
+      } else if(colName === 'lpd') {
+        let rawLpd = row.lpd !== undefined && row.lpd !== null ? row.lpd : (row.lastPaymentDate || row['LPD'] || '');
+        return formatDateDDMMYY(rawLpd);
+      } else if(colName === 'lpAmount') {
+        let amt = row.lpAmount !== undefined && row.lpAmount !== null ? row.lpAmount : (row.lpamnt || row['L.PAmnt'] || 0);
+        return Number(amt) || 0;
+      } else if(colName === 'endingMonth') {
+        return calculateEndingMonth(row);
+      } else if(colName === 'monthlyInst') {
+        return calculateMonthlyInstallment(row);
+      } else if(colName === 'advance') {
+        return row.advance !== undefined && row.advance !== null ? row.advance : (row.adv || '');
+      } else if(colName === 'processingFee') {
+        let p = row.processingFee !== undefined && row.processingFee !== null ? row.processingFee : (row.processingfee || row.pros || '');
+        return p;
+      } else if(colName === 'nextInst') {
+        return row.nextInst !== undefined && row.nextInst !== null ? row.nextInst : (row.nextInstMonth || row['Next Inst Month'] || '');
       } else {
         return row[colName] !== undefined && row[colName] !== null ? row[colName] : '';
       }
@@ -782,11 +862,11 @@
       activePopupCol = colName;
       activePopupInput = input;
       activeIsNumeric = isNumeric;
-      isDateCol = (colName === 'deliveryDate');
+      isDateCol = (colName === 'deliveryDate' || colName === 'lpd');
 
       let rect = btn.getBoundingClientRect();
       popup.style.top = (rect.bottom + window.scrollY + 2) + 'px';
-      popup.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 270) + 'px';
+      popup.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 290) + 'px';
 
       let numSec = document.getElementById('numericFilterSection');
       let univSec = document.getElementById('universalFilterSection');
@@ -798,49 +878,162 @@
       } else {
         numSec.style.display = 'none';
         univSec.style.display = 'block';
-        popup.style.width = '270px';
+        popup.style.width = '280px';
 
-        univSec.innerHTML = `
-          <input type="text" id="popupSearchInput" placeholder="Search (All)..." oninput="filterPopupCheckboxes()">
-          <div class="excel-checkbox-item" style="border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 3px; font-weight: bold;">
-            <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAllCheckboxes(this)">
-            <label for="selectAllCheckbox" style="cursor: pointer; margin:0;">(Select All)</label>
-          </div>
-          <div id="popupCheckboxList" class="excel-checkbox-list"></div>
-        `;
+        if (isDateCol) {
+          univSec.innerHTML = `
+            <input type="text" id="popupSearchInput" placeholder="Search dates..." oninput="filterDateTree(this.value)">
+            <div class="excel-checkbox-item" style="border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 3px; font-weight: bold;">
+              <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAllCheckboxes(this)">
+              <label for="selectAllCheckbox" style="cursor: pointer; margin:0;">(Select All Years/Dates)</label>
+            </div>
+            <div id="popupCheckboxList" class="excel-checkbox-list" style="max-height: 200px;"></div>
+          `;
 
-        let listContainer = document.getElementById('popupCheckboxList');
-        let currentFilterVal = input.value.trim();
+          let dateMap = {};
+          globalResponse.data.forEach(row => {
+            let rawD = getColumnValue(row, colName, globalResponse.monthHeaders);
+            if (!rawD) return;
+            let dObj = parseCustomDate(rawD);
+            if (!dObj) return;
 
-        let valSet = new Set();
-        globalResponse.data.forEach(row => {
-          let val = String(getColumnValue(row, colName, globalResponse.monthHeaders)).trim();
-          if (val !== "") valSet.add(val);
-        });
+            let year = String(dObj.getFullYear());
+            let monthName = dObj.toLocaleString('default', { month: 'short' }) + ' ' + year;
+            let monthKey = String(dObj.getMonth() + 1).padStart(2, '0') + '-' + year;
+            let fullDateStr = formatDateDDMMYY(dObj);
 
-        popupAllUniqueValues = Array.from(valSet).sort();
-        let selectedSet = new Set();
-        if (currentFilterVal === "") {
-          popupAllUniqueValues.forEach(v => selectedSet.add(v));
+            if (!dateMap[year]) dateMap[year] = {};
+            if (!dateMap[year][monthKey]) dateMap[year][monthKey] = { name: monthName, dates: new Set() };
+            dateMap[year][monthKey].dates.add(fullDateStr);
+          });
+
+          let currentFilterVal = input.value.trim();
+          let selectedDatesSet = new Set(currentFilterVal ? currentFilterVal.split('|').map(s => s.trim()) : []);
+
+          let listContainer = document.getElementById('popupCheckboxList');
+          let treeHtml = "";
+          let yearKeys = Object.keys(dateMap).sort().reverse();
+
+          yearKeys.forEach((yr, yIdx) => {
+            let mKeys = Object.keys(dateMap[yr]).sort().reverse();
+            treeHtml += `<div class="tree-year-group" style="margin-bottom: 4px;">
+              <div style="display:flex; align-items:center; background:#e8f5e9; padding:3px 6px; font-weight:bold; border-radius:3px;">
+                <input type="checkbox" class="tree-year-chk" data-year="${yr}" onchange="toggleYearGroup(this)" style="margin-right:6px;">
+                <span onclick="toggleSubTree('sub_${yIdx}')" style="cursor:pointer; flex:1;">📁 ${yr} (${Object.keys(dateMap[yr]).length} months)</span>
+              </div>
+              <div id="sub_${yIdx}" style="padding-left:15px; display:block; margin-top:2px;">`;
+
+            mKeys.forEach((mKey, mIdx) => {
+              let mData = dateMap[yr][mKey];
+              let dateArray = Array.from(mData.dates).sort();
+              treeHtml += `<div style="margin-bottom:2px;">
+                <div style="display:flex; align-items:center; background:#f1f8e9; padding:2px 4px; font-weight:600; border-radius:2px;">
+                  <input type="checkbox" class="tree-month-chk" data-year="${yr}" data-month="${mKey}" onchange="toggleMonthGroup(this)" style="margin-right:5px;">
+                  <span onclick="toggleSubTree('sub_m_${yIdx}_${mIdx}')" style="cursor:pointer; flex:1;">📂 ${mData.name}</span>
+                </div>
+                <div id="sub_m_${yIdx}_${mIdx}" style="padding-left:15px; display:block; margin-top:2px;">`;
+
+              dateArray.forEach(dStr => {
+                let isChecked = (selectedDatesSet.size === 0 || selectedDatesSet.has(dStr)) ? "checked" : "";
+                treeHtml += `<div class="excel-checkbox-item date-item-row" data-date="${dStr}" style="margin:0; padding:1px 0;">
+                  <input type="checkbox" value="${dStr}" ${isChecked} class="popup-item-chk val-chk date-leaf-chk" onchange="updateDateSelectAllState()">
+                  <label style="cursor:pointer; width:100%; font-weight:normal;" title="${dStr}">${dStr}</label>
+                </div>`;
+              });
+
+              treeHtml += `</div></div>`;
+            });
+            treeHtml += `</div></div>`;
+          });
+
+          listContainer.innerHTML = treeHtml;
+          updateDateSelectAllState();
+
         } else {
-          currentFilterVal.split('|').forEach(v => selectedSet.add(v.trim()));
+          univSec.innerHTML = `
+            <input type="text" id="popupSearchInput" placeholder="Search (All)..." oninput="filterPopupCheckboxes()">
+            <div class="excel-checkbox-item" style="border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 3px; font-weight: bold;">
+              <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAllCheckboxes(this)">
+              <label for="selectAllCheckbox" style="cursor: pointer; margin:0;">(Select All)</label>
+            </div>
+            <div id="popupCheckboxList" class="excel-checkbox-list"></div>
+          `;
+
+          let listContainer = document.getElementById('popupCheckboxList');
+          let currentFilterVal = input.value.trim();
+
+          let valSet = new Set();
+          globalResponse.data.forEach(row => {
+            let val = String(getColumnValue(row, colName, globalResponse.monthHeaders)).trim();
+            if (val !== "") valSet.add(val);
+          });
+
+          popupAllUniqueValues = Array.from(valSet).sort();
+          let selectedSet = new Set();
+          if (currentFilterVal === "") {
+            popupAllUniqueValues.forEach(v => selectedSet.add(v));
+          } else {
+            currentFilterVal.split('|').forEach(v => selectedSet.add(v.trim()));
+          }
+
+          let html = "";
+          popupAllUniqueValues.forEach((val, idx) => {
+            let isChecked = selectedSet.has(val) ? "checked" : "";
+            html += `<div class="excel-checkbox-item" style="margin:0;">
+              <input type="checkbox" id="chk_${idx}" value="${val}" ${isChecked} class="popup-item-chk val-chk" onchange="updateMasterSelectAllState()">
+              <label for="chk_${idx}" style="cursor:pointer; width:100%; overflow:hidden; text-overflow:ellipsis;" title="${val}">${val}</label>
+            </div>`;
+          });
+
+          listContainer.innerHTML = html;
+          document.getElementById('popupSearchInput').value = "";
+          updateMasterSelectAllState();
         }
-
-        let html = "";
-        popupAllUniqueValues.forEach((val, idx) => {
-          let isChecked = selectedSet.has(val) ? "checked" : "";
-          html += `<div class="excel-checkbox-item" style="margin:0;">
-            <input type="checkbox" id="chk_${idx}" value="${val}" ${isChecked} class="popup-item-chk val-chk" onchange="updateMasterSelectAllState()">
-            <label for="chk_${idx}" style="cursor:pointer; width:100%; overflow:hidden; text-overflow:ellipsis;" title="${val}">${val}</label>
-          </div>`;
-        });
-
-        listContainer.innerHTML = html;
-        document.getElementById('popupSearchInput').value = "";
-        updateMasterSelectAllState();
       }
 
       popup.classList.add('active');
+    }
+
+    function toggleSubTree(id) {
+      let el = document.getElementById(id);
+      if (el) {
+        el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+      }
+    }
+
+    function toggleYearGroup(yearChk) {
+      let group = yearChk.closest('.tree-year-group');
+      if (!group) return;
+      group.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        chk.checked = yearChk.checked;
+      });
+      updateDateSelectAllState();
+    }
+
+    function toggleMonthGroup(monthChk) {
+      let monthContainer = monthChk.closest('div').nextElementSibling;
+      if (!monthContainer) return;
+      monthContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        chk.checked = monthChk.checked;
+      });
+      updateDateSelectAllState();
+    }
+
+    function updateDateSelectAllState() {
+      let allLeaves = document.querySelectorAll('.date-leaf-chk');
+      let checkedLeaves = Array.from(allLeaves).filter(chk => chk.checked);
+      let master = document.getElementById('selectAllCheckbox');
+      if (master) {
+        master.checked = (allLeaves.length > 0 && checkedLeaves.length === allLeaves.length);
+      }
+    }
+
+    function filterDateTree(query) {
+      query = query.toLowerCase().trim();
+      document.querySelectorAll('.date-item-row').forEach(row => {
+        let text = row.querySelector('label').innerText.toLowerCase();
+        row.style.display = text.includes(query) ? 'flex' : 'none';
+      });
     }
 
     function updateMasterSelectAllState() {
@@ -881,14 +1074,27 @@
     }
 
     function toggleSelectAllCheckboxes(master) {
-      let visibleItems = document.querySelectorAll('.excel-checkbox-item');
-      visibleItems.forEach(item => {
-        let label = item.querySelector('label');
-        if (label && label.getAttribute('for') !== 'selectAllCheckbox' && item.style.display !== 'none') {
-          let chk = item.querySelector('.popup-item-chk');
-          if (chk) chk.checked = master.checked;
-        }
-      });
+      if (isDateCol) {
+        document.querySelectorAll('.date-item-row').forEach(row => {
+          if (row.style.display !== 'none') {
+            let chk = row.querySelector('.date-leaf-chk');
+            if (chk) chk.checked = master.checked;
+          }
+        });
+        document.querySelectorAll('.tree-year-chk, .tree-month-chk').forEach(chk => {
+          chk.checked = master.checked;
+        });
+        updateDateSelectAllState();
+      } else {
+        let visibleItems = document.querySelectorAll('.excel-checkbox-item');
+        visibleItems.forEach(item => {
+          let label = item.querySelector('label');
+          if (label && label.getAttribute('for') !== 'selectAllCheckbox' && item.style.display !== 'none') {
+            let chk = item.querySelector('.popup-item-chk');
+            if (chk) chk.checked = master.checked;
+          }
+        });
+      }
     }
 
     document.addEventListener('click', (e) => {
@@ -922,13 +1128,23 @@
           }
         });
 
-        let selectedSet = new Set(selectedValues);
-        let allSelected = popupAllUniqueValues.every(v => selectedSet.has(v));
-
-        if (allSelected || selectedValues.length === 0) {
-          activePopupInput.value = "";
+        if (isDateCol) {
+          let allLeafCheckboxes = document.querySelectorAll('.date-leaf-chk');
+          let allSelected = Array.from(allLeafCheckboxes).every(c => c.checked);
+          if (allSelected || selectedValues.length === 0) {
+            activePopupInput.value = "";
+          } else {
+            activePopupInput.value = selectedValues.join('|');
+          }
         } else {
-          activePopupInput.value = selectedValues.join('|');
+          let selectedSet = new Set(selectedValues);
+          let allSelected = popupAllUniqueValues.every(v => selectedSet.has(v));
+
+          if (allSelected || selectedValues.length === 0) {
+            activePopupInput.value = "";
+          } else {
+            activePopupInput.value = selectedValues.join('|');
+          }
         }
       }
 
@@ -970,16 +1186,16 @@
         if (startDate || endDate) {
           let dDateStr = row.deliveryDate ? String(row.deliveryDate).trim() : '';
           if (!dDateStr) return false;
-          let dDate = new Date(dDateStr);
-          if (isNaN(dDate.getTime())) return false;
+          let dDate = parseCustomDate(dDateStr);
+          if (!dDate) return false;
           
           if (startDate) {
-            let sDate = new Date(startDate);
-            if (!isNaN(sDate.getTime()) && dDate < sDate) return false;
+            let sDate = parseCustomDate(startDate);
+            if (sDate && dDate < sDate) return false;
           }
           if (endDate) {
-            let eDate = new Date(endDate);
-            if (!isNaN(eDate.getTime()) && dDate > eDate) return false;
+            let eDate = parseCustomDate(endDate);
+            if (eDate && dDate > eDate) return false;
           }
         }
 
@@ -1056,6 +1272,8 @@
       renderTableRows(filtered, globalResponse.monthHeaders);
     }
 
+    let currentFilteredData = [];
+
     function renderTableRows(data, monthHeaders) {
       let tbody = document.getElementById('tableBody');
       let m3Label = monthHeaders ? monthHeaders.m3 : 'M-3';
@@ -1066,8 +1284,10 @@
       document.getElementById('thM2').innerText = m2Label;
       document.getElementById('thM1').innerText = m1Label;
 
+      currentFilteredData = data;
+
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="17" style="text-align: center; color: #777; padding: 10px;">No records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: #777; padding: 10px;">No records found.</td></tr>`;
         document.getElementById('totalRecords').innerText = "Total Accounts: 0";
         document.getElementById('totalBalance').innerText = "Total Balance: Rs. 0";
         return;
@@ -1080,18 +1300,26 @@
         let tBal = Number(row.balance) || 0;
         totalBalSum += tBal;
 
+        let inst = calculateMonthlyInstallment(row);
+        let advVal = Number(row.advance !== undefined ? row.advance : row.adv) || 0;
+        let prosVal = Number(row.processingFee !== undefined ? row.processingFee : row.processingfee || row.pros) || 0;
+        let nextInstVal = row.nextInst !== undefined && row.nextInst !== null ? row.nextInst : (row.nextInstMonth || row['Next Inst Month'] || '');
+        let endVal = calculateEndingMonth(row);
+        
+        let rawLpd = row.lpd !== undefined && row.lpd !== null ? row.lpd : (row.lastPaymentDate || row['LPD'] || '');
+        let lpdVal = formatDateDDMMYY(rawLpd);
+
+        let lpAmt = getColumnValue(row, 'lpAmount', monthHeaders);
+
         let m3 = Number(row.m3Received) || 0;
         let m2 = Number(row.m2Received) || 0;
         let m1 = Number(row.m1Received) || 0;
-        let inst = Number(row.monthlyInst) || 0;
 
-        let planMonths = parseInt(String(row.plan || '').replace(/\D/g, '')) || 12;
-        let shortPlanStr = planMonths ? planMonths + "M" : (row.plan || '');
+        let planMonths = getPlanMonthsCount(row);
+        let shortPlanStr = planMonths + "M";
         let formattedDate = formatDateDDMMYY(row.deliveryDate);
         
-        let cmd = calculateCMD(row);
-        let fullProductName = formatProductTitle(row);
-
+        let cmd = calculateCMD(row, monthHeaders);
         let cmdStyle = cmd < 0 ? "text-align: right; background-color: #e3f2fd; color: #0d47a1;" : "text-align: right; background-color: #ffebee;";
 
         html += `<tr>
@@ -1103,23 +1331,145 @@
           <td class="col-4" title="${row.cro || ''}">${row.cro || ''}</td>
           <td class="col-5" title="${row.mobile || ''}">${row.mobile || ''}</td>
           <td class="col-6" style="text-align: right;" title="${inst.toLocaleString()}">${inst.toLocaleString()}</td>
-          <td class="col-7" title="${row.remarks || ''}">${row.remarks || ''}</td>
-          <td class="col-8" title="${fullProductName}">${fullProductName}</td>
+          <td class="col-7" style="text-align: right;" title="${advVal.toLocaleString()}">${advVal ? advVal.toLocaleString() : ''}</td>
+          <td class="col-8" style="text-align: right;" title="${prosVal.toLocaleString()}">${prosVal ? prosVal.toLocaleString() : ''}</td>
           <td class="col-9" title="${row.plan || ''}">${shortPlanStr}</td>
           <td class="col-10" style="text-align: right;" title="${Number(row.totalSales || 0).toLocaleString()}">${Number(row.totalSales || 0).toLocaleString()}</td>
           <td class="col-11" style="text-align: right;" title="${Number(row.totalPaid || row.totalReceived || 0).toLocaleString()}">${Number(row.totalPaid || row.totalReceived || 0).toLocaleString()}</td>
           <td class="col-12" style="text-align: right; color: #b71c1c;" title="${tBal.toLocaleString()}">${tBal.toLocaleString()}</td>
           <td class="col-13" title="${formattedDate}">${formattedDate}</td>
-          <td class="col-14" style="text-align: right;" title="${m3.toLocaleString()}">${m3.toLocaleString()}</td>
-          <td class="col-15" style="text-align: right;" title="${m2.toLocaleString()}">${m2.toLocaleString()}</td>
-          <td class="col-16" style="text-align: right;" title="${m1.toLocaleString()}">${m1.toLocaleString()}</td>
-          <td class="col-17" style="${cmdStyle}" title="${cmd.toLocaleString()}">${cmd.toLocaleString()}</td>
+          <td class="col-14" title="${lpdVal}">${lpdVal}</td>
+          <td class="col-15" style="text-align: right;" title="${lpAmt.toLocaleString()}">${lpAmt ? lpAmt.toLocaleString() : ''}</td>
+          <td class="col-16" title="${nextInstVal}">${nextInstVal}</td>
+          <td class="col-17" title="${endVal}">${endVal}</td>
+          <td class="col-18" style="text-align: right;" title="${m3.toLocaleString()}">${m3.toLocaleString()}</td>
+          <td class="col-19" style="text-align: right;" title="${m2.toLocaleString()}">${m2.toLocaleString()}</td>
+          <td class="col-20" style="text-align: right;" title="${m1.toLocaleString()}">${m1.toLocaleString()}</td>
+          <td class="col-21" style="${cmdStyle}" title="${cmd.toLocaleString()}">${cmd.toLocaleString()}</td>
         </tr>`;
       });
 
       tbody.innerHTML = html;
       document.getElementById('totalRecords').innerText = "Total Accounts: " + data.length;
       document.getElementById('totalBalance').innerText = "Total Balance: Rs. " + totalBalSum.toLocaleString();
+    }
+
+    function exportToExcel() {
+      if (!currentFilteredData || currentFilteredData.length === 0) {
+        alert("No data available to export!");
+        return;
+      }
+
+      let m3Label = globalResponse && globalResponse.monthHeaders ? globalResponse.monthHeaders.m3 : 'M-3';
+      let m2Label = globalResponse && globalResponse.monthHeaders ? globalResponse.monthHeaders.m2 : 'M-2';
+      let m1Label = globalResponse && globalResponse.monthHeaders ? globalResponse.monthHeaders.m1 : 'M-1';
+
+      let excelHTML = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8">
+          <style>
+            table { border-collapse: collapse; width: 100%; }
+            th { background-color: #1b5e20; color: #ffffff; font-weight: bold; border: 1px solid #000000; padding: 5px; text-align: center; }
+            td { border: 1px solid #000000; padding: 4px; text-align: left; font-size: 11pt; }
+            .num { text-align: right; }
+          </style>
+        </head>
+        <body>
+          <h2>Al-Meezan Electronics - Customer Aging Report</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Account No</th>
+                <th>Account Title</th>
+                <th>Approved By</th>
+                <th>CRO</th>
+                <th>Mobile NO</th>
+                <th>M Inst</th>
+                <th>Adv</th>
+                <th>Pros</th>
+                <th>Plan(M)</th>
+                <th>Total Sale</th>
+                <th>Total Paid</th>
+                <th>T Balance</th>
+                <th>Delivery Date</th>
+                <th>LPD</th>
+                <th>L.PAmnt</th>
+                <th>Next Inst Month</th>
+                <th>End</th>
+                <th>${m3Label}</th>
+                <th>${m2Label}</th>
+                <th>${m1Label}</th>
+                <th>CMD</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      currentFilteredData.forEach(row => {
+        let tBal = Number(row.balance) || 0;
+        let inst = calculateMonthlyInstallment(row);
+        let advVal = Number(row.advance !== undefined ? row.advance : row.adv) || 0;
+        let prosVal = Number(row.processingFee !== undefined ? row.processingFee : row.processingfee || row.pros) || 0;
+        let nextInstVal = row.nextInst !== undefined && row.nextInst !== null ? row.nextInst : (row.nextInstMonth || row['Next Inst Month'] || '');
+        let endVal = calculateEndingMonth(row);
+        
+        let rawLpd = row.lpd !== undefined && row.lpd !== null ? row.lpd : (row.lastPaymentDate || row['LPD'] || '');
+        let lpdVal = formatDateDDMMYY(rawLpd);
+        let lpAmt = getColumnValue(row, 'lpAmount', globalResponse ? globalResponse.monthHeaders : null);
+
+        let m3 = Number(row.m3Received) || 0;
+        let m2 = Number(row.m2Received) || 0;
+        let m1 = Number(row.m1Received) || 0;
+
+        let totalSales = Number(row.totalSales || 0);
+        let totalPaid = Number(row.totalPaid || row.totalReceived || 0);
+        let planMonths = getPlanMonthsCount(row);
+        let shortPlanStr = planMonths + "M";
+        let formattedDate = formatDateDDMMYY(row.deliveryDate);
+        let cmd = calculateCMD(row, globalResponse ? globalResponse.monthHeaders : null);
+
+        excelHTML += `<tr>
+          <td>${row.accNo || ''}</td>
+          <td>${row.accTitle || ''}</td>
+          <td>${row.approvedBy || ''}</td>
+          <td>${row.cro || ''}</td>
+          <td>${row.mobile || ''}</td>
+          <td class="num">${inst}</td>
+          <td class="num">${advVal || ''}</td>
+          <td class="num">${prosVal || ''}</td>
+          <td>${shortPlanStr}</td>
+          <td class="num">${totalSales}</td>
+          <td class="num">${totalPaid}</td>
+          <td class="num">${tBal}</td>
+          <td>${formattedDate}</td>
+          <td>${lpdVal}</td>
+          <td class="num">${lpAmt || ''}</td>
+          <td>${nextInstVal}</td>
+          <td>${endVal}</td>
+          <td class="num">${m3}</td>
+          <td class="num">${m2}</td>
+          <td class="num">${m1}</td>
+          <td class="num">${cmd}</td>
+        </tr>`;
+      });
+
+      excelHTML += `
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+
+      let blob = new Blob([excelHTML], { type: 'application/vnd.ms-excel' });
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement('a');
+      a.href = url;
+      a.download = 'Customer_Aging_Report_' + new Date().toISOString().slice(0, 10) + '.xls';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
 
     function openLedgerNewTab(accNo) {
@@ -1149,7 +1499,6 @@
       }
     });
 
-    // ================= DEBOUNCE LOGIC FOR TEXT INPUTS =================
     function debounce(func, delay = 300) {
       let timer;
       return function(...args) {
@@ -1202,7 +1551,12 @@
     }
 
     function printReport() {
-      window.print();
+      let popup = document.getElementById('excelPopupBox');
+      if (popup) popup.classList.remove('active');
+
+      setTimeout(() => {
+        window.print();
+      }, 300);
     }
   
     function showUrlConfig() {
@@ -1225,114 +1579,6 @@
         if (box) box.classList.add('show');
       }
     });
-
-    // ================= UNIVERSAL MIC INPUT =================
-    (function() {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      let activeRec = null, activeBtn = null, activeInput = null;
-
-      function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
-
-      function stopActiveMic() {
-        if (activeRec) {
-          activeRec.onend = null; activeRec.onresult = null;
-          try { activeRec.abort(); } catch (e) {}
-          activeRec = null;
-        }
-        if (activeBtn) activeBtn.classList.remove('listening');
-        if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
-        activeBtn = null; activeInput = null;
-      }
-
-      function toggleMic(input, btn) {
-        if (!SR) { alert('Ye browser voice input support nahi karta. Chrome use karein.'); return; }
-        const isNumeric = input.type === 'number';
-
-        if (btn.classList.contains('listening')) { stopActiveMic(); return; }
-        stopActiveMic();
-
-        const rec = new SR();
-        rec.lang = 'en-US';
-        rec.continuous = true;
-        rec.interimResults = true;
-        let finalText = '';
-
-        activeRec = rec; activeBtn = btn; activeInput = input;
-        btn.classList.add('listening');
-        input.dataset.origPh = input.placeholder || '';
-        input.placeholder = 'Sun raha hoon... rokne ke liye mic dobara dabayein';
-
-        rec.onresult = function(ev) {
-          let interim = '';
-          for (let i = ev.resultIndex; i < ev.results.length; i++) {
-            const t = ev.results[i][0].transcript;
-            if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
-          }
-          let text = (finalText + interim).trim();
-          if (isNumeric) text = cleanNumeric(text);
-          input.value = text;
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        };
-        rec.onerror = function(ev) {
-          if (ev.error !== 'no-speech' && ev.error !== 'aborted') console.error('Mic error:', ev.error);
-        };
-        rec.onend = function() {
-          btn.classList.remove('listening');
-          input.placeholder = input.dataset.origPh || '';
-          if (isNumeric) input.value = cleanNumeric(input.value);
-          if (activeInput === input) { activeRec = null; activeBtn = null; activeInput = null; }
-        };
-        try { rec.start(); } catch (e) {}
-      }
-
-      function attachMic(input) {
-        if (!input || input.dataset.autoMic) return;
-        if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
-            input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
-        if (input.closest('#configBox')) return;
-        if (input.closest('.input-with-mic')) return; 
-        if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
-
-        input.dataset.autoMic = '1';
-
-        const wrap = document.createElement('span');
-        wrap.className = 'auto-mic-wrap';
-        input.parentNode.insertBefore(wrap, input);
-        wrap.appendChild(input);
-
-        input.style.paddingRight = '24px';
-        input.style.boxSizing = 'border-box';
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'auto-mic-btn';
-        btn.title = 'Voice input';
-        btn.innerHTML = '&#127908;';
-        btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
-        wrap.appendChild(btn);
-      }
-
-      function scanAndAttach(root) {
-        root.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
-      }
-
-      document.addEventListener('DOMContentLoaded', function() {
-        scanAndAttach(document);
-      });
-
-      const mo = new MutationObserver(function(mutations) {
-        mutations.forEach(function(m) {
-          m.addedNodes.forEach(function(node) {
-            if (node.nodeType !== 1) return;
-            if (node.matches && (node.matches('input[type="text"]') || node.matches('input[type="number"]') || node.matches('input:not([type])'))) {
-              attachMic(node);
-            }
-            if (node.querySelectorAll) scanAndAttach(node);
-          });
-        });
-      });
-      mo.observe(document.body, { childList: true, subtree: true });
-    })();
-</script>
+  </script>
 </body>
 </html>
