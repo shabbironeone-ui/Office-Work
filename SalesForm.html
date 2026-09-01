@@ -375,7 +375,7 @@
       70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
       100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
     }
-</style>
+  </style>
 </head>
 <body>
   <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
@@ -385,566 +385,399 @@
     <button onclick="saveScriptUrl()">Save URL</button>
   </div>
 
+  <div class="container">
+    <div class="top-header-row">
+      <h2>Al Meezan ERP - Sales Entry</h2>
+    </div>
 
-<div class="container">
-  <div class="top-header-row">
-    <h2>Al Meezan ERP - Sales Entry</h2>
+    <div id="loader" class="loader">Processing, please wait...</div>
+
+    <!-- Account & Details -->
+    <div class="section-card">
+      <div class="section-title" style="margin-bottom: 8px;">1. Account & Details</div>
+      <div class="row" style="align-items: flex-end;">
+        <div class="col" style="flex: 1.1;">
+          <label for="saleDate">Date</label>
+          <input type="date" id="saleDate">
+        </div>
+        <div class="col" style="flex: 1.2;">
+          <label for="accountNo">Account No. (Type & Press Enter)</label>
+          <input type="text" id="accountNo" placeholder="Type & Press Enter" onkeydown="handleAccountKey(event)">
+        </div>
+        <div class="col" style="flex: 2.5;">
+          <label for="accountTitle">Account Title</label>
+          <input type="text" id="accountTitle" readonly placeholder="Auto-fetched">
+        </div>
+        <div class="col" style="flex: 1.5;">
+          <label for="approvedBy">Approved By</label>
+          <input type="text" id="approvedBy" readonly placeholder="Auto-fetched">
+        </div>
+        <div class="col" style="flex: 1.2;">
+          <label for="cro">CRO</label>
+          <input type="text" id="cro" readonly placeholder="Auto-fetched">
+        </div>
+      </div>
+    </div>
+
+    <!-- Product & Installment Details -->
+    <div class="section-card">
+      <div class="section-header-flex">
+        <span class="section-title">2. Product & Installment Details</span>
+        <button type="button" class="btn-header-search" onclick="openGlobalSearchModal()">🔍 Search Stock Ledger</button>
+      </div>
+      <div class="product-table-wrapper">
+        <table class="product-table">
+          <thead>
+            <tr>
+              <th style="width: 9%;">Product ID</th>
+              <th style="width: 10%;">Company</th>
+              <th style="width: 8%;">Category</th>
+              <th style="width: 10%;">Model</th>
+              <th style="width: 8%;">Color</th>
+              <th style="width: 5%;">Qty</th>
+              <th style="width: 7%;">Rate</th>
+              <th style="width: 7%;">Amount</th>
+              <th style="width: 5%;">Months</th>
+              <th style="width: 6%;">Advance</th>
+              <th style="width: 7%;">Per Month</th>
+              <th style="width: 6%;">Proc Fee</th>
+              <th style="width: 7%;">Remarks</th>
+              <th style="width: 4%; text-align: center;">
+                <button type="button" class="add-row-btn" onclick="addProductRow()" title="Add Product Line">+</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="productTableBody">
+            <tr>
+              <td class="product-cell"><input type="text" class="productId" placeholder="Product ID" readonly></td>
+              <td><input type="text" class="companyName" placeholder="Company" readonly></td>
+              <td><input type="text" class="productCategory" placeholder="Category" readonly></td>
+              <td><input type="text" class="model" placeholder="Model" readonly></td>
+              <td><input type="text" class="color" placeholder="Color" readonly></td>
+              <td><input type="number" class="qty" value="1" oninput="calculateRow(this)" onfocus="this.select()"></td>
+              <td><input type="number" class="salesRate" placeholder="Rate" oninput="calculateRow(this)" onfocus="this.select()"></td>
+              <td><input type="text" class="salesAmount" readonly tabindex="-1" placeholder="Amt"></td>
+              <td><input type="number" class="planMonths" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
+              <td><input type="number" class="advance" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
+              <td><input type="text" class="installmentPerMonth" readonly tabindex="-1" placeholder="Inst"></td>
+              <td><input type="number" class="processingFee" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
+              <td><input type="text" class="remarks" placeholder="Remarks"></td>
+              <td style="text-align: center;"><button type="button" class="del-row-btn" onclick="removeProductRow(this)">X</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Overall Totals -->
+    <div class="section-card">
+      <div class="section-title">3. Overall Totals</div>
+      <div class="row">
+        <div class="col">
+          <label for="totalAmount">Total Amount (Sales + Fees)</label>
+          <input type="text" id="totalAmount" readonly tabindex="-1" placeholder="Auto calculated">
+        </div>
+        <div class="col">
+          <label for="nextInstMonth">Next Inst Month</label>
+          <select id="nextInstMonth"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button id="actionMainBtn" class="action-btn btn-primary" onclick="submitNewSale()">Save Sales</button>
+      <button class="action-btn btn-secondary" onclick="clearSaleForm()">Reset / New</button>
+    </div>
+
+    <!-- Recent Saved Sales Section -->
+    <div class="recent-sales-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h3 style="margin: 0; color: var(--primary); font-size: 15px;">Recent Saved Sales</h3>
+      </div>
+      <div class="recent-filter-bar">
+        <span style="font-weight: 600; font-size: 11px;">From Date:</span>
+        <input type="date" id="recentFromDate" onchange="loadRecentSales()">
+        <span style="font-weight: 600; font-size: 11px; margin-left: 10px;">To Date:</span>
+        <input type="date" id="recentToDate" onchange="loadRecentSales()">
+        <button type="button" class="btn-header-search" style="margin-left: auto;" onclick="loadRecentSales()">Refresh List</button>
+      </div>
+      
+      <!-- Frozen Totals Bar -->
+      <div class="recent-totals-bar">
+        <span style="margin-right: auto;">Totals:</span>
+        <div style="display: flex; gap: 15px; text-align: right;">
+          <div>Qty: <span id="totalQty" style="font-weight:700;">0</span></div>
+          <div>Sales Amt: <span id="totalSalesAmt" style="font-weight:700;">0</span></div>
+          <div>Advance: <span id="totalAdvance" style="font-weight:700;">0</span></div>
+          <div>Proc Fee: <span id="totalProcFee" style="font-weight:700;">0</span></div>
+          <div>Total Amount: <span id="totalGrandAmount" style="font-weight:700;">0</span></div>
+        </div>
+      </div>
+
+      <!-- Scrollable Table Container -->
+      <div class="recent-scroll-container">
+        <table class="product-table recent-table">
+          <thead>
+            <tr>
+              <th class="sortable-th" data-field="date" onclick="sortSalesTable('date')">Date <span class="sort-arrow" id="arrow-date"></span></th>
+              <th class="sortable-th" data-field="productId" onclick="sortSalesTable('productId')">Product ID <span class="sort-arrow" id="arrow-productId"></span></th>
+              <th class="sortable-th" data-field="approvedBy" onclick="sortSalesTable('approvedBy')">Approved By <span class="sort-arrow" id="arrow-approvedBy"></span></th>
+              <th class="sortable-th" data-field="accountNo" onclick="sortSalesTable('accountNo')">Account No <span class="sort-arrow" id="arrow-accountNo"></span></th>
+              <th class="sortable-th" data-field="accountTitle" onclick="sortSalesTable('accountTitle')">Account Title <span class="sort-arrow" id="arrow-accountTitle"></span></th>
+              <th class="sortable-th" data-field="companyName" onclick="sortSalesTable('companyName')">Company Name <span class="sort-arrow" id="arrow-companyName"></span></th>
+              <th class="sortable-th" data-field="productCategory" onclick="sortSalesTable('productCategory')">Category <span class="sort-arrow" id="arrow-productCategory"></span></th>
+              <th class="sortable-th" data-field="model" onclick="sortSalesTable('model')">Model <span class="sort-arrow" id="arrow-model"></span></th>
+              <th class="sortable-th" data-field="qty" onclick="sortSalesTable('qty')">Qty <span class="sort-arrow" id="arrow-qty"></span></th>
+              <th class="sortable-th" data-field="salesRate" onclick="sortSalesTable('salesRate')">Sales Rate <span class="sort-arrow" id="arrow-salesRate"></span></th>
+              <th class="sortable-th" data-field="salesAmt" onclick="sortSalesTable('salesAmt')">Sales Amt <span class="sort-arrow" id="arrow-salesAmt"></span></th>
+              <th class="sortable-th" data-field="planMonths" onclick="sortSalesTable('planMonths')">Months <span class="sort-arrow" id="arrow-planMonths"></span></th>
+              <th class="sortable-th" data-field="advance" onclick="sortSalesTable('advance')">Advance <span class="sort-arrow" id="arrow-advance"></span></th>
+              <th class="sortable-th" data-field="installmentPerMonth" onclick="sortSalesTable('installmentPerMonth')">Per Month <span class="sort-arrow" id="arrow-installmentPerMonth"></span></th>
+              <th class="sortable-th" data-field="processingFee" onclick="sortSalesTable('processingFee')">Proc Fee <span class="sort-arrow" id="arrow-processingFee"></span></th>
+              <th class="sortable-th" data-field="totalAmount" onclick="sortSalesTable('totalAmount')">Total Amount <span class="sort-arrow" id="arrow-totalAmount"></span></th>
+              <th style="text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="recentSalesTableBody">
+            <tr><td colspan="17" style="text-align: center; color: #666;">Loading recent sales...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
-  <div id="loader" class="loader">Processing, please wait...</div>
-
-  <!-- Account & Details with Date First -->
-  <div class="section-card">
-    <div class="section-title" style="margin-bottom: 8px;">1. Account & Details</div>
-    <div class="row" style="align-items: flex-end;">
-      <div class="col" style="flex: 1.1;">
-        <label for="saleDate">Date</label>
-        <input type="date" id="saleDate">
-      </div>
-      <div class="col" style="flex: 1.2;">
-        <label for="accountNo">Account No. (Type & Press Enter)</label>
-        <input type="text" id="accountNo" placeholder="Type & Press Enter" onkeydown="handleAccountKey(event)">
-      </div>
-      <div class="col" style="flex: 2.5;">
-        <label for="accountTitle">Account Title</label>
-        <input type="text" id="accountTitle" readonly placeholder="Auto-fetched">
-      </div>
-      <div class="col" style="flex: 1.5;">
-        <label for="approvedBy">Approved By</label>
-        <input type="text" id="approvedBy" readonly placeholder="Auto-fetched">
-      </div>
-      <div class="col" style="flex: 1.2;">
-        <label for="cro">CRO</label>
-        <input type="text" id="cro" readonly placeholder="Auto-fetched">
+  <!-- Product Selection Modal -->
+  <div id="productModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeProductModal()">&times;</span>
+      <h3 style="margin-top:0; color:var(--primary); font-size:15px;">Select Product from Stock Ledger</h3>
+      <input type="text" id="modalSearchInput" class="search-box" placeholder="Search by Product ID, Company, Category, Model, Color..." oninput="filterModalProducts()">
+      <div style="overflow-x:auto;">
+        <table class="product-table" style="min-width: 100%;">
+          <thead>
+            <tr>
+              <th>Product ID</th>
+              <th>Company Name</th>
+              <th>Category</th>
+              <th>Model</th>
+              <th>Color</th>
+              <th style="text-align: center; color: #059669;">Balance</th>
+              <th style="text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="modalProductTableBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <div class="section-card">
-    <div class="section-header-flex">
-      <span class="section-title">2. Product & Installment Details</span>
-      <button type="button" class="btn-header-search" onclick="openGlobalSearchModal()">🔍 Search Stock Ledger</button>
-    </div>
-    <div class="product-table-wrapper">
-      <table class="product-table">
-        <thead>
-          <tr>
-            <th style="width: 9%;">Product ID</th>
-            <th style="width: 10%;">Company</th>
-            <th style="width: 8%;">Category</th>
-            <th style="width: 10%;">Model</th>
-            <th style="width: 8%;">Color</th>
-            <th style="width: 5%;">Qty</th>
-            <th style="width: 7%;">Rate</th>
-            <th style="width: 7%;">Amount</th>
-            <th style="width: 5%;">Months</th>
-            <th style="width: 6%;">Advance</th>
-            <th style="width: 7%;">Per Month</th>
-            <th style="width: 6%;">Proc Fee</th>
-            <th style="width: 7%;">Remarks</th>
-            <th style="width: 4%; text-align: center;">
-              <button type="button" class="add-row-btn" onclick="addProductRow()" title="Add Product Line">+</button>
-            </th>
-          </tr>
-        </thead>
-        <tbody id="productTableBody">
-          <tr>
-            <td class="product-cell"><input type="text" class="productId" placeholder="Product ID" readonly></td>
-            <td><input type="text" class="companyName" placeholder="Company" readonly></td>
-            <td><input type="text" class="productCategory" placeholder="Category" readonly></td>
-            <td><input type="text" class="model" placeholder="Model" readonly></td>
-            <td><input type="text" class="color" placeholder="Color" readonly></td>
-            <td><input type="number" class="qty" value="1" oninput="calculateRow(this)" onfocus="this.select()"></td>
-            <td><input type="number" class="salesRate" placeholder="Rate" oninput="calculateRow(this)" onfocus="this.select()"></td>
-            <td><input type="text" class="salesAmount" readonly tabindex="-1" placeholder="Amt"></td>
-            <td><input type="number" class="planMonths" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
-            <td><input type="number" class="advance" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
-            <td><input type="text" class="installmentPerMonth" readonly tabindex="-1" placeholder="Inst"></td>
-            <td><input type="number" class="processingFee" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
-            <td><input type="text" class="remarks" placeholder="Remarks"></td>
-            <td style="text-align: center;"><button type="button" class="del-row-btn" onclick="removeProductRow(this)">X</button></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="section-card">
-    <div class="section-title">3. Overall Totals</div>
-    <div class="row">
-      <div class="col">
-        <label for="totalAmount">Total Amount (Sales + Fees)</label>
-        <input type="text" id="totalAmount" readonly tabindex="-1" placeholder="Auto calculated">
-      </div>
-      <div class="col">
-        <label for="nextInstMonth">Next Inst Month</label>
-        <select id="nextInstMonth"></select>
-      </div>
-    </div>
-  </div>
-
-  <div class="btn-row">
-    <button id="actionMainBtn" class="action-btn btn-primary" onclick="submitNewSale()">Save Sales</button>
-    <button class="action-btn btn-secondary" onclick="clearSaleForm()">Reset / New</button>
-  </div>
-
-  <!-- Recent Saved Sales Section with Frozen Totals Bar & Sticky Headers -->
-  <div class="recent-sales-section">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <h3 style="margin: 0; color: var(--primary); font-size: 15px;">Recent Saved Sales</h3>
-    </div>
-    <div class="recent-filter-bar">
-      <span style="font-weight: 600; font-size: 11px;">From Date:</span>
-      <input type="date" id="recentFromDate" onchange="loadRecentSales()">
-      <span style="font-weight: 600; font-size: 11px; margin-left: 10px;">To Date:</span>
-      <input type="date" id="recentToDate" onchange="loadRecentSales()">
-      <button type="button" class="btn-header-search" style="margin-left: auto;" onclick="loadRecentSales()">Refresh List</button>
-    </div>
-    
-    <!-- Frozen Totals Bar -->
-    <div class="recent-totals-bar">
-      <span style="margin-right: auto;">Totals:</span>
-      <div style="display: flex; gap: 15px; text-align: right;">
-        <div>Qty: <span id="totalQty" style="font-weight:700;">0</span></div>
-        <div>Sales Amt: <span id="totalSalesAmt" style="font-weight:700;">0</span></div>
-        <div>Advance: <span id="totalAdvance" style="font-weight:700;">0</span></div>
-        <div>Proc Fee: <span id="totalProcFee" style="font-weight:700;">0</span></div>
-        <div>Total Amount: <span id="totalGrandAmount" style="font-weight:700;">0</span></div>
-      </div>
-    </div>
-
-    <!-- Scrollable Table Container -->
-    <div class="recent-scroll-container">
-      <table class="product-table recent-table">
-        <thead>
-          <tr>
-            <th class="sortable-th" data-field="date" onclick="sortSalesTable('date')">Date <span class="sort-arrow" id="arrow-date"></span></th>
-            <th class="sortable-th" data-field="productId" onclick="sortSalesTable('productId')">Product ID <span class="sort-arrow" id="arrow-productId"></span></th>
-            <th class="sortable-th" data-field="approvedBy" onclick="sortSalesTable('approvedBy')">Approved By <span class="sort-arrow" id="arrow-approvedBy"></span></th>
-            <th class="sortable-th" data-field="accountNo" onclick="sortSalesTable('accountNo')">Account No <span class="sort-arrow" id="arrow-accountNo"></span></th>
-            <th class="sortable-th" data-field="accountTitle" onclick="sortSalesTable('accountTitle')">Account Title <span class="sort-arrow" id="arrow-accountTitle"></span></th>
-            <th class="sortable-th" data-field="companyName" onclick="sortSalesTable('companyName')">Company Name <span class="sort-arrow" id="arrow-companyName"></span></th>
-            <th class="sortable-th" data-field="productCategory" onclick="sortSalesTable('productCategory')">Category <span class="sort-arrow" id="arrow-productCategory"></span></th>
-            <th class="sortable-th" data-field="model" onclick="sortSalesTable('model')">Model <span class="sort-arrow" id="arrow-model"></span></th>
-            <th class="sortable-th" data-field="qty" onclick="sortSalesTable('qty')">Qty <span class="sort-arrow" id="arrow-qty"></span></th>
-            <th class="sortable-th" data-field="salesRate" onclick="sortSalesTable('salesRate')">Sales Rate <span class="sort-arrow" id="arrow-salesRate"></span></th>
-            <th class="sortable-th" data-field="salesAmt" onclick="sortSalesTable('salesAmt')">Sales Amt <span class="sort-arrow" id="arrow-salesAmt"></span></th>
-            <th class="sortable-th" data-field="planMonths" onclick="sortSalesTable('planMonths')">Months <span class="sort-arrow" id="arrow-planMonths"></span></th>
-            <th class="sortable-th" data-field="advance" onclick="sortSalesTable('advance')">Advance <span class="sort-arrow" id="arrow-advance"></span></th>
-            <th class="sortable-th" data-field="installmentPerMonth" onclick="sortSalesTable('installmentPerMonth')">Per Month <span class="sort-arrow" id="arrow-installmentPerMonth"></span></th>
-            <th class="sortable-th" data-field="processingFee" onclick="sortSalesTable('processingFee')">Proc Fee <span class="sort-arrow" id="arrow-processingFee"></span></th>
-            <th class="sortable-th" data-field="totalAmount" onclick="sortSalesTable('totalAmount')">Total Amount <span class="sort-arrow" id="arrow-totalAmount"></span></th>
-            <th style="text-align: center;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="recentSalesTableBody">
-          <tr><td colspan="17" style="text-align: center; color: #666;">Loading recent sales...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- Product Selection Modal -->
-<div id="productModal" class="modal">
-  <div class="modal-content">
-    <span class="close-modal" onclick="closeProductModal()">&times;</span>
-    <h3 style="margin-top:0; color:var(--primary); font-size:15px;">Select Product from Stock Ledger</h3>
-    <input type="text" id="modalSearchInput" class="search-box" placeholder="Search by Product ID, Company, Category, Model, Color..." oninput="filterModalProducts()">
-    <div style="overflow-x:auto;">
-      <table class="product-table" style="min-width: 100%;">
-        <thead>
-          <tr>
-            <th>Product ID</th>
-            <th>Company Name</th>
-            <th>Category</th>
-            <th>Model</th>
-            <th>Color</th>
-            <th style="text-align: center; color: #059669;">Balance</th>
-            <th style="text-align: center;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="modalProductTableBody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<script>
+  <script>
     let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
 
-  let activeRowForModal = null;
-  let allMasterProducts = [];
+    let activeRowForModal = null;
+    let allMasterProducts = [];
 
-  window.onload = function() {
-    setCurrentDatePakistani();
-    populateNextInstMonthDropdown();
-    loadRecentSales(); 
-  };
-
-  function setCurrentDatePakistani() {
-    let now = new Date();
-    let yyyy = now.getFullYear();
-    let mm = String(now.getMonth() + 1).padStart(2, '0');
-    let dd = String(now.getDate()).padStart(2, '0');
-    document.getElementById('saleDate').value = `${yyyy}-${mm}-${dd}`;
-  }
-
-  function populateNextInstMonthDropdown(selectedVal = '') {
-    let select = document.getElementById('nextInstMonth');
-    select.innerHTML = '';
-    
-    let date = new Date();
-    let monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    
-    for (let i = 0; i < 24; i++) {
-      let mIndex = date.getMonth();
-      let year = date.getFullYear();
-      let monthName = monthNames[mIndex];
-      let displayStr = monthName + " " + year;
-      
-      let option = document.createElement('option');
-      option.value = displayStr;
-      option.text = displayStr;
-      
-      if (selectedVal && displayStr.toLowerCase() === String(selectedVal).trim().toLowerCase()) {
-        option.selected = true;
-      }
-      
-      select.appendChild(option);
-      date.setMonth(date.getMonth() + 1);
-    }
-    
-    if (selectedVal && ![...select.options].some(o => o.value.toLowerCase() === String(selectedVal).trim().toLowerCase())) {
-      let option = document.createElement('option');
-      option.value = selectedVal;
-      option.text = selectedVal;
-      option.selected = true;
-      select.insertBefore(option, select.firstChild);
-    }
-  }
-
-  function showLoader(show) {
-    document.getElementById('loader').style.display = show ? 'block' : 'none';
-  }
-
-  function handleAccountKey(event) {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      fetchCustomerDetails();
-    }
-  }
-
-  function fetchCustomerDetails() {
-    let accNo = document.getElementById("accountNo").value.trim();
-    if (!accNo) return;
-
-    showLoader(true);
-    fetch(SCRIPT_URL + "?action=getCustomerDetailsForSales" + "&accNo=" + encodeURIComponent(accNo))
-        .then(r => r.json())
-        .then(function(res) {
-        showLoader(false);
-        if (res && res.success) {
-          if (res.alreadySaved) {
-            alert("Error: Sale against this Account Number is already saved!");
-            document.getElementById("accountNo").value = "";
-            document.getElementById("accountTitle").value = "";
-            document.getElementById("approvedBy").value = "";
-            document.getElementById("cro").value = "";
-            document.getElementById("accountNo").focus();
-            return;
-          }
-          document.getElementById("accountTitle").value = res.accountTitle || "";
-          document.getElementById("approvedBy").value = res.approvedBy || "";
-          document.getElementById("cro").value = res.cro || "";
-        } else {
-          alert(res.error || "Account not found!");
-          document.getElementById("accountNo").value = "";
-          document.getElementById("accountNo").focus();
-        }
-      })
-        .catch(function(err) {
-        showLoader(false);
-        alert("Error fetching customer details.");
-      });
-  }
-
-  function openGlobalSearchModal() {
-    let rows = document.querySelectorAll("#productTableBody tr");
-    activeRowForModal = rows[rows.length - 1]; 
-    document.getElementById('productModal').style.display = 'block';
-    document.getElementById('modalSearchInput').value = '';
-    
-    showLoader(true);
-    fetch(SCRIPT_URL + "?action=getStockLedgerProductsForSales")
-        .then(r => r.json())
-        .then(function(res) {
-        showLoader(false);
-        if (res.success) {
-          allMasterProducts = res.products;
-          renderModalTable(allMasterProducts);
-        } else {
-          alert("Could not load stock ledger products.");
-        }
-      })
-        .catch(function(err) {
-        showLoader(false);
-        alert("Error loading stock ledger.");
-      });
-  }
-
-  function closeProductModal() {
-    document.getElementById('productModal').style.display = 'none';
-  }
-
-  function renderModalTable(products) {
-    let tbody = document.getElementById('modalProductTableBody');
-    tbody.innerHTML = '';
-    if (!products || products.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No products found in stock ledger.</td></tr>';
-      return;
-    }
-
-    // Product ID ke lihaz se group kar ke latest/net balance nikalne ka logic
-    let groupedProducts = {};
-    products.forEach(function(p) {
-      let prodIdVal = p.product_id !== undefined ? p.product_id : (p.PRODUCT_ID !== undefined ? p.PRODUCT_ID : '');
-      if (!prodIdVal) return;
-
-      let balanceVal = 0;
-      if (p.balance !== undefined) balanceVal = Number(p.balance) || 0;
-      else if (p.BALAN !== undefined) balanceVal = Number(p.BALAN) || 0;
-
-      // Agar product pehle se map mein hai, toh uska balance update kar lein (ya jo bhi latest row ho)
-      // Kyunki backend se data chronological aata hai, aakhri row ka balance ya net balance yahan reflect hoga
-      groupedProducts[prodIdVal] = {
-        product_id: prodIdVal,
-        companyName: p.companyName !== undefined ? p.companyName : (p.COMPANY_NAME !== undefined ? p.COMPANY_NAME : ''),
-        productCategory: p.productCategory !== undefined ? p.productCategory : (p.PRODUCT_CATEGORY !== undefined ? p.PRODUCT_CATEGORY : ''),
-        model: p.model !== undefined ? p.model : (p.MODEL !== undefined ? p.MODEL : ''),
-        color: p.color !== undefined ? p.color : (p.Color !== undefined ? p.Color : ''),
-        balance: balanceVal // Ya agar sari entries ka net balance chahiye toh yahan += kar sakte hain, lekin ledger mein BALAN column already current running balance hota hai toh aakhri entry wala balance uthay ga.
-      };
-    });
-
-    let uniqueList = Object.values(groupedProducts);
-
-    uniqueList.forEach(function(p) {
-      let tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><b>${p.product_id}</b></td>
-        <td>${String(p.companyName).toUpperCase()}</td>
-        <td>${String(p.productCategory).toUpperCase()}</td>
-        <td>${String(p.model).toUpperCase()}</td>
-        <td>${String(p.color).toUpperCase()}</td>
-        <td style="font-weight: bold; color: #059669; text-align: center;">${p.balance}</td>
-        <td style="text-align: center;"><button type="button" class="action-btn btn-primary" style="padding: 4px 8px; font-size:11px;" onclick='selectProductFromModal(${JSON.stringify(p)})'>Select</button></td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function filterModalProducts() {
-    let query = document.getElementById('modalSearchInput').value.toLowerCase();
-    let filtered = allMasterProducts.filter(function(p) {
-      let pid = String(p.product_id || p.PRODUCT_ID || '').toLowerCase();
-      let comp = String(p.companyName || p.COMPANY_NAME || '').toLowerCase();
-      let cat = String(p.productCategory || p.PRODUCT_CATEGORY || '').toLowerCase();
-      let mod = String(p.model || p.MODEL || '').toLowerCase();
-      let col = String(p.color || p.Color || '').toLowerCase();
-      return pid.includes(query) || comp.includes(query) || cat.includes(query) || mod.includes(query) || col.includes(query);
-    });
-    renderModalTable(filtered);
-  }
-
-  function selectProductFromModal(p) {
-    if (!activeRowForModal) return;
-
-    let prodIdVal = p.product_id || p.PRODUCT_ID || '';
-    let companyVal = p.companyName || p.COMPANY_NAME || '';
-    let categoryVal = p.productCategory || p.PRODUCT_CATEGORY || '';
-    let modelVal = String(p.model || p.MODEL || '').toUpperCase();
-    let colorVal = String(p.color || p.Color || '').trim().toUpperCase();
-    
-    activeRowForModal.querySelector('.productId').value = String(prodIdVal).toUpperCase();
-    activeRowForModal.querySelector('.companyName').value = String(companyVal).toUpperCase();
-    activeRowForModal.querySelector('.productCategory').value = String(categoryVal).toUpperCase();
-    activeRowForModal.querySelector('.model').value = modelVal;
-    activeRowForModal.querySelector('.color').value = colorVal;
-    
-    closeProductModal();
-    activeRowForModal.querySelector('.qty').focus();
-  }
-
-  function addProductRow() {
-    let tbody = document.getElementById("productTableBody");
-    let newRow = document.createElement("tr");
-    newRow.innerHTML = `
-      <td class="product-cell"><input type="text" class="productId" placeholder="Product ID" readonly></td>
-      <td><input type="text" class="companyName" placeholder="Company" readonly></td>
-      <td><input type="text" class="productCategory" placeholder="Category" readonly></td>
-      <td><input type="text" class="model" placeholder="Model" readonly></td>
-      <td><input type="text" class="color" placeholder="Color" readonly></td>
-      <td><input type="number" class="qty" value="1" oninput="calculateRow(this)" onfocus="this.select()"></td>
-      <td><input type="number" class="salesRate" placeholder="Rate" oninput="calculateRow(this)" onfocus="this.select()"></td>
-      <td><input type="text" class="salesAmount" readonly tabindex="-1" placeholder="Amt"></td>
-      <td><input type="number" class="planMonths" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
-      <td><input type="number" class="advance" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
-      <td><input type="text" class="installmentPerMonth" readonly tabindex="-1" placeholder="Inst"></td>
-      <td><input type="number" class="processingFee" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
-      <td><input type="text" class="remarks" placeholder="Remarks"></td>
-      <td style="text-align: center;"><button type="button" class="del-row-btn" onclick="removeProductRow(this)">X</button></td>
-    `;
-    tbody.appendChild(newRow);
-  }
-
-  function removeProductRow(btn) {
-    let tbody = document.getElementById("productTableBody");
-    if (tbody.rows.length > 1) {
-      btn.closest("tr").remove();
-      calculateTotals();
-    } else {
-      alert("At least one product row is required!");
-    }
-  }
-
-  function calculateRow(input) {
-    let row = input.closest("tr");
-    let qty = Number(row.querySelector('.qty').value) || 0;
-    let rate = Number(row.querySelector('.salesRate').value) || 0;
-    let rowAmt = qty * rate;
-    row.querySelector('.salesAmount').value = rowAmt;
-
-    let planMonths = Number(row.querySelector('.planMonths').value) || 0;
-    let advance = Number(row.querySelector('.advance').value) || 0;
-
-    let netRowVal = rowAmt - advance;
-    if (planMonths > 0) {
-      let perMonthInst = netRowVal / planMonths;
-      row.querySelector('.installmentPerMonth').value = perMonthInst > 0 ? perMonthInst.toFixed(2) : '0.00';
-    } else {
-      row.querySelector('.installmentPerMonth').value = '0.00';
-    }
-
-    calculateTotals();
-  }
-
-  function calculateTotals() {
-    let rows = document.querySelectorAll("#productTableBody tr");
-    let grandTotal = 0;
-
-    rows.forEach(row => {
-      let rowAmt = Number(row.querySelector('.salesAmount').value) || 0;
-      let procFee = Number(row.querySelector('.processingFee').value) || 0;
-      grandTotal += (rowAmt + procFee);
-    });
-
-    document.getElementById('totalAmount').value = grandTotal.toFixed(2);
-  }
-
-  function submitNewSale() {
-    let data = collectFormData();
-    if (!data) return;
-
-    // Save button ko disable aur cursor ko wait (loading wheel) banana
-    let saveBtn = document.getElementById('actionMainBtn');
-    saveBtn.disabled = true;
-    saveBtn.style.opacity = '0.5';
-    saveBtn.style.cursor = 'wait';
-    document.body.style.cursor = 'wait';
-
-    showLoader(true);
-    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveSalesEntry", data: data }) })
-        .then(r => r.json())
-        .then(function(res) {
-        // Button aur cursor ko wapas normal karna
-        saveBtn.disabled = false;
-        saveBtn.style.opacity = '1';
-        saveBtn.style.cursor = 'pointer';
-        document.body.style.cursor = 'default';
-        showLoader(false);
-
-        if (res.success) {
-          clearSaleForm();
-          loadRecentSales();
-          fetch(SCRIPT_URL + "?action=rebuildStockLedgerNow").catch(() => {}); // Stock Ledger turant refresh karein
-          window.open('receipts.html', '_blank');
-        } else {
-          alert("Error: " + res.error);
-        }
-      })
-        .catch(function(err) {
-        // Error ki surat mein bhi button aur cursor restore karna
-        let saveBtn = document.getElementById('actionMainBtn');
-        saveBtn.disabled = false;
-        saveBtn.style.opacity = '1';
-        saveBtn.style.cursor = 'pointer';
-        document.body.style.cursor = 'default';
-        showLoader(false);
-
-        alert("Server Error: " + err.message);
-      });
-  }
-
-  function collectFormData() {
-    let accNoVal = document.getElementById('accountNo').value.trim();
-    let rawDate = document.getElementById('saleDate').value;
-    let formattedDate = "";
-    if (rawDate) {
-      let parts = rawDate.split("-");
-      if (parts.length === 3) {
-        formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0].slice(-2);
-      }
-    }
-
-    let rows = document.querySelectorAll("#productTableBody tr");
-    let products = [];
-
-    rows.forEach(row => {
-      products.push({
-        product_id: row.querySelector('.productId').value.trim(),
-        companyName: row.querySelector('.companyName').value.trim(),
-        productCategory: row.querySelector('.productCategory').value.trim(),
-        model: row.querySelector('.model').value.trim(),
-        color: row.querySelector('.color').value.trim(),
-        qty: row.querySelector('.qty').value,
-        salesRate: row.querySelector('.salesRate').value,
-        salesAmt: row.querySelector('.salesAmount').value,
-        planMonths: row.querySelector('.planMonths').value,
-        advance: row.querySelector('.advance').value,
-        installmentPerMonth: row.querySelector('.installmentPerMonth').value,
-        processingFee: row.querySelector('.processingFee').value,
-        remarks: row.querySelector('.remarks').value.trim()
-      });
-    });
-
-    let data = {
-      accountNo: accNoVal,
-      accountTitle: document.getElementById('accountTitle').value.trim(),
-      approvedBy: document.getElementById('approvedBy').value.trim(),
-      cro: document.getElementById('cro').value.trim(),
-      date: formattedDate || rawDate,
-      products: products,
-      totalAmount: document.getElementById('totalAmount').value,
-      nextInstMonth: document.getElementById('nextInstMonth').value.trim()
+    window.onload = function() {
+      setCurrentDatePakistani();
+      populateNextInstMonthDropdown();
+      loadRecentSales(); 
     };
 
-    if (!data.accountNo || !products[0].model || !products[0].salesRate) {
-      alert("Please fill required fields (Account No, Model, Sales Rate)!");
-      return null;
+    function setCurrentDatePakistani() {
+      let now = new Date();
+      let yyyy = now.getFullYear();
+      let mm = String(now.getMonth() + 1).padStart(2, '0');
+      let dd = String(now.getDate()).padStart(2, '0');
+      document.getElementById('saleDate').value = `${yyyy}-${mm}-${dd}`;
     }
-    return data;
-  }
 
-  function clearSaleForm() {
-    document.getElementById('accountNo').value = '';
-    document.getElementById('accountTitle').value = '';
-    document.getElementById('approvedBy').value = '';
-    document.getElementById('cro').value = '';
-    
-    let tbody = document.getElementById('productTableBody');
-    tbody.innerHTML = `
-      <tr>
+    function populateNextInstMonthDropdown(selectedVal = '') {
+      let select = document.getElementById('nextInstMonth');
+      select.innerHTML = '';
+      
+      let date = new Date();
+      let monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      
+      for (let i = 0; i < 24; i++) {
+        let mIndex = date.getMonth();
+        let year = date.getFullYear();
+        let monthName = monthNames[mIndex];
+        let displayStr = monthName + " " + year;
+        
+        let option = document.createElement('option');
+        option.value = displayStr;
+        option.text = displayStr;
+        
+        if (selectedVal && displayStr.toLowerCase() === String(selectedVal).trim().toLowerCase()) {
+          option.selected = true;
+        }
+        
+        select.appendChild(option);
+        date.setMonth(date.getMonth() + 1);
+      }
+      
+      if (selectedVal && ![...select.options].some(o => o.value.toLowerCase() === String(selectedVal).trim().toLowerCase())) {
+        let option = document.createElement('option');
+        option.value = selectedVal;
+        option.text = selectedVal;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+    }
+
+    function showLoader(show) {
+      document.getElementById('loader').style.display = show ? 'block' : 'none';
+    }
+
+    function handleAccountKey(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        fetchCustomerDetails();
+      }
+    }
+
+    function fetchCustomerDetails() {
+      let accNo = document.getElementById("accountNo").value.trim();
+      if (!accNo) return;
+
+      showLoader(true);
+      fetch(SCRIPT_URL + "?action=getCustomerDetailsForSales" + "&accNo=" + encodeURIComponent(accNo))
+        .then(r => r.json())
+        .then(function(res) {
+          showLoader(false);
+          if (res && res.success) {
+            if (res.alreadySaved) {
+              alert("Error: Sale against this Account Number is already saved!");
+              document.getElementById("accountNo").value = "";
+              document.getElementById("accountTitle").value = "";
+              document.getElementById("approvedBy").value = "";
+              document.getElementById("cro").value = "";
+              document.getElementById("accountNo").focus();
+              return;
+            }
+            document.getElementById("accountTitle").value = res.accountTitle || "";
+            document.getElementById("approvedBy").value = res.approvedBy || "";
+            document.getElementById("cro").value = res.cro || "";
+          } else {
+            alert(res.error || "Account not found!");
+            document.getElementById("accountNo").value = "";
+            document.getElementById("accountNo").focus();
+          }
+        })
+        .catch(function(err) {
+          showLoader(false);
+          alert("Error fetching customer details.");
+        });
+    }
+
+    function openGlobalSearchModal() {
+      let rows = document.querySelectorAll("#productTableBody tr");
+      activeRowForModal = rows[rows.length - 1]; 
+      document.getElementById('productModal').style.display = 'block';
+      document.getElementById('modalSearchInput').value = '';
+      
+      showLoader(true);
+      fetch(SCRIPT_URL + "?action=getStockLedgerProductsForSales")
+        .then(r => r.json())
+        .then(function(res) {
+          showLoader(false);
+          if (res.success) {
+            allMasterProducts = res.products;
+            renderModalTable(allMasterProducts);
+          } else {
+            alert("Could not load stock ledger products.");
+          }
+        })
+        .catch(function(err) {
+          showLoader(false);
+          alert("Error loading stock ledger.");
+        });
+    }
+
+    function closeProductModal() {
+      document.getElementById('productModal').style.display = 'none';
+    }
+
+    function renderModalTable(products) {
+      let tbody = document.getElementById('modalProductTableBody');
+      tbody.innerHTML = '';
+      if (!products || products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No products found in stock ledger.</td></tr>';
+        return;
+      }
+
+      let groupedProducts = {};
+      products.forEach(function(p) {
+        let prodIdVal = p.product_id !== undefined ? p.product_id : (p.PRODUCT_ID !== undefined ? p.PRODUCT_ID : '');
+        if (!prodIdVal) return;
+
+        let balanceVal = 0;
+        if (p.balance !== undefined) balanceVal = Number(p.balance) || 0;
+        else if (p.BALAN !== undefined) balanceVal = Number(p.BALAN) || 0;
+
+        groupedProducts[prodIdVal] = {
+          product_id: prodIdVal,
+          companyName: p.companyName !== undefined ? p.companyName : (p.COMPANY_NAME !== undefined ? p.COMPANY_NAME : ''),
+          productCategory: p.productCategory !== undefined ? p.productCategory : (p.PRODUCT_CATEGORY !== undefined ? p.PRODUCT_CATEGORY : ''),
+          model: p.model !== undefined ? p.model : (p.MODEL !== undefined ? p.MODEL : ''),
+          color: p.color !== undefined ? p.color : (p.Color !== undefined ? p.Color : ''),
+          balance: balanceVal
+        };
+      });
+
+      let uniqueList = Object.values(groupedProducts);
+
+      uniqueList.forEach(function(p) {
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><b>${p.product_id}</b></td>
+          <td>${String(p.companyName).toUpperCase()}</td>
+          <td>${String(p.productCategory).toUpperCase()}</td>
+          <td>${String(p.model).toUpperCase()}</td>
+          <td>${String(p.color).toUpperCase()}</td>
+          <td style="font-weight: bold; color: #059669; text-align: center;">${p.balance}</td>
+          <td style="text-align: center;"><button type="button" class="action-btn btn-primary" style="padding: 4px 8px; font-size:11px;" onclick='selectProductFromModal(${JSON.stringify(p)})'>Select</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterModalProducts() {
+      let query = document.getElementById('modalSearchInput').value.toLowerCase();
+      let filtered = allMasterProducts.filter(function(p) {
+        let pid = String(p.product_id || p.PRODUCT_ID || '').toLowerCase();
+        let comp = String(p.companyName || p.COMPANY_NAME || '').toLowerCase();
+        let cat = String(p.productCategory || p.PRODUCT_CATEGORY || '').toLowerCase();
+        let mod = String(p.model || p.MODEL || '').toLowerCase();
+        let col = String(p.color || p.Color || '').toLowerCase();
+        return pid.includes(query) || comp.includes(query) || cat.includes(query) || mod.includes(query) || col.includes(query);
+      });
+      renderModalTable(filtered);
+    }
+
+    function selectProductFromModal(p) {
+      if (!activeRowForModal) return;
+
+      let prodIdVal = p.product_id || p.PRODUCT_ID || '';
+      let companyVal = p.companyName || p.COMPANY_NAME || '';
+      let categoryVal = p.productCategory || p.PRODUCT_CATEGORY || '';
+      let modelVal = String(p.model || p.MODEL || '').toUpperCase();
+      let colorVal = String(p.color || p.Color || '').trim().toUpperCase();
+      
+      activeRowForModal.querySelector('.productId').value = String(prodIdVal).toUpperCase();
+      activeRowForModal.querySelector('.companyName').value = String(companyVal).toUpperCase();
+      activeRowForModal.querySelector('.productCategory').value = String(categoryVal).toUpperCase();
+      activeRowForModal.querySelector('.model').value = modelVal;
+      activeRowForModal.querySelector('.color').value = colorVal;
+      
+      closeProductModal();
+      activeRowForModal.querySelector('.qty').focus();
+    }
+
+    function addProductRow() {
+      let tbody = document.getElementById("productTableBody");
+      let newRow = document.createElement("tr");
+      newRow.innerHTML = `
         <td class="product-cell"><input type="text" class="productId" placeholder="Product ID" readonly></td>
         <td><input type="text" class="companyName" placeholder="Company" readonly></td>
         <td><input type="text" class="productCategory" placeholder="Category" readonly></td>
@@ -959,126 +792,303 @@
         <td><input type="number" class="processingFee" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
         <td><input type="text" class="remarks" placeholder="Remarks"></td>
         <td style="text-align: center;"><button type="button" class="del-row-btn" onclick="removeProductRow(this)">X</button></td>
-      </tr>
-    `;
+      `;
+      tbody.appendChild(newRow);
+    }
 
-    document.getElementById('totalAmount').value = '';
-    populateNextInstMonthDropdown();
-    setCurrentDatePakistani();
-    document.getElementById('accountNo').focus();
-  }
+    function removeProductRow(btn) {
+      let tbody = document.getElementById("productTableBody");
+      if (tbody.rows.length > 1) {
+        btn.closest("tr").remove();
+        calculateTotals();
+      } else {
+        alert("At least one product row is required!");
+      }
+    }
 
-  let recentSalesData = [];
-  let salesSortState = { field: null, asc: true };
+    function calculateRow(input) {
+      let row = input.closest("tr");
+      let qty = Number(row.querySelector('.qty').value) || 0;
+      let rate = Number(row.querySelector('.salesRate').value) || 0;
+      let rowAmt = qty * rate;
+      row.querySelector('.salesAmount').value = rowAmt;
 
-  function loadRecentSales() {
-    let fromDate = document.getElementById('recentFromDate').value;
-    let toDate = document.getElementById('recentToDate').value;
+      let planMonths = Number(row.querySelector('.planMonths').value) || 0;
+      let advance = Number(row.querySelector('.advance').value) || 0;
 
-    fetch(SCRIPT_URL + "?action=getRecentSalesList" + "&fromDate=" + encodeURIComponent(fromDate) + "&toDate=" + encodeURIComponent(toDate))
+      let netRowVal = rowAmt - advance;
+      if (planMonths > 0) {
+        let perMonthInst = netRowVal / planMonths;
+        row.querySelector('.installmentPerMonth').value = perMonthInst > 0 ? perMonthInst.toFixed(2) : '0.00';
+      } else {
+        row.querySelector('.installmentPerMonth').value = '0.00';
+      }
+
+      calculateTotals();
+    }
+
+    function calculateTotals() {
+      let rows = document.querySelectorAll("#productTableBody tr");
+      let grandTotal = 0;
+
+      rows.forEach(row => {
+        let rowAmt = Number(row.querySelector('.salesAmount').value) || 0;
+        let procFee = Number(row.querySelector('.processingFee').value) || 0;
+        grandTotal += (rowAmt + procFee);
+      });
+
+      document.getElementById('totalAmount').value = grandTotal.toFixed(2);
+    }
+
+    function submitNewSale() {
+      let data = collectFormData();
+      if (!data) return;
+
+      let saveBtn = document.getElementById('actionMainBtn');
+      saveBtn.disabled = true;
+      saveBtn.style.opacity = '0.5';
+      saveBtn.style.cursor = 'wait';
+      document.body.style.cursor = 'wait';
+
+      showLoader(true);
+      fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveSalesEntry", data: data }) })
         .then(r => r.json())
         .then(function(res) {
-        recentSalesData = (res && res.success && res.sales) ? res.sales : [];
-        salesSortState = { field: null, asc: true };
-        renderSalesTable(recentSalesData);
-      })
+          saveBtn.disabled = false;
+          saveBtn.style.opacity = '1';
+          saveBtn.style.cursor = 'pointer';
+          document.body.style.cursor = 'default';
+          showLoader(false);
+
+          if (res.success) {
+            clearSaleForm();
+            loadRecentSales();
+            fetch(SCRIPT_URL + "?action=rebuildStockLedgerNow").catch(() => {});
+            window.open('receipts.html', '_blank');
+          } else {
+            alert("Error: " + res.error);
+          }
+        })
         .catch(function(err) {
-        console.error("Error loading recent sales:", err);
-      });
-  }
+          saveBtn.disabled = false;
+          saveBtn.style.opacity = '1';
+          saveBtn.style.cursor = 'pointer';
+          document.body.style.cursor = 'default';
+          showLoader(false);
 
-  function sortSalesTable(field) {
-    if (salesSortState.field === field) {
-      salesSortState.asc = !salesSortState.asc;
-    } else {
-      salesSortState.field = field;
-      salesSortState.asc = true;
+          alert("Server Error: " + err.message);
+        });
     }
 
-    const numericFields = ['qty', 'salesRate', 'salesAmt', 'planMonths', 'advance', 'installmentPerMonth', 'processingFee', 'totalAmount'];
-    const isNumeric = numericFields.includes(field);
-
-    recentSalesData.sort((a, b) => {
-      let valA = a[field], valB = b[field];
-      if (isNumeric) {
-        valA = Number(valA) || 0;
-        valB = Number(valB) || 0;
-        return salesSortState.asc ? valA - valB : valB - valA;
-      } else {
-        valA = String(valA || '').toLowerCase();
-        valB = String(valB || '').toLowerCase();
-        if (valA < valB) return salesSortState.asc ? -1 : 1;
-        if (valA > valB) return salesSortState.asc ? 1 : -1;
-        return 0;
+    // UPDATED: Har individual row ka apna Item Total pass hoga grand total ki bajaye
+    function collectFormData() {
+      let accNoVal = document.getElementById('accountNo').value.trim();
+      let rawDate = document.getElementById('saleDate').value;
+      let formattedDate = "";
+      if (rawDate) {
+        let parts = rawDate.split("-");
+        if (parts.length === 3) {
+          formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0].slice(-2);
+        }
       }
-    });
 
-    document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '');
-    const arrowEl = document.getElementById('arrow-' + field);
-    if (arrowEl) arrowEl.textContent = salesSortState.asc ? '▲' : '▼';
+      let rows = document.querySelectorAll("#productTableBody tr");
+      let products = [];
 
-    renderSalesTable(recentSalesData);
-  }
+      rows.forEach(row => {
+        let sAmt = Number(row.querySelector('.salesAmount').value) || 0;
+        let pFee = Number(row.querySelector('.processingFee').value) || 0;
+        let rowItemTotal = sAmt + pFee;
 
-  function renderSalesTable(sales) {
-    let tbody = document.getElementById('recentSalesTableBody');
-    tbody.innerHTML = '';
-
-    let sumQty = 0;
-    let sumSalesAmt = 0;
-    let sumAdvance = 0;
-    let sumProcFee = 0;
-    let sumTotalAmount = 0;
-
-    if (sales && sales.length > 0) {
-      sales.forEach(s => {
-        sumQty += Number(s.qty || 0);
-        sumSalesAmt += Number(s.salesAmt || 0);
-        sumAdvance += Number(s.advance || 0);
-        sumProcFee += Number(s.processingFee || 0);
-        sumTotalAmount += Number(s.totalAmount || 0);
-
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${s.date || ''}</td>
-          <td>${s.productId || ''}</td>
-          <td>${s.approvedBy || ''}</td>
-          <td><b>${s.accountNo || ''}</b></td>
-          <td>${s.accountTitle || ''}</td>
-          <td>${s.companyName || ''}</td>
-          <td>${s.productCategory || ''}</td>
-          <td>${s.model || ''}</td>
-          <td>${s.qty || ''}</td>
-          <td>${s.salesRate ? Number(s.salesRate).toLocaleString() : ''}</td>
-          <td>${s.salesAmt ? Number(s.salesAmt).toLocaleString() : ''}</td>
-          <td>${s.planMonths || ''}</td>
-          <td>${s.advance ? Number(s.advance).toLocaleString() : ''}</td>
-          <td>${s.installmentPerMonth ? Number(s.installmentPerMonth).toLocaleString() : ''}</td>
-          <td>${s.processingFee ? Number(s.processingFee).toLocaleString() : ''}</td>
-          <td><b>${s.totalAmount ? Number(s.totalAmount).toLocaleString() : ''}</b></td>
-          <td style="text-align: center;">
-            <button type="button" class="action-btn btn-primary" style="padding: 2px 5px; font-size: 9px;" onclick="loadSpecificSale('${s.accountNo}')">View / Edit</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
+        products.push({
+          product_id: row.querySelector('.productId').value.trim(),
+          companyName: row.querySelector('.companyName').value.trim(),
+          productCategory: row.querySelector('.productCategory').value.trim(),
+          model: row.querySelector('.model').value.trim(),
+          color: row.querySelector('.color').value.trim(),
+          qty: row.querySelector('.qty').value,
+          salesRate: row.querySelector('.salesRate').value,
+          salesAmt: sAmt,
+          planMonths: row.querySelector('.planMonths').value,
+          advance: row.querySelector('.advance').value,
+          installmentPerMonth: row.querySelector('.installmentPerMonth').value,
+          processingFee: pFee,
+          rowTotalAmount: rowItemTotal,
+          remarks: row.querySelector('.remarks').value.trim()
+        });
       });
-    } else {
-      tbody.innerHTML = `<tr><td colspan="17" style="text-align: center; color: #666;">No recent sales found.</td></tr>`;
+
+      let data = {
+        accountNo: accNoVal,
+        accountTitle: document.getElementById('accountTitle').value.trim(),
+        approvedBy: document.getElementById('approvedBy').value.trim(),
+        cro: document.getElementById('cro').value.trim(),
+        date: formattedDate || rawDate,
+        products: products,
+        totalAmount: document.getElementById('totalAmount').value,
+        nextInstMonth: document.getElementById('nextInstMonth').value.trim()
+      };
+
+      if (!data.accountNo || !products[0].model || !products[0].salesRate) {
+        alert("Please fill required fields (Account No, Model, Sales Rate)!");
+        return null;
+      }
+      return data;
     }
 
-    document.getElementById('totalQty').innerText = sumQty ? sumQty.toLocaleString() : '0';
-    document.getElementById('totalSalesAmt').innerText = sumSalesAmt ? sumSalesAmt.toLocaleString() : '0';
-    document.getElementById('totalAdvance').innerText = sumAdvance ? sumAdvance.toLocaleString() : '0';
-    document.getElementById('totalProcFee').innerText = sumProcFee ? sumProcFee.toLocaleString() : '0';
-    document.getElementById('totalGrandAmount').innerText = sumTotalAmount ? sumTotalAmount.toLocaleString() : '0';
-  }
+    function clearSaleForm() {
+      document.getElementById('accountNo').value = '';
+      document.getElementById('accountTitle').value = '';
+      document.getElementById('approvedBy').value = '';
+      document.getElementById('cro').value = '';
+      
+      let tbody = document.getElementById('productTableBody');
+      tbody.innerHTML = `
+        <tr>
+          <td class="product-cell"><input type="text" class="productId" placeholder="Product ID" readonly></td>
+          <td><input type="text" class="companyName" placeholder="Company" readonly></td>
+          <td><input type="text" class="productCategory" placeholder="Category" readonly></td>
+          <td><input type="text" class="model" placeholder="Model" readonly></td>
+          <td><input type="text" class="color" placeholder="Color" readonly></td>
+          <td><input type="number" class="qty" value="1" oninput="calculateRow(this)" onfocus="this.select()"></td>
+          <td><input type="number" class="salesRate" placeholder="Rate" oninput="calculateRow(this)" onfocus="this.select()"></td>
+          <td><input type="text" class="salesAmount" readonly tabindex="-1" placeholder="Amt"></td>
+          <td><input type="number" class="planMonths" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
+          <td><input type="number" class="advance" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
+          <td><input type="text" class="installmentPerMonth" readonly tabindex="-1" placeholder="Inst"></td>
+          <td><input type="number" class="processingFee" value="0" oninput="calculateRow(this)" onfocus="this.select()"></td>
+          <td><input type="text" class="remarks" placeholder="Remarks"></td>
+          <td style="text-align: center;"><button type="button" class="del-row-btn" onclick="removeProductRow(this)">X</button></td>
+        </tr>
+      `;
 
-  function loadSpecificSale(accNo) {
-    document.getElementById('accountNo').value = accNo;
-    fetchCustomerDetails();
-  }
+      document.getElementById('totalAmount').value = '';
+      populateNextInstMonthDropdown();
+      setCurrentDatePakistani();
+      document.getElementById('accountNo').focus();
+    }
 
-    // ===== Deployment URL config (auto-added) =====
+    let recentSalesData = [];
+    let salesSortState = { field: null, asc: true };
+
+    function loadRecentSales() {
+      let fromDate = document.getElementById('recentFromDate').value;
+      let toDate = document.getElementById('recentToDate').value;
+
+      fetch(SCRIPT_URL + "?action=getRecentSalesList" + "&fromDate=" + encodeURIComponent(fromDate) + "&toDate=" + encodeURIComponent(toDate))
+        .then(r => r.json())
+        .then(function(res) {
+          recentSalesData = (res && res.success && res.sales) ? res.sales : [];
+          salesSortState = { field: null, asc: true };
+          renderSalesTable(recentSalesData);
+        })
+        .catch(function(err) {
+          console.error("Error loading recent sales:", err);
+        });
+    }
+
+    function sortSalesTable(field) {
+      if (salesSortState.field === field) {
+        salesSortState.asc = !salesSortState.asc;
+      } else {
+        salesSortState.field = field;
+        salesSortState.asc = true;
+      }
+
+      const numericFields = ['qty', 'salesRate', 'salesAmt', 'planMonths', 'advance', 'installmentPerMonth', 'processingFee', 'totalAmount'];
+      const isNumeric = numericFields.includes(field);
+
+      recentSalesData.sort((a, b) => {
+        let valA = a[field], valB = b[field];
+        if (isNumeric) {
+          valA = Number(valA) || 0;
+          valB = Number(valB) || 0;
+          return salesSortState.asc ? valA - valB : valB - valA;
+        } else {
+          valA = String(valA || '').toLowerCase();
+          valB = String(valB || '').toLowerCase();
+          if (valA < valB) return salesSortState.asc ? -1 : 1;
+          if (valA > valB) return salesSortState.asc ? 1 : -1;
+          return 0;
+        }
+      });
+
+      document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '');
+      const arrowEl = document.getElementById('arrow-' + field);
+      if (arrowEl) arrowEl.textContent = salesSortState.asc ? '▲' : '▼';
+
+      renderSalesTable(recentSalesData);
+    }
+
+    // UPDATED: Display row-level specific totals instead of bill grand total
+    function renderSalesTable(sales) {
+      let tbody = document.getElementById('recentSalesTableBody');
+      tbody.innerHTML = '';
+
+      let sumQty = 0;
+      let sumSalesAmt = 0;
+      let sumAdvance = 0;
+      let sumProcFee = 0;
+      let sumTotalAmount = 0;
+
+      if (sales && sales.length > 0) {
+        sales.forEach(s => {
+          let qtyVal = Number(s.qty || 0);
+          let salesAmtVal = Number(s.salesAmt || 0);
+          let advanceVal = Number(s.advance || 0);
+          let procFeeVal = Number(s.processingFee || 0);
+
+          let rowTotal = (s.rowTotalAmount !== undefined && s.rowTotalAmount !== null) 
+                         ? Number(s.rowTotalAmount) 
+                         : (salesAmtVal + procFeeVal);
+
+          sumQty += qtyVal;
+          sumSalesAmt += salesAmtVal;
+          sumAdvance += advanceVal;
+          sumProcFee += procFeeVal;
+          sumTotalAmount += rowTotal;
+
+          let tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${s.date || ''}</td>
+            <td>${s.productId || ''}</td>
+            <td>${s.approvedBy || ''}</td>
+            <td><b>${s.accountNo || ''}</b></td>
+            <td>${s.accountTitle || ''}</td>
+            <td>${s.companyName || ''}</td>
+            <td>${s.productCategory || ''}</td>
+            <td>${s.model || ''}</td>
+            <td>${s.qty || ''}</td>
+            <td>${s.salesRate ? Number(s.salesRate).toLocaleString() : ''}</td>
+            <td>${s.salesAmt ? Number(s.salesAmt).toLocaleString() : ''}</td>
+            <td>${s.planMonths || ''}</td>
+            <td>${s.advance ? Number(s.advance).toLocaleString() : ''}</td>
+            <td>${s.installmentPerMonth ? Number(s.installmentPerMonth).toLocaleString() : ''}</td>
+            <td>${s.processingFee ? Number(s.processingFee).toLocaleString() : ''}</td>
+            <td><b>${rowTotal ? rowTotal.toLocaleString() : '0'}</b></td>
+            <td style="text-align: center;">
+              <button type="button" class="action-btn btn-primary" style="padding: 2px 5px; font-size: 9px;" onclick="loadSpecificSale('${s.accountNo}')">View / Edit</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = `<tr><td colspan="17" style="text-align: center; color: #666;">No recent sales found.</td></tr>`;
+      }
+
+      document.getElementById('totalQty').innerText = sumQty ? sumQty.toLocaleString() : '0';
+      document.getElementById('totalSalesAmt').innerText = sumSalesAmt ? sumSalesAmt.toLocaleString() : '0';
+      document.getElementById('totalAdvance').innerText = sumAdvance ? sumAdvance.toLocaleString() : '0';
+      document.getElementById('totalProcFee').innerText = sumProcFee ? sumProcFee.toLocaleString() : '0';
+      document.getElementById('totalGrandAmount').innerText = sumTotalAmount ? sumTotalAmount.toLocaleString() : '0';
+    }
+
+    function loadSpecificSale(accNo) {
+      document.getElementById('accountNo').value = accNo;
+      fetchCustomerDetails();
+    }
+
+    // ===== Deployment URL config =====
     function showUrlConfig() {
       var inp = document.getElementById('scriptUrlInput');
       if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
@@ -1100,7 +1110,7 @@
       }
     });
 
-    // ================= UNIVERSAL MIC INPUT (auto-added) =================
+    // ================= UNIVERSAL MIC INPUT =================
     (function() {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       let activeRec = null, activeBtn = null, activeInput = null;
@@ -1164,7 +1174,7 @@
         if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
             input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
         if (input.closest('#configBox')) return;
-        if (input.closest('.input-with-mic')) return; // already has a manual mic button
+        if (input.closest('.input-with-mic')) return;
         if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
 
         input.dataset.autoMic = '1';
@@ -1174,7 +1184,6 @@
         input.parentNode.insertBefore(wrap, input);
         wrap.appendChild(input);
 
-        const curPad = window.getComputedStyle(input).paddingRight;
         input.style.paddingRight = '24px';
         input.style.boxSizing = 'border-box';
 
@@ -1208,7 +1217,6 @@
       });
       mo.observe(document.body, { childList: true, subtree: true });
     })();
-</script>
-
+  </script>
 </body>
 </html>
