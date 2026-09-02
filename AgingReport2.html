@@ -150,18 +150,19 @@
     th.col-monthlyInst, td.col-monthlyInst { width: 50px; } /* M Inst */
     th.col-remarks, td.col-remarks { width: 120px; }    /* Remarks */
     th.col-cmd, td.col-cmd { width: 55px; }             /* CMD */
+    th.col-plan, td.col-plan { width: 32px; text-align: center; } /* Plan */
     th.col-totalSales, td.col-totalSales { width: 60px; } /* Total Sale */
     th.col-totalReceived, td.col-totalReceived { width: 60px; } /* Total Paid */
     th.col-balance, td.col-balance { width: 55px; }     /* T Balance */
     th.col-lpd, td.col-lpd { width: 60px; }             /* LPD */
     th.col-lpAmount, td.col-lpAmount { width: 55px; }   /* L.Pamount */
     th.col-deliveryDate, td.col-deliveryDate { width: 60px; } /* Deliv Date */
-    th.col-endingMonth, td.col-endingMonth { width: 60px; } /* End (Width Expanded) */
+    th.col-endingMonth, td.col-endingMonth { width: 60px; } /* End */
     th.col-product, td.col-product { width: 55px; }     /* Product */
-    th.col-m4, td.col-m4 { width: 45px; }               /* M-4 (June) */
-    th.col-m3, td.col-m3 { width: 45px; }               /* M-3 (July) */
-    th.col-m2, td.col-m2 { width: 52px; }               /* M-2 (August) */
-    th.col-m1, td.col-m1 { width: 52px; }               /* M-1 (September) */
+    th.col-m4, td.col-m4 { width: 45px; }               /* M-4 */
+    th.col-m3, td.col-m3 { width: 45px; }               /* M-3 */
+    th.col-m2, td.col-m2 { width: 52px; }               /* M-2 */
+    th.col-m1, td.col-m1 { width: 52px; }               /* M-1 */
 
     .sticky-header {
       background-color: #1b5e20 !important;
@@ -505,6 +506,7 @@
             <th class="col-monthlyInst">M Inst</th>
             <th class="col-remarks">Remarks</th>
             <th class="col-cmd">CMD</th>
+            <th class="col-plan">Plan</th>
             <th class="col-totalSales">Total Sale</th>
             <th class="col-totalReceived">Total Paid</th>
             <th class="col-balance">T Balance</th>
@@ -513,10 +515,10 @@
             <th class="col-deliveryDate">Deliv Date</th>
             <th class="col-endingMonth">End</th>
             <th class="col-product">Product</th>
-            <th class="col-m4" id="thM4">June</th>
-            <th class="col-m3" id="thM3">July</th>
-            <th class="col-m2" id="thM2">August</th>
-            <th class="col-m1" id="thM1">September</th>
+            <th class="col-m4" id="thM4">M-4</th>
+            <th class="col-m3" id="thM3">M-3</th>
+            <th class="col-m2" id="thM2">M-2</th>
+            <th class="col-m1" id="thM1">M-1</th>
           </tr>
           <tr class="filter-header-row">
             <th class="col-accNo"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="accNo" placeholder="Filter..."><button class="excel-filter-btn" id="btn_accNo" onclick="toggleExcelPopup(event, 'accNo')"><i class="fa fa-filter"></i></button></div></th>
@@ -527,6 +529,7 @@
             <th class="col-monthlyInst"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="monthlyInst" placeholder="Filter..."><button class="excel-filter-btn" id="btn_monthlyInst" onclick="toggleExcelPopup(event, 'monthlyInst', true)"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-remarks"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="remarks" placeholder="Filter..."></div></th>
             <th class="col-cmd"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="cmd" placeholder="Filter..."><button class="excel-filter-btn" id="btn_cmd" onclick="toggleExcelPopup(event, 'cmd', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-plan"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="plan" placeholder="Filter..."><button class="excel-filter-btn" id="btn_plan" onclick="toggleExcelPopup(event, 'plan', true)"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-totalSales"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="totalSales" placeholder="Filter..."><button class="excel-filter-btn" id="btn_totalSales" onclick="toggleExcelPopup(event, 'totalSales', true)"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-totalReceived"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="totalReceived" placeholder="Filter..."><button class="excel-filter-btn" id="btn_totalReceived" onclick="toggleExcelPopup(event, 'totalReceived', true)"><i class="fa fa-filter"></i></button></div></th>
             <th class="col-balance"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="balance" placeholder="Filter..."><button class="excel-filter-btn" id="btn_balance" onclick="toggleExcelPopup(event, 'balance', true)"><i class="fa fa-filter"></i></button></div></th>
@@ -543,7 +546,7 @@
         </thead>
         <tbody id="tableBody">
           <tr>
-            <td colspan="20" style="text-align: center; color: #777; padding: 15px; font-weight: normal;">Loading aging report...</td>
+            <td colspan="21" style="text-align: center; color: #777; padding: 15px; font-weight: normal;">Loading aging report...</td>
           </tr>
         </tbody>
         <tfoot id="tableFooter">
@@ -623,7 +626,7 @@
       let str = String(dateString).trim();
       if (!str) return null;
 
-      let isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      let isoMatch = str.match(/^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})/);
       if (isoMatch) {
         let y = parseInt(isoMatch[1], 10);
         let m = parseInt(isoMatch[2], 10) - 1;
@@ -631,7 +634,7 @@
         return new Date(y, m, d);
       }
 
-      let monthYearMatch = str.match(/^([A-Za-z]+)[\s\-\/]+(\d{2}|\d{4})$/);
+      let monthYearMatch = str.match(/^([A-Za-z]+)[\s\-\/\.]+(\d{2,4})$/);
       if (monthYearMatch) {
         let mStr = monthYearMatch[1].toLowerCase();
         let yNum = parseInt(monthYearMatch[2], 10);
@@ -644,7 +647,7 @@
         }
       }
 
-      let yearMonthMatch = str.match(/^(\d{2}|\d{4})[\s\-\/]+([A-Za-z]+)$/);
+      let yearMonthMatch = str.match(/^(\d{2,4})[\s\-\/\.]+([A-Za-z]+)$/);
       if (yearMonthMatch) {
         let yNum = parseInt(yearMonthMatch[1], 10);
         let year = yNum < 100 ? (yNum >= 50 ? 1900 + yNum : 2000 + yNum) : yNum;
@@ -656,7 +659,20 @@
         }
       }
 
-      let parts = str.split(/[\/\-]/);
+      let dmyAlphaMatch = str.match(/^(\d{1,2})[\s\-\/\.]+([A-Za-z]+)[\s\-\/\.]+(\d{2,4})$/);
+      if (dmyAlphaMatch) {
+        let d = parseInt(dmyAlphaMatch[1], 10);
+        let mStr = dmyAlphaMatch[2].toLowerCase();
+        let yNum = parseInt(dmyAlphaMatch[3], 10);
+        let year = yNum < 100 ? (yNum >= 50 ? 1900 + yNum : 2000 + yNum) : yNum;
+        let months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+        let monthIdx = months.findIndex(m => mStr.startsWith(m));
+        if (monthIdx !== -1) {
+          return new Date(year, monthIdx, d);
+        }
+      }
+
+      let parts = str.split(/[\/\-\.]/);
       if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
         let p1 = parseInt(parts[0], 10);
         let p2 = parseInt(parts[1], 10) - 1;
@@ -715,31 +731,64 @@
       if (loadingContainer) loadingContainer.style.display = 'block';
       if (loadingMsg) loadingMsg.innerText = "Fetching aging records... Please wait.";
 
-      let targetUrl = WEB_APP_URL ? (WEB_APP_URL + "?action=getAgingReportData") : "?action=getAgingReportData";
+      // 1. If inside Google Apps Script Web App environment
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (loadingContainer) loadingContainer.style.display = 'none';
+            if (res && (res.data || Array.isArray(res))) {
+              globalResponse = res.data ? res : { data: res, monthHeaders: res.monthHeaders || {} };
+              applySearchFilter();
+            } else {
+              let tbody = document.getElementById('tableBody');
+              if (tbody) tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: #d32f2f; padding: 15px;">Error: ${(res && res.error) || "Could not load data."}</td></tr>`;
+            }
+          })
+          .withFailureHandler(function(err) {
+            if (loadingContainer) loadingContainer.style.display = 'none';
+            let tbody = document.getElementById('tableBody');
+            if (tbody) tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: #d32f2f; padding: 15px;">Apps Script Error: ${err.message || err}</td></tr>`;
+          })
+          .getAgingReportData();
+        return;
+      }
 
-      let controller = new AbortController();
-      let timeoutId = setTimeout(() => controller.abort(), 60000);
+      // 2. Standalone HTML mode via fetch
+      let targetUrl = WEB_APP_URL ? (WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + "action=getAgingReportData") : "?action=getAgingReportData";
 
-      fetch(targetUrl, { signal: controller.signal })
+      if (!WEB_APP_URL) {
+        if (loadingContainer) loadingContainer.style.display = 'none';
+        let box = document.getElementById('configBox');
+        if (box) box.classList.add('show');
+        let tbody = document.getElementById('tableBody');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: #b71c1c; padding: 15px;"><b>Apps Script URL not set.</b> Please paste your Deployment URL above and click Save URL.</td></tr>`;
+        return;
+      }
+
+      fetch(targetUrl, {
+        method: 'GET',
+        redirect: 'follow'
+      })
         .then(response => {
-          clearTimeout(timeoutId);
+          if (!response.ok) {
+            throw new Error("HTTP error " + response.status + ": " + response.statusText);
+          }
           return response.json();
         })
         .then(res => {
           if (loadingContainer) loadingContainer.style.display = 'none';
-          if (res && (res.success || res.data)) {
-            globalResponse = res;
+          if (res && (res.success !== false) && (res.data || Array.isArray(res))) {
+            globalResponse = res.data ? res : { data: res, monthHeaders: res.monthHeaders || {} };
             applySearchFilter();
           } else {
             let tbody = document.getElementById('tableBody');
-            if (tbody) tbody.innerHTML = `<tr><td colspan="20" style="text-align: center; color: #d32f2f; padding: 15px;">Error: ${res.error || "Could not load data from sheet."}</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: #d32f2f; padding: 15px;">Error: ${(res && res.error) || "Could not load data from sheet."}</td></tr>`;
           }
         })
         .catch(err => {
-          clearTimeout(timeoutId);
           if (loadingContainer) loadingContainer.style.display = 'none';
           let tbody = document.getElementById('tableBody');
-          if (tbody) tbody.innerHTML = `<tr><td colspan="20" style="text-align: center; color: #d32f2f; padding: 15px;">Fetch Failure: ${err.message}. Please check Deployment URL or Server Status.</td></tr>`;
+          if (tbody) tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: #d32f2f; padding: 15px;">Fetch Failure: ${err.message}. Please check Deployment URL or verify access permissions are set to 'Anyone'.</td></tr>`;
         });
     }
 
@@ -749,28 +798,44 @@
       return isNaN(num) || num <= 0 ? 12 : num;
     }
 
+    // Monthly Installment = (Total Sale - Advance - Proc Fee) / Plan Months
+    function calculateMonthlyInstallment(row) {
+      let totalSale = Number(row.totalSales) || 0;
+      let advVal = Number(row.advance !== undefined ? row.advance : (row.adv || 0));
+      let prosVal = Number(row.processingFee !== undefined ? row.processingFee : (row.processingfee || row.pros || 0));
+      let planMonths = getPlanMonthsCount(row);
+
+      let netPrincipal = totalSale - advVal - prosVal;
+      if (planMonths <= 0) return Number(row.monthlyInst) || 0;
+      return Math.round(netPrincipal / planMonths);
+    }
+
+    // Ending Month Calculation Logic
     function calculateEndingMonthObject(row) {
-      let nextInstStr = row.nextInst !== undefined && row.nextInst !== null ? row.nextInst : (row.nextInstMonth || row['Next Inst Month'] || '');
-      let nextDate = null;
-      if (nextInstStr) {
-        nextDate = parseCustomDate(nextInstStr);
-      }
+      let firstPaid = Number(row.firstInstPaid !== undefined ? row.firstInstPaid : (row['1st Instalment paid'] || row['1st Inst Paid'] || 0));
+      let firstMonthRaw = row.firstInstMonth !== undefined && row.firstInstMonth !== null ? row.firstInstMonth : (row['1st installment date'] || row['1st inst month'] || '');
+      let nextInstRaw = row.nextInstMonth !== undefined && row.nextInstMonth !== null ? row.nextInstMonth : (row.nextInst || row['Next Inst Month'] || '');
 
       let baseDate = null;
-      if (nextDate && !isNaN(nextDate.getTime())) {
-        baseDate = new Date(nextDate.getFullYear(), nextDate.getMonth(), 1);
-        let totalReceived = Number(row.totalReceived || row.totalPaid) || 0;
-        let adv = Number(row.advance || row.adv) || 0;
-        let pros = Number(row.processingFee || row.processingfee || row.pros) || 0;
-        let monthlyInst = calculateMonthlyInstallment(row);
-        let paymentsAboveExtras = totalReceived - (adv + pros);
 
-        if (paymentsAboveExtras >= monthlyInst) {
-          baseDate.setMonth(baseDate.getMonth() - 1);
+      // 1. Agar 1st Inst Paid (Col T) mein amount > 0 ho, to 1st installment month Col U (firstInstMonth) hoga
+      // 2. Agar 1st Inst Paid (Col T) khali / 0 ho, to 1st installment month Col Q (nextInstMonth) hoga
+      if (firstPaid > 0 && firstMonthRaw) {
+        baseDate = parseCustomDate(firstMonthRaw);
+      } else if (nextInstRaw) {
+        baseDate = parseCustomDate(nextInstRaw);
+      }
+
+      // Fallbacks
+      if (!baseDate || isNaN(baseDate.getTime())) {
+        if (firstMonthRaw) {
+          baseDate = parseCustomDate(firstMonthRaw);
+        } else if (nextInstRaw) {
+          baseDate = parseCustomDate(nextInstRaw);
+        } else {
+          let dStr = row.deliveryDate || row['Delivery Date'] || '';
+          baseDate = parseCustomDate(dStr);
         }
-      } else {
-        let dStr = row.deliveryDate || row['Delivery Date'] || '';
-        baseDate = parseCustomDate(dStr);
       }
 
       if (!baseDate || isNaN(baseDate.getTime())) return null;
@@ -785,17 +850,6 @@
       let endDate = calculateEndingMonthObject(row);
       if (!endDate) return String(row.endingMonth || row.end || '');
       return formatMonthYearName(endDate);
-    }
-
-    function calculateMonthlyInstallment(row) {
-      let totalSale = Number(row.totalSales) || 0;
-      let advVal = Number(row.advance !== undefined ? row.advance : row.adv) || 0;
-      let prosVal = Number(row.processingFee !== undefined ? row.processingFee : row.processingfee || row.pros) || 0;
-      let planMonths = getPlanMonthsCount(row);
-
-      let netPrincipal = totalSale - advVal - prosVal;
-      if (planMonths <= 0) return Number(row.monthlyInst) || 0;
-      return Math.round(netPrincipal / planMonths);
     }
 
     function getBenchmarkDate() {
@@ -925,12 +979,12 @@
         return row.product !== undefined && row.product !== null ? row.product : (row.model || row.productModel || row['PRODUCT CATEGOR'] || row['MODEL'] || '');
       } else if(colName === 'cmd') {
         return calculateCMD(row, monthHeaders);
+      } else if(colName === 'plan') {
+        return getPlanMonthsCount(row);
       } else if(colName === 'balance') {
         return calculateDynamicBalance(row);
       } else if(colName === 'totalReceived') {
         return calculateDynamicTotalPaid(row);
-      } else if(colName === 'plan') {
-        return getPlanMonthsCount(row) + "M";
       } else if(colName === 'deliveryDate') {
         return formatDateDDMMYY(row[colName]);
       } else if(colName === 'lpd') {
@@ -944,12 +998,15 @@
       } else if(colName === 'monthlyInst') {
         return calculateMonthlyInstallment(row);
       } else if(colName === 'advance') {
-        return row.advance !== undefined && row.advance !== null ? row.advance : (row.adv || '');
+        return row.advance !== undefined && row.advance !== null ? row.advance : (row.adv || 0);
       } else if(colName === 'processingFee') {
-        let p = row.processingFee !== undefined && row.processingFee !== null ? row.processingFee : (row.processingfee || row.pros || '');
-        return p;
+        return row.processingFee !== undefined && row.processingFee !== null ? row.processingFee : (row.processingfee || row.pros || 0);
+      } else if(colName === 'firstInstPaid') {
+        return Number(row.firstInstPaid) || 0;
+      } else if(colName === 'firstInstMonth') {
+        return formatNextInstMonth(row.firstInstMonth);
       } else if(colName === 'nextInst') {
-        let rawNext = row.nextInst !== undefined && row.nextInst !== null ? row.nextInst : (row.nextInstMonth || row['Next Inst Month'] || '');
+        let rawNext = row.nextInstMonth !== undefined && row.nextInstMonth !== null ? row.nextInstMonth : (row.nextInst || row['Next Inst Month'] || '');
         return formatNextInstMonth(rawNext);
       } else {
         return row[colName] !== undefined && row[colName] !== null ? row[colName] : '';
@@ -1528,7 +1585,7 @@
       currentFilteredData = data;
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="20" style="text-align: center; color: #777; padding: 10px;">No records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="21" style="text-align: center; color: #777; padding: 10px;">No records found.</td></tr>`;
         tfoot.innerHTML = ``;
         return;
       }
@@ -1539,6 +1596,7 @@
       data.forEach(row => {
         let tBal = calculateDynamicBalance(row);
         let inst = calculateMonthlyInstallment(row);
+        let planNum = getPlanMonthsCount(row);
         let approvedVal = row.approvedBy !== undefined && row.approvedBy !== null ? row.approvedBy : '';
         let endVal = calculateEndingMonth(row);
         let prodVal = getColumnValue(row, 'product', monthHeaders);
@@ -1584,6 +1642,7 @@
           <td class="col-monthlyInst" style="text-align: right;" title="${inst}">${inst}</td>
           <td class="col-remarks" title=""></td>
           <td class="col-cmd" style="${cmdStyle}" title="${cmd}">${cmd}</td>
+          <td class="col-plan" style="text-align: center;" title="${planNum}">${planNum}</td>
           <td class="col-totalSales" style="text-align: right;" title="${totalSales}">${totalSales}</td>
           <td class="col-totalReceived" style="text-align: right;" title="${totalPaid}">${totalPaid}</td>
           <td class="col-balance" style="text-align: right; color: #b71c1c;" title="${tBal}">${tBal}</td>
@@ -1610,6 +1669,7 @@
         <td class="col-monthlyInst" style="text-align: right;">${sumInst}</td>
         <td class="col-remarks"></td>
         <td class="col-cmd" style="text-align: right;">${sumCmd}</td>
+        <td class="col-plan"></td>
         <td class="col-totalSales" style="text-align: right;">${sumSales}</td>
         <td class="col-totalReceived" style="text-align: right;">${sumPaid}</td>
         <td class="col-balance" style="text-align: right;">${sumBal}</td>
@@ -1644,6 +1704,7 @@
             th { background-color: #1b5e20; color: #ffffff; font-weight: bold; border: 1px solid #000000; padding: 5px; text-align: center; }
             td { border: 1px solid #000000; padding: 4px; text-align: left; font-size: 11pt; mso-number-format:"\\@"; }
             .num { text-align: right; mso-number-format:"0"; }
+            .center { text-align: center; mso-number-format:"0"; }
             .foot { background-color: #dcedc8; font-weight: bold; }
           </style>
         </head>
@@ -1660,6 +1721,7 @@
                 <th>M Inst</th>
                 <th>Remarks</th>
                 <th>CMD</th>
+                <th>Plan</th>
                 <th>Total Sale</th>
                 <th>Total Paid</th>
                 <th>T Balance</th>
@@ -1682,6 +1744,7 @@
       currentFilteredData.forEach(row => {
         let tBal = calculateDynamicBalance(row);
         let inst = calculateMonthlyInstallment(row);
+        let planNum = getPlanMonthsCount(row);
         let approvedVal = row.approvedBy !== undefined && row.approvedBy !== null ? row.approvedBy : '';
         let endVal = calculateEndingMonth(row);
         let prodVal = getColumnValue(row, 'product', globalResponse ? globalResponse.monthHeaders : null);
@@ -1721,6 +1784,7 @@
           <td class="num">${inst}</td>
           <td></td>
           <td class="num">${cmd}</td>
+          <td class="center">${planNum}</td>
           <td class="num">${totalSales}</td>
           <td class="num">${totalPaid}</td>
           <td class="num">${tBal}</td>
@@ -1744,6 +1808,7 @@
                 <td class="num">${sumInst}</td>
                 <td></td>
                 <td class="num">${sumCmd}</td>
+                <td></td>
                 <td class="num">${sumSales}</td>
                 <td class="num">${sumPaid}</td>
                 <td class="num">${sumBal}</td>
