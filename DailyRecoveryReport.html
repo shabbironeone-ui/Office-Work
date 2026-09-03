@@ -155,6 +155,16 @@
       top: 0;
       z-index: 1;
       font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    .sticky-header:hover {
+      background-color: #144316 !important;
+    }
+    .sort-arrow {
+      font-size: 10px;
+      margin-left: 5px;
+      color: #c8e6c9;
     }
     tr:nth-child(even) {
       background-color: #f9f9f9;
@@ -209,7 +219,7 @@
         color: white !important;
         border: 1px solid #000 !important;
       }
-      td {
+      td, th {
         border: 1px solid #000 !important;
       }
       .summary-box {
@@ -241,7 +251,7 @@
       70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
       100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
     }
-</style>
+  </style>
 </head>
 <body>
   <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
@@ -250,7 +260,6 @@
     <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
     <button onclick="saveScriptUrl()">Save URL</button>
   </div>
-
 
   <div class="container">
     <h2>Al-Meezan Electronics - Daily Recovery Report</h2>
@@ -299,15 +308,17 @@
 
     <div class="table-container">
       <table id="reportTable">
-        <tbody id="tableBody">
+        <thead>
           <tr class="sticky-header">
-            <td>Date</td>
-            <td>Rct #</td>
-            <td>Acc No</td>
-            <td>Customer Title</td>
-            <td>Payment Mode / Head</td>
-            <td>Amount</td>
+            <th onclick="sortTable('dateObj')">Date <span id="sort-dateObj" class="sort-arrow"></span></th>
+            <th onclick="sortTable('receiptNo')">Rct # <span id="sort-receiptNo" class="sort-arrow"></span></th>
+            <th onclick="sortTable('accountNo')">Acc No <span id="sort-accountNo" class="sort-arrow"></span></th>
+            <th onclick="sortTable('accountTitle')">Customer Title <span id="sort-accountTitle" class="sort-arrow"></span></th>
+            <th onclick="sortTable('paymentHead')">Payment Mode / Head <span id="sort-paymentHead" class="sort-arrow"></span></th>
+            <th onclick="sortTable('amount')">Amount <span id="sort-amount" class="sort-arrow"></span></th>
           </tr>
+        </thead>
+        <tbody id="tableBody">
           <tr>
             <td colspan="6" style="text-align: center; color: #777;">Please select filters and click search.</td>
           </tr>
@@ -323,8 +334,10 @@
 
   <script>
     let globalData = null;
+    let currentFilteredData = [];
+    let currentSortField = null;
+    let currentSortAsc = true;
 
-    // Google Apps Script Web App URL integrated
     let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
 
     function fetchAndFilterData() {
@@ -371,7 +384,7 @@
       let fTime = fromDate ? new Date(fromDate).setHours(0,0,0,0) : null;
       let tTime = toDate ? new Date(toDate).setHours(23,59,59,999) : null;
       
-      let filtered = globalData.filter(row => {
+      currentFilteredData = globalData.filter(row => {
         if (fTime && row.dateObj && row.dateObj < fTime) return false;
         if (tTime && row.dateObj && row.dateObj > tTime) return false;
 
@@ -394,8 +407,60 @@
 
         return matchesAcc && matchesReceipt;
       });
+
+      if (currentSortField) {
+        sortDataArray(currentFilteredData, currentSortField, currentSortAsc);
+      }
       
-      renderTableRows(filtered);
+      renderTableRows(currentFilteredData);
+    }
+
+    function sortTable(field) {
+      if (currentSortField === field) {
+        currentSortAsc = !currentSortAsc;
+      } else {
+        currentSortField = field;
+        currentSortAsc = true;
+      }
+
+      document.querySelectorAll('.sort-arrow').forEach(el => el.innerText = '');
+      let arrowSpan = document.getElementById('sort-' + field);
+      if (arrowSpan) {
+        arrowSpan.innerText = currentSortAsc ? ' ▲' : ' ▼';
+      }
+
+      if (currentFilteredData.length > 0) {
+        sortDataArray(currentFilteredData, field, currentSortAsc);
+        renderTableRows(currentFilteredData);
+      }
+    }
+
+    function sortDataArray(arr, field, asc) {
+      arr.sort((a, b) => {
+        let valA = a[field];
+        let valB = b[field];
+
+        if (field === 'amount') {
+          valA = Number(valA) || 0;
+          valB = Number(valB) || 0;
+          return asc ? valA - valB : valB - valA;
+        }
+
+        if (field === 'receiptNo' || field === 'accountNo') {
+          let numA = Number(valA);
+          let numB = Number(valB);
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return asc ? numA - numB : numB - numA;
+          }
+        }
+
+        valA = String(valA || '').toLowerCase();
+        valB = String(valB || '').toLowerCase();
+
+        if (valA < valB) return asc ? -1 : 1;
+        if (valA > valB) return asc ? 1 : -1;
+        return 0;
+      });
     }
 
     function renderTableRows(data) {
@@ -446,18 +511,8 @@
       document.getElementById('cashTotalText').innerText = `Cash Total (Daybook): Rs. ${cashTotal.toLocaleString()} (${cashReceiptsSet.size})`;
       document.getElementById('bankTotalText').innerText = `Bank Total: Rs. ${bankTotal.toLocaleString()} (${bankReceiptsSet.size})`;
 
-      let html = `<tr class="sticky-header">
-        <td>Date</td>
-        <td>Rct #</td>
-        <td>Acc No</td>
-        <td>Customer Title</td>
-        <td>Payment Mode / Head</td>
-        <td>Amount</td>
-      </tr>`;
-
       if (!data || data.length === 0) {
-        html += `<tr><td colspan="6" style="text-align: center; color: #777;">No records found.</td></tr>`;
-        tbody.innerHTML = html;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #777;">No records found.</td></tr>`;
         document.getElementById('totalRecords').innerText = "Total Records: 0";
         document.getElementById('totalAmount').innerText = "Total Recovered Amount: Rs. 0";
         return;
@@ -465,6 +520,7 @@
 
       let uniqueFilteredReceipts = new Set();
       let totalAmt = 0;
+      let html = '';
 
       data.forEach(row => {
         let amt = Number(row.amount) || 0;
@@ -506,7 +562,13 @@
       document.getElementById('searchReceiptInput').value = '';
       document.getElementById('chkCash').checked = true;
       document.getElementById('chkBank').checked = true;
-      if (globalData) renderTableRows(globalData);
+      currentSortField = null;
+      currentSortAsc = true;
+      document.querySelectorAll('.sort-arrow').forEach(el => el.innerText = '');
+      if (globalData) {
+        currentFilteredData = [...globalData];
+        renderTableRows(currentFilteredData);
+      }
     }
 
     function printReport() {
@@ -605,7 +667,7 @@
         if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
             input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
         if (input.closest('#configBox')) return;
-        if (input.closest('.input-with-mic')) return; // already has a manual mic button
+        if (input.closest('.input-with-mic')) return; 
         if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
 
         input.dataset.autoMic = '1';
@@ -649,6 +711,6 @@
       });
       mo.observe(document.body, { childList: true, subtree: true });
     })();
-</script>
+  </script>
 </body>
 </html>
