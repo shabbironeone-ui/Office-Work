@@ -25,8 +25,46 @@
       font-size: 13px;
     }
 
-    body.is-saving, body.is-saving *, body.is-working, body.is-working * {
+    /* Dim screen overlay with spinning loader */
+    body.is-working::after, body.is-saving::after {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body.is-working, body.is-saving, body.is-working *, body.is-saving * {
       cursor: progress !important;
+    }
+
+    /* Global Center Spinner Overlay */
+    #globalSpinnerOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0.6);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 8px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    #globalSpinnerOverlay.show {
+      display: flex;
+    }
+    .big-spinner {
+      width: 45px;
+      height: 45px;
+      border: 5px solid rgba(27, 94, 32, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 0.8s linear infinite;
     }
 
     .container {
@@ -48,7 +86,6 @@
       padding-bottom: 3px;
     }
 
-    /* CONFIG BOX - Apps Script URL */
     .config-box {
       background: #fff3cd;
       border: 1px solid #ffe69c;
@@ -83,14 +120,14 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
       border-bottom: 1px solid var(--border);
       padding-bottom: 6px;
     }
 
     .tab {
       flex: 1;
-      padding: 6px;
+      padding: 8px;
       text-align: center;
       cursor: pointer;
       font-weight: bold;
@@ -218,21 +255,13 @@
       100% { transform: rotate(360deg); }
     }
 
-    .search-box-card {
-      background: #f9f9f9;
-      border: 1px solid #e0e0e0;
-      padding: 8px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-    }
-
     .table-responsive {
       width: 100%;
       overflow-x: auto;
       margin-top: 4px;
       border: 1px solid #ddd;
       border-radius: 4px;
-      max-height: 240px;
+      max-height: 260px;
       overflow-y: auto;
     }
 
@@ -256,9 +285,12 @@
       position: sticky;
       top: 0;
       z-index: 1;
+      cursor: pointer;
+    }
+    table.edit-table th:hover {
+      background-color: #e2f0d9;
     }
 
-    /* RECENT SAVED RECEIPTS SECTION */
     .recent-section {
       margin-top: 16px;
       border-top: 2px solid var(--border);
@@ -287,7 +319,6 @@
       background-color: #fffde7 !important;
     }
     
-    /* PRINT AREA */
     #printArea { display: none; }
     @media print {
       .container { display: none !important; }
@@ -296,7 +327,7 @@
       #printArea th, #printArea td { border: 1px solid #000; padding: 5px 8px; text-align: left; }
       #printArea h2 { text-align: center; margin-bottom: 4px; }
       #printArea .print-meta { text-align: center; margin-bottom: 12px; font-size: 12px; }
-      #printArea .print-total { text-align: right; font-weight: bold; margin-top: 10px; font-size: 13px; }
+      #printArea .print-total { display: flex; justify-content: space-between; font-weight: bold; margin-top: 10px; font-size: 13px; }
     }
   
     .auto-mic-wrap { position: relative; display: inline-block; width: 100%; }
@@ -320,21 +351,31 @@
 </head>
 <body>
 
+<!-- Global Dim Screen & Spinning Bowl Overlay -->
+<div id="globalSpinnerOverlay">
+  <div class="big-spinner"></div>
+  <div>Processing, please wait...</div>
+</div>
+
 <div class="container">
   <h2>Al Meezan ERP Receipts</h2>
 
-    <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
+  <div class="change-url-link" onclick="showUrlConfig()" style="cursor:pointer; font-size:11px; color:#1b5e20; margin-bottom:4px;">&#9881; Change Deployment URL</div>
   <div id="configBox" class="config-box">
     <b>Setup:</b> Pehli baar use karne ke liye apna Apps Script Web App URL neeche paste karein aur Save dabayein.
     <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
     <button onclick="saveScriptUrl()">Save URL</button>
   </div>
   
-  <div class="nav-bar-container" style="border-bottom:none; margin-bottom:0;"></div>
+  <!-- Navigation Tabs -->
+  <div class="nav-bar-container">
+    <div class="tab active" onclick="switchTab('new')"><i class="fas fa-file-invoice"></i> New Receipts Entry</div>
+    <div class="tab" onclick="switchTab('edit')"><i class="fas fa-edit"></i> Edit & Search Receipts</div>
+  </div>
 
   <div id="loader" class="loader"><span class="spinner"></span>Processing, please wait...</div>
 
-  <!-- NEW RECEIPTS ENTRY -->
+  <!-- SECTION 1: NEW RECEIPTS ENTRY -->
   <div id="sectionNew" class="form-section active">
     <div id="batchReceiptsSection">
       <div style="display: flex; gap: 8px; margin-bottom: 6px;" class="form-group">
@@ -367,13 +408,13 @@
           <thead>
             <tr>
               <th style="width: 15%;">Account No</th>
-              <th style="width: 11%;">Receipt No</th>
               <th style="width: 10%;">Amount</th>
+              <th style="width: 11%;">Receipt No</th>
+              <th style="width: 21%;">Customer Name</th>
               <th style="width: 7%;">Inst</th>
               <th style="width: 12%;">Total Sale Amount</th>
               <th style="width: 10%;">Paid Amount</th>
               <th style="width: 10%;">Balance</th>
-              <th style="width: 21%;">Customer Name</th>
               <th style="width: 4%;">Action</th>
             </tr>
           </thead>
@@ -411,12 +452,6 @@
           <label>Search Receipt No</label>
           <input type="text" id="recentSearchRct" placeholder="Receipt No..." oninput="renderRecentReceipts()" style="width:140px;">
         </div>
-        <div class="form-group">
-          <label>Payment Mode</label>
-          <select id="recentModeFilter" onchange="renderRecentReceipts()" style="width:170px;">
-            <option value="All">All Modes</option>
-          </select>
-        </div>
         
         <div class="form-group" style="flex-direction:row; align-items:center; gap:6px; padding-bottom:6px;">
           <input type="checkbox" id="recentDaybookOnly" checked onchange="renderRecentReceipts()" style="width:auto; margin:0;">
@@ -427,6 +462,7 @@
 
         <button class="action-btn btn-secondary" style="height: 30px;" onclick="resetRecentFilter()">Reset Filter</button>
         <button class="action-btn btn-primary" style="height: 30px;" onclick="loadRecentReceipts()"><i class="fas fa-sync-alt"></i> Refresh</button>
+        <button class="action-btn btn-danger" style="height: 30px;" onclick="deleteSelectedRecentReceipts()"><i class="fas fa-trash"></i> Delete Selected</button>
         <button class="action-btn btn-secondary" style="height: 30px; background:#37474f;" onclick="printRecentReceipts()"><i class="fas fa-print"></i> Print</button>
       </div>
 
@@ -438,13 +474,13 @@
         <table class="edit-table" id="recentReceiptsTable">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Receipt No</th>
-              <th>Acc No</th>
-              <th>Customer Name</th>
-              <th>Pay Mode</th>
-              <th>Amount</th>
-              <th>Actions</th>
+              <th style="width:30px;"><input type="checkbox" id="selectAllRecent" onclick="toggleSelectAllRecent(this)"></th>
+              <th onclick="sortRecentTable('dateObj')">Date <i class="fas fa-sort"></i></th>
+              <th onclick="sortRecentTable('receiptNo')">Receipt No <i class="fas fa-sort"></i></th>
+              <th onclick="sortRecentTable('accountNo')">Acc No <i class="fas fa-sort"></i></th>
+              <th onclick="sortRecentTable('accountTitle')">Customer Name <i class="fas fa-sort"></i></th>
+              <th onclick="sortRecentTable('paymentHead')">Pay Mode <i class="fas fa-sort"></i></th>
+              <th onclick="sortRecentTable('amount')">Amount <i class="fas fa-sort"></i></th>
             </tr>
           </thead>
           <tbody id="recentReceiptsBody">
@@ -454,6 +490,53 @@
       </div>
     </div>
   </div>
+
+  <!-- SECTION 2: EDIT & SEARCH RECEIPTS TAB -->
+  <div id="sectionEdit" class="form-section">
+    <div class="search-box-card" style="background:#fff; border:1px solid var(--border); padding:10px; border-radius:6px; margin-bottom:10px;">
+      <h3 style="margin-top:0; color:var(--primary); font-size:13px;"><i class="fas fa-search"></i> Search Receipts for Edit / Bulk Delete</h3>
+      <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+        <div style="flex:1; min-width:180px;">
+          <label>Search by Receipt Number</label>
+          <input type="text" id="editSearchReceiptNo" placeholder="Enter Receipt No..." onkeydown="if(event.key==='Enter') searchReceiptsForEditTab()">
+        </div>
+        <div style="flex:1; min-width:180px;">
+          <label>Search by Account Number</label>
+          <input type="text" id="editSearchAccountNo" placeholder="Enter Account No (786...)" onkeydown="if(event.key==='Enter') searchReceiptsForEditTab()">
+        </div>
+        <div style="display:flex; gap:5px;">
+          <button class="action-btn btn-primary" style="height:30px;" onclick="searchReceiptsForEditTab()"><i class="fas fa-search"></i> Search</button>
+          <button class="action-btn btn-secondary" style="height:30px;" onclick="resetEditTabSearch()"><i class="fas fa-undo"></i> Reset</button>
+          <button class="action-btn btn-danger" style="height:30px;" onclick="bulkDeleteSelectedReceipts()"><i class="fas fa-trash"></i> Delete Selected</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: left; font-weight: bold; font-size: 12px; color: var(--primary); margin-bottom: 2px;">
+      Found Items: <span id="editTabTotalsQty">0</span> &nbsp;|&nbsp; Total Amount: <span id="editTabTotalsAmount">0</span>
+    </div>
+
+    <div class="table-responsive" style="max-height: 400px;">
+      <table class="edit-table" id="editTabTable">
+        <thead>
+          <tr>
+            <th style="width:30px;"><input type="checkbox" id="selectAllEditTab" onclick="toggleSelectAllEditTab(this)"></th>
+            <th onclick="sortEditTabTable('date')">Date <i class="fas fa-sort"></i></th>
+            <th onclick="sortEditTabTable('receiptNo')">Receipt No <i class="fas fa-sort"></i></th>
+            <th onclick="sortEditTabTable('accountNo')">Acc No <i class="fas fa-sort"></i></th>
+            <th onclick="sortEditTabTable('accountTitle')">Customer Name <i class="fas fa-sort"></i></th>
+            <th onclick="sortEditTabTable('payMode')">Pay Mode <i class="fas fa-sort"></i></th>
+            <th onclick="sortEditTabTable('amount')">Amount <i class="fas fa-sort"></i></th>
+            <th style="width:110px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="editTabBody">
+          <tr><td colspan="8" style="text-align:center;">Enter search terms above and click Search.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <div id="printArea"></div>
@@ -481,6 +564,19 @@
     loadRecentReceipts();
   }
 
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+
+    if (tabName === 'new') {
+      document.querySelectorAll('.tab')[0].classList.add('active');
+      document.getElementById('sectionNew').classList.add('active');
+    } else {
+      document.querySelectorAll('.tab')[1].classList.add('active');
+      document.getElementById('sectionEdit').classList.add('active');
+    }
+  }
+
   let settingsOptions = { 
     cash: ["Cash", "Head Office Cash", "Collection Cash"], 
     bank: ["Bank Transfer", "Online Meezan", "Cheque"] 
@@ -489,19 +585,22 @@
   let isSubmitting = false;
 
   function setWorking(active) {
-    if (active) document.body.classList.add('is-working');
-    else document.body.classList.remove('is-working');
+    if (active) {
+      document.body.classList.add('is-working');
+      document.getElementById('globalSpinnerOverlay').classList.add('show');
+    } else {
+      document.body.classList.remove('is-working');
+      document.getElementById('globalSpinnerOverlay').classList.remove('show');
+    }
   }
 
   function loadInitialData() {
     if (!SCRIPT_URL) return;
-    setWorking(true);
 
     Promise.all([
       fetch(SCRIPT_URL + "?action=getSettings").then(res => res.json()).catch(() => null),
       fetch(SCRIPT_URL + "?action=getAllCustomersCache").then(res => res.json()).catch(() => null)
     ]).then(([settingsRes, custRes]) => {
-      setWorking(false);
       if (settingsRes && settingsRes.success) {
         if (settingsRes.cash && settingsRes.cash.length > 0) settingsOptions.cash = settingsRes.cash;
         if (settingsRes.bank && settingsRes.bank.length > 0) settingsOptions.bank = settingsRes.bank;
@@ -515,21 +614,26 @@
 
   function checkDuplicateReceipt(rctNo, inputElement) {
     if (!rctNo || rctNo.trim() === '' || !SCRIPT_URL) return;
-    setWorking(true);
     fetch(SCRIPT_URL + "?action=checkReceiptExists&rctNo=" + encodeURIComponent(rctNo.trim()))
       .then(res => res.json())
       .then(res => {
-        setWorking(false);
         if (res && res.exists) {
           alert("⚠️ Warning: Receipt No '" + rctNo + "' pehle se save hai!\n📅 Date: " + res.date);
           if (inputElement) { inputElement.focus(); inputElement.select(); }
         }
       })
-      .catch(err => { setWorking(false); console.error("Duplicate check error:", err); });
+      .catch(err => { console.error("Duplicate check error:", err); });
   }
 
   function addBatchRow() {
     let tbody = document.getElementById('batchTableBody');
+    let rows = tbody.querySelectorAll('tr');
+    let lastReceiptNo = "";
+    if (rows.length > 0) {
+      let lastRctInput = rows[rows.length - 1].querySelector('.batch-rct');
+      if (lastRctInput) lastReceiptNo = lastRctInput.value;
+    }
+
     let row = document.createElement('tr');
     row.innerHTML = `
       <td>
@@ -540,24 +644,25 @@
       </td>
       <td>
         <div class="input-with-mic">
-          <input type="text" class="batch-rct" placeholder="Receipt No" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'rct')" onblur="if(this.value.trim()){ checkDuplicateReceipt(this.value.trim(), this); }">
-          <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, false)"><i class="fas fa-microphone"></i></button>
-        </div>
-      </td>
-      <td>
-        <div class="input-with-mic">
           <input type="number" class="batch-amt" placeholder="" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'amt')">
           <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, true)"><i class="fas fa-microphone"></i></button>
         </div>
       </td>
+      <td>
+        <div class="input-with-mic">
+          <input type="text" class="batch-rct" value="${lastReceiptNo}" placeholder="Receipt No" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'rct')" onblur="if(this.value.trim()){ checkDuplicateReceipt(this.value.trim(), this); }">
+          <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, false)"><i class="fas fa-microphone"></i></button>
+        </div>
+      </td>
+      <td><input type="text" class="batch-title" readonly placeholder="Auto..." style="background-color: #eaeded; text-align: left;"></td>
       <td><input type="text" class="batch-inst" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
       <td><input type="text" class="batch-total-sale" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
       <td><input type="text" class="batch-paid-amt" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
       <td><input type="text" class="batch-bal" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
-      <td><input type="text" class="batch-title" readonly placeholder="Auto..." style="background-color: #eaeded; text-align: left;"></td>
       <td><button type="button" class="action-btn btn-danger" style="padding: 2px 5px; font-size: 10px;" onclick="removeBatchRow(this)"><i class="fas fa-trash"></i></button></td>
     `;
     tbody.appendChild(row);
+    calculateBatchTotal();
     return row;
   }
 
@@ -566,30 +671,27 @@
     if (event.key === 'Backspace' && inputElement.value === '') {
       event.preventDefault();
       if (fieldType === 'rct') {
+        let amtInput = currentRow.querySelector('.batch-amt');
+        if (amtInput) { amtInput.focus(); amtInput.select(); }
+      } else if (fieldType === 'amt') {
         let accInput = currentRow.querySelector('.batch-acc');
         if (accInput) { accInput.focus(); accInput.select(); }
-      } else if (fieldType === 'amt') {
-        let rctInput = currentRow.querySelector('.batch-rct');
-        if (rctInput) { rctInput.focus(); rctInput.select(); }
       }
       return;
     }
     if (event.key === 'Enter') {
       event.preventDefault();
-      setWorking(true);
-      setTimeout(() => setWorking(false), 300);
-
       if (fieldType === 'acc') {
         let accNo = inputElement.value.trim();
         if (accNo.length > 3) fetchBatchCustomerDetails(accNo, currentRow);
+        let amtInput = currentRow.querySelector('.batch-amt');
+        if (amtInput) { amtInput.focus(); amtInput.select(); }
+      } else if (fieldType === 'amt') {
         let rctInput = currentRow.querySelector('.batch-rct');
         if (rctInput) { rctInput.focus(); rctInput.select(); }
       } else if (fieldType === 'rct') {
         let rctVal = inputElement.value.trim();
         if (rctVal) checkDuplicateReceipt(rctVal, inputElement);
-        let amtInput = currentRow.querySelector('.batch-amt');
-        if (amtInput) { amtInput.focus(); amtInput.select(); }
-      } else if (fieldType === 'amt') {
         let tbody = document.getElementById('batchTableBody');
         let isLastRow = (currentRow === tbody.lastElementChild);
         if (isLastRow) {
@@ -645,17 +747,15 @@
     }
     if (!SCRIPT_URL) return;
 
-    setWorking(true);
     fetch(SCRIPT_URL + "?action=getCustomer&accNo=" + encodeURIComponent(accNo))
       .then(res => res.json())
       .then(res => {
-        setWorking(false);
         if (res && res.success) {
           customerCache[accNo] = res;
           populateBatchRowDetails(row, res);
         } else { clearBatchRowDetails(row); }
       })
-      .catch(err => { setWorking(false); clearBatchRowDetails(row); });
+      .catch(err => { clearBatchRowDetails(row); });
   }
 
   function populateBatchRowDetails(row, data) {
@@ -688,9 +788,6 @@
     document.getElementById('totalReceiptsQty').innerText = uniqueReceipts.size;
   }
 
-  // ============================================================
-  // VOICE INPUT (Mic Button)
-  // ============================================================
   let activeRecognition = null;
   let activeBtn = null;
 
@@ -789,10 +886,6 @@
     });
   }
 
-  function showLoader(show) {
-    document.getElementById('loader').style.display = show ? 'block' : 'none';
-  }
-
   function submitBatchReceipts() {
     if (isSubmitting) return;
     if (!SCRIPT_URL) { alert("Pehle Apps Script URL set karein."); return; }
@@ -823,14 +916,14 @@
     if (entries.length === 0) { alert("Kam az kam aik mukammal row enter karein!"); return; }
 
     isSubmitting = true;
-    document.body.classList.add('is-saving');
+    setWorking(true);
     let saveBtn = document.getElementById('saveBatchBtn');
     saveBtn.disabled = true;
 
     function saveNext(i) {
       if (i >= entries.length) {
         isSubmitting = false;
-        document.body.classList.remove('is-saving');
+        setWorking(false);
         saveBtn.disabled = false;
         addEntriesToLocalRecentList(entries, commonDate, commonSuffix);
         clearBatchForm();
@@ -853,7 +946,6 @@
     return isoDate;
   }
 
-  // Naye save hue receipts turant list mein dikhayein - poori sheet dobara load kiye bagair (fast)
   function addEntriesToLocalRecentList(savedEntries, dateVal, payMode) {
     const isCash = (settingsOptions.cash || []).includes(payMode);
     const dObj = dateVal ? new Date(dateVal).setHours(0, 0, 0, 0) : Date.now();
@@ -872,7 +964,6 @@
       });
     });
 
-    populateModeFilterOptions();
     renderRecentReceipts();
   }
 
@@ -884,10 +975,9 @@
     document.getElementById('batchReceiptDate').value = new Date().toISOString().split('T')[0];
   }
 
-  // ============================================================
-  // RECENT SAVED RECEIPTS
-  // ============================================================
+  // ================= RECENT SAVED RECEIPTS =================
   let recentReceiptsData = [];
+  let recentSortDirection = {};
 
   function loadRecentReceipts() {
     if (!SCRIPT_URL) return;
@@ -901,7 +991,6 @@
         setWorking(false);
         if (res && res.success) {
           recentReceiptsData = res.data || [];
-          populateModeFilterOptions();
           renderRecentReceipts();
         } else {
           tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Error loading data</td></tr>';
@@ -913,17 +1002,6 @@
       });
   }
 
-  function populateModeFilterOptions() {
-    const select = document.getElementById('recentModeFilter');
-    const currentVal = select.value;
-    const modes = [...new Set(recentReceiptsData.map(r => r.paymentHead).filter(Boolean))].sort();
-    select.innerHTML = '<option value="All">All Modes</option>';
-    modes.forEach(m => {
-      select.innerHTML += `<option value="${m}">${m}</option>`;
-    });
-    if (modes.includes(currentVal)) select.value = currentVal;
-  }
-
   function isDaybookRow(r) {
     if (typeof r.isCash === 'boolean') return r.isCash;
     return /daybook|cash/i.test(r.paymentHead || '');
@@ -933,14 +1011,12 @@
     const fromVal = document.getElementById('recentFromDate').value;
     const toVal = document.getElementById('recentToDate').value;
     const searchVal = document.getElementById('recentSearchRct').value.trim().toLowerCase();
-    const modeVal = document.getElementById('recentModeFilter').value;
     const daybookOnly = document.getElementById('recentDaybookOnly').checked;
     const bankOnly = document.getElementById('recentBankOnly').checked;
 
     let fTime = fromVal ? new Date(fromVal).setHours(0, 0, 0, 0) : null;
     let tTime = toVal ? new Date(toVal).setHours(23, 59, 59, 999) : null;
 
-    // FIX: Agar From Date selected hai aur To Date khali hai, toh To Date ko bhi wahi din set kar dein
     if (fTime && !tTime) {
       tTime = new Date(fromVal).setHours(23, 59, 59, 999);
     }
@@ -955,13 +1031,10 @@
         if (daybookOnly && isDaybookRow(r)) matched = true;
         if (bankOnly && !isDaybookRow(r)) matched = true;
         if (!matched) return false;
-      } else if (modeVal && modeVal !== 'All') {
-        if ((r.paymentHead || '') !== modeVal) return false;
       }
       return true;
     });
 
-    filtered.sort((a, b) => (b.dateObj || 0) - (a.dateObj || 0));
     return filtered;
   }
 
@@ -986,28 +1059,84 @@
     let html = '';
     filtered.slice(0, 150).forEach(row => {
       html += `
-        <tr data-receipt="${row.receiptNo || ''}">
+        <tr>
+          <td><input type="checkbox" class="recent-row-chk" value="${row.receiptNo || ''}" data-acc="${row.accountNo || ''}"></td>
           <td class="cell-date">${row.dateStr || ''}</td>
           <td class="cell-rct">${row.receiptNo || ''}</td>
           <td class="cell-acc">${row.accountNo || ''}</td>
           <td class="cell-title" style="text-align:left;">${row.accountTitle || ''}</td>
           <td class="cell-mode">${row.paymentHead || ''}</td>
           <td class="cell-amt">${(Number(row.amount) || 0).toLocaleString()}</td>
-          <td style="white-space:nowrap;">
-            <button class="action-btn btn-secondary edit-toggle-btn" style="padding:3px 7px; font-size:10px;" onclick="toggleEditRow(this)" title="Edit"><i class="fas fa-pen"></i></button>
-            <button class="action-btn btn-danger" style="padding:3px 7px; font-size:10px;" onclick="deleteRecentReceipt('${row.receiptNo}')" title="Delete"><i class="fas fa-trash"></i></button>
-          </td>
         </tr>
       `;
     });
     tbody.innerHTML = html;
   }
 
+  function toggleSelectAllRecent(master) {
+    document.querySelectorAll('.recent-row-chk').forEach(chk => chk.checked = master.checked);
+  }
+
+  function sortRecentTable(column) {
+    recentSortDirection[column] = !recentSortDirection[column];
+    let asc = recentSortDirection[column];
+    recentReceiptsData.sort((a, b) => {
+      let valA = a[column] || '';
+      let valB = b[column] || '';
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+      if (valA < valB) return asc ? -1 : 1;
+      if (valA > valB) return asc ? 1 : -1;
+      return 0;
+    });
+    renderRecentReceipts();
+  }
+
+  function deleteSelectedRecentReceipts() {
+    let checkboxes = document.querySelectorAll('.recent-row-chk:checked');
+    if (checkboxes.length === 0) {
+      alert("Delete karne ke liye kam az kam aik receipt select karein.");
+      return;
+    }
+    if (!confirm(`Kya aap waqai select ki gayi ${checkboxes.length} receipts delete karna chahte hain?`)) return;
+
+    if (!SCRIPT_URL) return;
+    setWorking(true);
+
+    let promises = [];
+    checkboxes.forEach(chk => {
+      let rctNo = chk.value;
+      let accNo = chk.getAttribute('data-acc');
+      
+      let p = fetch(SCRIPT_URL + "?action=searchReceipt&rctNo=" + encodeURIComponent(rctNo))
+        .then(res => res.json())
+        .then(res => {
+          if (res && res.success && res.entries) {
+            let matchedEntry = res.entries.find(e => String(e.accountNo) === String(accNo));
+            if (!matchedEntry && res.entries.length > 0) matchedEntry = res.entries[0];
+            if (matchedEntry) {
+              return fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'deleteReceiptEntry', data: { rowIndex: matchedEntry.rowIndex } })
+              }).then(r => r.json());
+            }
+          }
+          return null;
+        }).catch(() => null);
+      promises.push(p);
+    });
+
+    Promise.all(promises).then(() => {
+      setWorking(false);
+      alert("Selected receipts delete ho gayi hain.");
+      loadRecentReceipts();
+    });
+  }
+
   function resetRecentFilter() {
     document.getElementById('recentFromDate').value = '';
     document.getElementById('recentToDate').value = '';
     document.getElementById('recentSearchRct').value = '';
-    document.getElementById('recentModeFilter').value = 'All';
     document.getElementById('recentDaybookOnly').checked = true;
     document.getElementById('recentBankOnly').checked = false;
     renderRecentReceipts();
@@ -1016,9 +1145,12 @@
   function printRecentReceipts() {
     const filtered = getFilteredRecentReceipts();
     let total = 0;
+    let uniquePrintReceipts = new Set();
     let rowsHtml = '';
+    
     filtered.forEach(r => {
       total += Number(r.amount) || 0;
+      if (r.receiptNo) uniquePrintReceipts.add(String(r.receiptNo).trim());
       rowsHtml += `
         <tr>
           <td>${r.dateStr || ''}</td>
@@ -1054,88 +1186,225 @@
         </thead>
         <tbody>${rowsHtml || '<tr><td colspan="6" style="text-align:center;">No records</td></tr>'}</tbody>
       </table>
-      <div class="print-total">Total: Rs ${total.toLocaleString()} (${filtered.length} records)</div>
+      <div class="print-total">
+        <span>Unique Receipt Qty: <b>${uniquePrintReceipts.size}</b> &nbsp;|&nbsp; Total Records: <b>${filtered.length}</b></span>
+        <span>Total Amount: Rs <b>${total.toLocaleString()}</b></span>
+      </div>
     `;
 
     setTimeout(() => window.print(), 150);
   }
 
-  function toggleEditRow(btn) {
-    const tr = btn.closest('tr');
-    const receiptNo = tr.getAttribute('data-receipt');
+  // ================= EDIT & SEARCH TAB LOGIC =================
+  let editTabResultsData = [];
+  let editTabSortDirection = {};
 
-    if (tr.classList.contains('editing')) {
-      saveRecentRowEdit(tr, btn);
+  function searchReceiptsForEditTab() {
+    if (!SCRIPT_URL) { alert("Pehle Apps Script URL set karein."); return; }
+    let rctNo = document.getElementById('editSearchReceiptNo').value.trim();
+    let accNo = document.getElementById('editSearchAccountNo').value.trim();
+
+    if (!rctNo && !accNo) {
+      alert("Kam az kam Receipt No ya Account No darj karein search ke liye.");
       return;
     }
 
-    if (!SCRIPT_URL) return;
-    btn.disabled = true;
     setWorking(true);
-
-    fetch(SCRIPT_URL + "?action=searchReceipt&rctNo=" + encodeURIComponent(receiptNo))
+    // Fetch all receipts to securely perform frontend matching for both receipt number and account number
+    fetch(SCRIPT_URL + "?action=getAllReceiptsForReport")
       .then(res => res.json())
       .then(res => {
-        btn.disabled = false;
         setWorking(false);
-        if (!res || !res.success || !res.entries || res.entries.length === 0) {
-          alert("Entry ki detail nahi mil saki.");
-          return;
+        if (res && res.success && res.data) {
+          let allData = res.data;
+          let matchedRows = allData.filter(item => {
+            let matchRct = rctNo ? String(item.receiptNo || '').trim().toLowerCase() === rctNo.toLowerCase() : true;
+            let matchAcc = accNo ? String(item.accountNo || '').trim() === accNo : true;
+            if (rctNo && accNo) return matchRct && matchAcc;
+            return (rctNo && matchRct) || (accNo && matchAcc);
+          });
+
+          if (matchedRows.length > 0) {
+            // Fetch precise row indices using searchReceipt endpoint for editing support
+            let queryParam = rctNo ? ("?action=searchReceipt&rctNo=" + encodeURIComponent(rctNo)) : ("?action=searchReceipt&rctNo=" + encodeURIComponent(matchedRows[0].receiptNo));
+            setWorking(true);
+            fetch(SCRIPT_URL + queryParam)
+              .then(r => r.json())
+              .then(detailRes => {
+                setWorking(false);
+                if (detailRes && detailRes.success && detailRes.entries) {
+                  let entries = detailRes.entries;
+                  if (accNo) {
+                    entries = entries.filter(e => String(e.accountNo || '').trim() === accNo);
+                  }
+                  if (rctNo) {
+                    entries = entries.filter(e => String(e.receiptNo || '').trim().toLowerCase() === rctNo.toLowerCase());
+                  }
+                  editTabResultsData = entries;
+                } else {
+                  // Fallback map from allData report
+                  editTabResultsData = matchedRows.map((m, idx) => ({
+                    rowIndex: m.rowIndex || (idx + 2),
+                    date: m.dateStr,
+                    receiptNo: m.receiptNo,
+                    accountNo: m.accountNo,
+                    accountTitle: m.accountTitle,
+                    payMode: m.paymentHead,
+                    amount: m.amount,
+                    remarks: ''
+                  }));
+                }
+                renderEditTabResults();
+              }).catch(() => {
+                setWorking(false);
+                editTabResultsData = matchedRows.map((m, idx) => ({
+                  rowIndex: m.rowIndex || (idx + 2),
+                  date: m.dateStr,
+                  receiptNo: m.receiptNo,
+                  accountNo: m.accountNo,
+                  accountTitle: m.accountTitle,
+                  payMode: m.paymentHead,
+                  amount: m.amount,
+                  remarks: ''
+                }));
+                renderEditTabResults();
+              });
+          } else {
+            editTabResultsData = [];
+            renderEditTabResults();
+            alert("Koi record nahi mila.");
+          }
+        } else {
+          editTabResultsData = [];
+          renderEditTabResults();
+          alert("Koi record nahi mila.");
         }
-        renderRowAsEditable(tr, res.entries[0], btn);
       })
-      .catch(err => { btn.disabled = false; setWorking(false); alert("Error: " + err.message); });
+      .catch(err => {
+        setWorking(false);
+        alert("Error: " + err.message);
+      });
   }
 
-  function renderRowAsEditable(tr, entry, btn) {
+  function resetEditTabSearch() {
+    document.getElementById('editSearchReceiptNo').value = '';
+    document.getElementById('editSearchAccountNo').value = '';
+    editTabResultsData = [];
+    renderEditTabResults();
+  }
+
+  function renderEditTabResults() {
+    const tbody = document.getElementById('editTabBody');
+    let total = 0;
+    editTabResultsData.forEach(r => { total += Number(r.amount) || 0; });
+
+    document.getElementById('editTabTotalsQty').innerText = editTabResultsData.length;
+    document.getElementById('editTabTotalsAmount').innerText = total.toLocaleString();
+
+    if (editTabResultsData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Enter search terms above and click Search.</td></tr>';
+      return;
+    }
+
+    let html = '';
+    editTabResultsData.forEach((entry, idx) => {
+      html += `
+        <tr data-index="${idx}" data-rowindex="${entry.rowIndex}">
+          <td><input type="checkbox" class="edit-tab-chk" value="${entry.rowIndex}"></td>
+          <td class="edit-cell-date">${entry.date || ''}</td>
+          <td class="edit-cell-rct">${entry.receiptNo || ''}</td>
+          <td class="edit-cell-acc">${entry.accountNo || ''}</td>
+          <td style="text-align:left;" class="edit-cell-title">${entry.accountTitle || ''}</td>
+          <td class="edit-cell-mode">${entry.payMode || entry.suffix || ''}</td>
+          <td class="edit-cell-amt">${(Number(entry.amount) || 0).toLocaleString()}</td>
+          <td style="white-space:nowrap;">
+            <button class="action-btn btn-secondary" style="padding:3px 7px; font-size:10px;" onclick="toggleEditTabRow(this)"><i class="fas fa-pen"></i> Edit</button>
+            <button class="action-btn btn-danger" style="padding:3px 7px; font-size:10px;" onclick="deleteEditTabSingleRow(${entry.rowIndex})"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  }
+
+  function toggleSelectAllEditTab(master) {
+    document.querySelectorAll('.edit-tab-chk').forEach(chk => chk.checked = master.checked);
+  }
+
+  function sortEditTabTable(column) {
+    editTabSortDirection[column] = !editTabSortDirection[column];
+    let asc = editTabSortDirection[column];
+    editTabResultsData.sort((a, b) => {
+      let valA = a[column] || '';
+      let valB = b[column] || '';
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+      if (valA < valB) return asc ? -1 : 1;
+      if (valA > valB) return asc ? 1 : -1;
+      return 0;
+    });
+    renderEditTabResults();
+  }
+
+  function toggleEditTabRow(btn) {
+    const tr = btn.closest('tr');
+    if (tr.classList.contains('editing')) {
+      saveEditTabRow(tr, btn);
+      return;
+    }
+
     tr.classList.add('editing');
-    tr.dataset.rowIndex = entry.rowIndex;
-    tr.dataset.origAccNo = entry.accountNo || '';
+    let idx = tr.getAttribute('data-index');
+    let entry = editTabResultsData[idx];
 
     let cashOpts = settingsOptions.cash || ["Cash"];
     let bankOpts = settingsOptions.bank || ["Bank Transfer"];
-    let currentVal = (entry.payMode || entry.suffix || entry.receiptSuffix || entry.paymentMode || '').trim();
+    let currentVal = (entry.payMode || entry.suffix || '').trim();
 
-    let selectHtml = `<select class="cell-mode-input" style="padding:2px; font-size:11px; width:100%;">`;
+    let selectHtml = `<select class="edit-mode-input" style="padding:2px; font-size:11px; width:100%;">`;
     [...cashOpts, ...bankOpts].forEach(item => {
       let sel = (currentVal === item) ? 'selected' : '';
       selectHtml += `<option value="${item}" ${sel}>${item}</option>`;
     });
-    if (currentVal && !cashOpts.includes(currentVal) && !bankOpts.includes(currentVal)) {
-      selectHtml += `<option value="${currentVal}" selected>${currentVal}</option>`;
-    }
     selectHtml += `</select>`;
 
-    tr.querySelector('.cell-date').innerHTML = `<input type="date" value="${entry.date || ''}" class="cell-date-input" style="padding:2px; width:120px;">`;
-    tr.querySelector('.cell-rct').innerHTML = `<input type="text" value="${entry.receiptNo || ''}" class="cell-rct-input" style="padding:2px; width:70px; text-align:center;">`;
-    tr.querySelector('.cell-acc').innerHTML = `<input type="text" value="${entry.accountNo || ''}" class="cell-acc-input" style="padding:2px; width:75px;">`;
-    tr.querySelector('.cell-mode').innerHTML = selectHtml;
-    tr.querySelector('.cell-amt').innerHTML = `<input type="number" value="${entry.amount || 0}" class="cell-amt-input" style="padding:2px; width:75px; text-align:right;">`;
-    tr.querySelector('.cell-title').innerHTML = `
+    tr.querySelector('.edit-cell-date').innerHTML = `<input type="date" value="${entry.date || ''}" class="edit-date-input" style="padding:2px; width:110px;">`;
+    tr.querySelector('.edit-cell-rct').innerHTML = `<input type="text" value="${entry.receiptNo || ''}" class="edit-rct-input" style="padding:2px; width:65px; text-align:center;">`;
+    tr.querySelector('.edit-cell-acc').innerHTML = `<input type="text" value="${entry.accountNo || ''}" class="edit-acc-input" style="padding:2px; width:75px;">`;
+    tr.querySelector('.edit-cell-title').innerHTML = `
       <input type="text" value="${entry.accountTitle || ''}" disabled style="padding:2px; width:100%; background:#eee; margin-bottom:2px;">
-      <input type="text" value="${entry.remarks || ''}" class="cell-remarks-input" placeholder="Remarks" style="padding:2px; width:100%; font-size:10px;">
+      <input type="text" value="${entry.remarks || ''}" class="edit-remarks-input" placeholder="Remarks" style="padding:2px; width:100%; font-size:10px;">
     `;
+    tr.querySelector('.edit-cell-mode').innerHTML = selectHtml;
+    tr.querySelector('.edit-cell-amt').innerHTML = `<input type="number" value="${entry.amount || 0}" class="edit-amt-input" style="padding:2px; width:70px; text-align:right;">`;
 
-    btn.innerHTML = '<i class="fas fa-save"></i>';
-    btn.title = "Save";
+    btn.innerHTML = '<i class="fas fa-save"></i> Save';
     btn.classList.remove('btn-secondary');
     btn.classList.add('btn-primary');
+
+    const escHandler = function(e) {
+      if (e.key === 'Escape') {
+        renderEditTabResults();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
   }
 
-  function saveRecentRowEdit(tr, btn) {
+  function saveEditTabRow(tr, btn) {
     if (!SCRIPT_URL) return;
-    const oldReceiptNo = tr.getAttribute('data-receipt');
-    const oldAccNo = tr.dataset.origAccNo || null;
+    let idx = tr.getAttribute('data-index');
+    let entry = editTabResultsData[idx];
 
-    const newDate = tr.querySelector('.cell-date-input').value;
-    const newRct = tr.querySelector('.cell-rct-input').value.trim();
-    const newAcc = tr.querySelector('.cell-acc-input').value.trim();
-    const newMode = tr.querySelector('.cell-mode-input').value;
-    const newAmt = tr.querySelector('.cell-amt-input').value;
-    const newRemarks = tr.querySelector('.cell-remarks-input').value;
+    let newDate = tr.querySelector('.edit-date-input').value;
+    let newRct = tr.querySelector('.edit-rct-input').value.trim();
+    let newAcc = tr.querySelector('.edit-acc-input').value.trim();
+    let newMode = tr.querySelector('.edit-mode-input').value;
+    let newAmt = tr.querySelector('.edit-amt-input').value;
+    let newRemarks = tr.querySelector('.edit-remarks-input').value;
 
-    const entry = {
-      rowIndex: Number(tr.dataset.rowIndex),
+    let updatePayload = {
+      rowIndex: Number(entry.rowIndex),
       date: newDate,
       receiptNoCustom: newRct,
       accountNo: newAcc,
@@ -1148,197 +1417,199 @@
     setWorking(true);
     fetch(SCRIPT_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'updateAllReceiptEntries', data: [entry] })
+      body: JSON.stringify({ action: 'updateAllReceiptEntries', data: [updatePayload] })
     })
       .then(res => res.json())
       .then(res => {
         btn.disabled = false;
         setWorking(false);
         if (res && res.success) {
-          // Poori list dobara load kiye bagair, isi entry ko locally update kar dein (fast)
-          const isCash = (settingsOptions.cash || []).includes(newMode);
-          const item = recentReceiptsData.find(r =>
-            String(r.receiptNo || '').trim() === String(oldReceiptNo || '').trim() &&
-            (!oldAccNo || String(r.accountNo || '').trim() === String(oldAccNo).trim())
-          );
-          if (item) {
-            item.dateStr = formatDisplayDate(newDate);
-            item.dateObj = newDate ? new Date(newDate).setHours(0, 0, 0, 0) : item.dateObj;
-            item.receiptNo = newRct;
-            item.accountNo = newAcc;
-            item.paymentHead = newMode;
-            item.amount = Number(newAmt) || 0;
-            item.isCash = isCash;
-          }
-          populateModeFilterOptions();
-          renderRecentReceipts();
+          entry.date = newDate;
+          entry.receiptNo = newRct;
+          entry.accountNo = newAcc;
+          entry.payMode = newMode;
+          entry.amount = newAmt;
+          entry.remarks = newRemarks;
+          renderEditTabResults();
+          loadRecentReceipts();
         } else {
-          alert("Error: " + (res ? res.error : "Unknown error"));
+          alert("Error updating record.");
         }
       })
-      .catch(err => { btn.disabled = false; setWorking(false); alert("Server Error: " + err.message); });
+      .catch(err => {
+        btn.disabled = false;
+        setWorking(false);
+        alert("Server Error: " + err.message);
+      });
   }
 
-  function deleteRecentReceipt(receiptNo) {
-    if (!confirm("Kya aap waqai receipt '" + receiptNo + "' delete karna chahte hain?")) return;
+  function deleteEditTabSingleRow(rowIndex) {
+    if (!confirm("Kya aap waqai is entry ko delete karna chahte hain?")) return;
     if (!SCRIPT_URL) return;
 
     setWorking(true);
-    fetch(SCRIPT_URL + "?action=searchReceipt&rctNo=" + encodeURIComponent(receiptNo))
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'deleteReceiptEntry', data: { rowIndex: rowIndex } })
+    })
       .then(res => res.json())
-      .then(res => {
-        if (!res || !res.success || !res.entries || res.entries.length === 0) {
-          setWorking(false);
-          alert("Entry nahi mili.");
-          return null;
-        }
-        const rowIndex = res.entries[0].rowIndex;
-        return fetch(SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'deleteReceiptEntry', data: { rowIndex: rowIndex } })
-        }).then(r => r.json());
-      })
       .then(res => {
         setWorking(false);
         if (res && res.success) {
+          searchReceiptsForEditTab();
           loadRecentReceipts();
-        } else if (res) {
-          alert("Error: " + res.error);
+        } else {
+          alert("Delete fail ho gaya.");
         }
       })
-      .catch(err => { setWorking(false); alert("Error: " + err.message); });
+      .catch(err => {
+        setWorking(false);
+        alert("Error: " + err.message);
+      });
   }
 
-    // ===== Deployment URL config (auto-added) =====
-    function showUrlConfig() {
-      var inp = document.getElementById('scriptUrlInput');
-      if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
-      var box = document.getElementById('configBox');
-      if (box) box.classList.add('show');
+  function bulkDeleteSelectedReceipts() {
+    let checkboxes = document.querySelectorAll('.edit-tab-chk:checked');
+    if (checkboxes.length === 0) {
+      alert("Delete karne ke liye kam az kam aik receipt select karein.");
+      return;
     }
-    function saveScriptUrl() {
-      var inp = document.getElementById('scriptUrlInput');
-      var val = inp ? inp.value.trim() : '';
-      if (!val) { alert("URL enter karein"); return; }
-      localStorage.setItem('erp_script_url', val);
-      location.reload();
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-      var savedUrl = localStorage.getItem('erp_script_url');
-      if (!savedUrl) {
-        var box = document.getElementById('configBox');
-        if (box) box.classList.add('show');
-      }
+    if (!confirm(`Kya aap waqai select ki gayi ${checkboxes.length} receipts delete karna chahte hain?`)) return;
+
+    let rowIndices = [];
+    checkboxes.forEach(chk => rowIndices.push(Number(chk.value)));
+
+    setWorking(true);
+    let promiseChain = Promise.resolve();
+    rowIndices.forEach(idx => {
+      promiseChain = promiseChain.then(() => {
+        return fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'deleteReceiptEntry', data: { rowIndex: idx } })
+        }).then(r => r.json()).catch(() => null);
+      });
     });
 
-    // ================= UNIVERSAL MIC INPUT (auto-added) =================
-    (function() {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      let activeRec = null, activeBtn = null, activeInput = null;
+    promiseChain.then(() => {
+      setWorking(false);
+      alert("Selected receipts delete ho gayi hain.");
+      searchReceiptsForEditTab();
+      loadRecentReceipts();
+    });
+  }
 
-      function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
+  function showUrlConfig() {
+    var inp = document.getElementById('scriptUrlInput');
+    if (inp) inp.value = SCRIPT_URL;
+    var box = document.getElementById('configBox');
+    if (box) box.classList.add('show');
+  }
 
-      function stopActiveMic() {
-        if (activeRec) {
-          activeRec.onend = null; activeRec.onresult = null;
-          try { activeRec.abort(); } catch (e) {}
-          activeRec = null;
+  // ================= UNIVERSAL MIC INPUT =================
+  (function() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let activeRec = null, activeBtn = null, activeInput = null;
+
+    function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
+
+    function stopActiveMic() {
+      if (activeRec) {
+        activeRec.onend = null; activeRec.onresult = null;
+        try { activeRec.abort(); } catch (e) {}
+        activeRec = null;
+      }
+      if (activeBtn) activeBtn.classList.remove('listening');
+      if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
+      activeBtn = null; activeInput = null;
+    }
+
+    function toggleMic(input, btn) {
+      if (!SR) { alert('Ye browser voice input support nahi karta. Chrome use karein.'); return; }
+      const isNumeric = input.type === 'number';
+
+      if (btn.classList.contains('listening')) { stopActiveMic(); return; }
+      stopActiveMic();
+
+      const rec = new SR();
+      rec.lang = 'en-US';
+      rec.continuous = true;
+      rec.interimResults = true;
+      let finalText = '';
+
+      activeRec = rec; activeBtn = btn; activeInput = input;
+      btn.classList.add('listening');
+      input.dataset.origPh = input.placeholder || '';
+      input.placeholder = 'Sun raha hoon...';
+
+      rec.onresult = function(ev) {
+        let interim = '';
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const t = ev.results[i][0].transcript;
+          if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
         }
-        if (activeBtn) activeBtn.classList.remove('listening');
-        if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
-        activeBtn = null; activeInput = null;
-      }
+        let text = (finalText + interim).trim();
+        if (isNumeric) text = cleanNumeric(text);
+        input.value = text;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      rec.onerror = function() {};
+      rec.onend = function() {
+        btn.classList.remove('listening');
+        input.placeholder = input.dataset.origPh || '';
+        if (isNumeric) input.value = cleanNumeric(input.value);
+        if (activeInput === input) { activeRec = null; activeBtn = null; activeInput = null; }
+      };
+      try { rec.start(); } catch (e) {}
+    }
 
-      function toggleMic(input, btn) {
-        if (!SR) { alert('Ye browser voice input support nahi karta. Chrome use karein.'); return; }
-        const isNumeric = input.type === 'number';
+    function attachMic(input) {
+      if (!input || input.dataset.autoMic) return;
+      if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
+          input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
+      if (input.closest('#configBox')) return;
+      if (input.closest('.input-with-mic')) return;
+      if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
 
-        if (btn.classList.contains('listening')) { stopActiveMic(); return; }
-        stopActiveMic();
+      input.dataset.autoMic = '1';
 
-        const rec = new SR();
-        rec.lang = 'en-US';
-        rec.continuous = true;
-        rec.interimResults = true;
-        let finalText = '';
+      const wrap = document.createElement('span');
+      wrap.className = 'auto-mic-wrap';
+      input.parentNode.insertBefore(wrap, input);
+      wrap.appendChild(input);
 
-        activeRec = rec; activeBtn = btn; activeInput = input;
-        btn.classList.add('listening');
-        input.dataset.origPh = input.placeholder || '';
-        input.placeholder = 'Sun raha hoon... rokne ke liye mic dobara dabayein';
+      input.style.paddingRight = '24px';
+      input.style.boxSizing = 'border-box';
 
-        rec.onresult = function(ev) {
-          let interim = '';
-          for (let i = ev.resultIndex; i < ev.results.length; i++) {
-            const t = ev.results[i][0].transcript;
-            if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'auto-mic-btn';
+      btn.title = 'Voice input';
+      btn.innerHTML = '&#127908;';
+      btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
+      wrap.appendChild(btn);
+    }
+
+    function scanAndAttach(root) {
+      root.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      scanAndAttach(document);
+    });
+
+    const mo = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        m.addedNodes.forEach(function(node) {
+          if (node.nodeType !== 1) return;
+          if (node.matches && (node.matches('input[type="text"]') || node.matches('input[type="number"]') || node.matches('input:not([type])'))) {
+            attachMic(node);
           }
-          let text = (finalText + interim).trim();
-          if (isNumeric) text = cleanNumeric(text);
-          input.value = text;
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        };
-        rec.onerror = function(ev) {
-          if (ev.error !== 'no-speech' && ev.error !== 'aborted') console.error('Mic error:', ev.error);
-        };
-        rec.onend = function() {
-          btn.classList.remove('listening');
-          input.placeholder = input.dataset.origPh || '';
-          if (isNumeric) input.value = cleanNumeric(input.value);
-          if (activeInput === input) { activeRec = null; activeBtn = null; activeInput = null; }
-        };
-        try { rec.start(); } catch (e) {}
-      }
-
-      function attachMic(input) {
-        if (!input || input.dataset.autoMic) return;
-        if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
-            input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
-        if (input.closest('#configBox')) return;
-        if (input.closest('.input-with-mic')) return; // already has a manual mic button
-        if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
-
-        input.dataset.autoMic = '1';
-
-        const wrap = document.createElement('span');
-        wrap.className = 'auto-mic-wrap';
-        input.parentNode.insertBefore(wrap, input);
-        wrap.appendChild(input);
-
-        const curPad = window.getComputedStyle(input).paddingRight;
-        input.style.paddingRight = '24px';
-        input.style.boxSizing = 'border-box';
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'auto-mic-btn';
-        btn.title = 'Voice input';
-        btn.innerHTML = '&#127908;';
-        btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
-        wrap.appendChild(btn);
-      }
-
-      function scanAndAttach(root) {
-        root.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
-      }
-
-      document.addEventListener('DOMContentLoaded', function() {
-        scanAndAttach(document);
-      });
-
-      const mo = new MutationObserver(function(mutations) {
-        mutations.forEach(function(m) {
-          m.addedNodes.forEach(function(node) {
-            if (node.nodeType !== 1) return;
-            if (node.matches && (node.matches('input[type="text"]') || node.matches('input[type="number"]') || node.matches('input:not([type])'))) {
-              attachMic(node);
-            }
-            if (node.querySelectorAll) scanAndAttach(node);
-          });
+          if (node.querySelectorAll) scanAndAttach(node);
         });
       });
-      mo.observe(document.body, { childList: true, subtree: true });
-    })();
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  })();
 </script>
 </body>
 </html>
