@@ -3,10 +3,78 @@
 <head>
   <meta charset="utf-8">
   <title>Customer Ledger View</title>
+  <!-- Include html2pdf library for clean PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 8px auto; max-width: 1100px; background-color: #f4f6f9; color: #222; font-size: 11px; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 8px auto; max-width: 1100px; background-color: #f4f6f9; color: #222; font-size: 11px; transition: all 0.3s ease; }
     
-    .top-header-container { display: flex; justify-content: space-between; align-items: center; margin: 0 0 8px 0; }
+    .container-wrapper {
+      max-width: 1100px;
+      margin: auto;
+      position: relative;
+      transition: max-width 0.3s ease;
+      background: #ffffff;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    /* Mobile View Mode Styles - No Horizontal Scroll, Vertical Wrap Layout */
+    body.mobile-mode .container-wrapper {
+      max-width: 420px !important;
+      padding: 5px !important;
+    }
+    body.mobile-mode .ledger-header-card {
+      flex-direction: column !important;
+      gap: 10px !important;
+    }
+    body.mobile-mode .summary-box {
+      width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box;
+    }
+    body.mobile-mode .table-container {
+      overflow-x: visible !important;
+      max-height: none !important;
+    }
+    body.mobile-mode table {
+      width: 100% !important;
+      table-layout: fixed !important;
+    }
+    body.mobile-mode th, body.mobile-mode td {
+      white-space: normal !important;
+      word-break: break-word !important;
+      padding: 4px 5px !important;
+      font-size: 10px !important;
+    }
+    body.mobile-mode .col-date { width: 55px !important; }
+    body.mobile-mode .col-voucher { width: 50px !important; }
+    body.mobile-mode .col-type { width: 45px !important; }
+    body.mobile-mode .col-amount { width: 55px !important; }
+
+    .floating-mobile-toggle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 100;
+      transition: background 0.2s;
+    }
+    .floating-mobile-toggle:hover {
+      background: #1557b0;
+    }
+
+    .top-header-container { display: flex; justify-content: space-between; align-items: center; margin: 0 0 8px 0; padding-right: 40px; flex-wrap: wrap; gap: 8px; }
     h2 { color: #1a73e8; margin: 0; font-size: 16px; }
     
     .ledger-header-card { background: #fff; padding: 10px 14px; border-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; }
@@ -17,8 +85,11 @@
     .summary-box div { display: flex; justify-content: space-between; margin-bottom: 2px; }
     .summary-box span { font-weight: bold; color: #1a73e8; }
 
-    .btn { padding: 5px 12px; background: #34a853; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; }
+    .btn-group { display: flex; gap: 6px; align-items: center; }
+    .btn { padding: 5px 12px; background: #34a853; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
     .btn:hover { background: #2b8743; }
+    .btn-whatsapp { background: #25d366; }
+    .btn-whatsapp:hover { background: #1ebe5d; }
 
     .table-container { 
       max-height: 500px; 
@@ -55,7 +126,7 @@
     .change-url-link { cursor: pointer; color: #1a73e8; font-size: 11px; margin-bottom: 6px; display: inline-block; }
 
     @media print {
-      .btn, .search-box-inline, .config-box, .change-url-link { display: none; }
+      .btn, .search-box-inline, .config-box, .change-url-link, .floating-mobile-toggle { display: none; }
       body { background-color: #fff; margin: 0; max-width: 100%; }
       .table-container { max-height: none; box-shadow: none; }
     }
@@ -78,64 +149,76 @@
       100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
     }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
-  <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
-  <div id="configBox" class="config-box">
-    <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
-    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
-    <button onclick="saveScriptUrl()">Save URL</button>
-  </div>
+  <div class="container-wrapper" id="pdfContainer">
+    <!-- Floating Mobile View Toggle Button -->
+    <button class="floating-mobile-toggle" onclick="toggleMobileView()" id="mobileToggleBtn" title="Switch Mobile/Desktop View">
+      📱
+    </button>
 
-  <div class="top-header-container">
-    <h2>Customer Account Ledger</h2>
-    <button class="btn" onclick="window.print()">Print Ledger</button>
-  </div>
-
-  <div class="search-box-inline">
-    <input type="text" id="accNoInput" placeholder="Account No enter karein aur Enter dabayein..." onkeydown="if(event.key==='Enter'){ loadLedgerForAccount(); }">
-    <button class="btn" onclick="loadLedgerForAccount()">Load Ledger</button>
-  </div>
-
-  <div class="ledger-header-card">
-    <div class="ledger-info" id="customerInfo">
-      <div>Account No: <span id="lblAccNo">-</span></div>
-      <div>Account Title: <span id="lblAccTitle">-</span></div>
-      <div>Approved By: <span id="lblApprovedBy">-</span> | CRO: <span id="lblCro">-</span></div>
-      <div>Mobile: <span id="lblMobile">-</span></div>
+    <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
+    <div id="configBox" class="config-box">
+      <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
+      <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+      <button onclick="saveScriptUrl()">Save URL</button>
     </div>
-    
-    <div class="summary-box">
-      <div>Total Amount: <span id="lblTotalAmount">-</span></div>
-      <div>No of Month: <span id="lblTotalMonth">-</span></div>
-      <div>Per Month Inst: <span id="lblPerMonthInst">-</span></div>
-      <div>Starting Month: <span id="lblStartMonth">-</span></div>
-      <div>Ending Month: <span id="lblEndMonth">-</span></div>
+
+    <div class="top-header-container">
+      <h2>Customer Account Ledger</h2>
+      <div class="btn-group">
+        <button class="btn" onclick="window.print()"><i class="fa fa-print"></i> Print Ledger</button>
+        <button class="btn btn-whatsapp" onclick="downloadLedgerPDF()" title="Download PDF & Open WhatsApp"><i class="fa-brands fa-whatsapp"></i> PDF & WhatsApp</button>
+      </div>
     </div>
-  </div>
 
-  <div id="loading" class="loading">Account No enter karein upar box mein.</div>
+    <div class="search-box-inline">
+      <input type="text" id="accNoInput" placeholder="Account No enter karein aur Enter dabayein..." onkeydown="if(event.key==='Enter'){ loadLedgerForAccount(); }">
+      <button class="btn" onclick="loadLedgerForAccount()">Load Ledger</button>
+    </div>
 
-  <div class="table-container">
-    <table id="ledgerTable" style="display: none;">
-      <thead>
-        <tr>
-          <th class="col-date">Date</th>
-          <th class="col-voucher">Voucher No</th>
-          <th class="col-type">Type</th>
-          <th>Particulars / Description</th>
-          <th class="number col-amount">Debit (In)</th>
-          <th class="number col-amount">Credit (Out)</th>
-          <th class="number col-amount">Balance</th>
-        </tr>
-      </thead>
-      <tbody id="ledgerTableBody"></tbody>
-    </table>
+    <div class="ledger-header-card">
+      <div class="ledger-info" id="customerInfo">
+        <div>Account No: <span id="lblAccNo">-</span></div>
+        <div>Account Title: <span id="lblAccTitle">-</span></div>
+        <div>Approved By: <span id="lblApprovedBy">-</span> | CRO: <span id="lblCro">-</span></div>
+        <div>Mobile: <span id="lblMobile">-</span></div>
+      </div>
+      
+      <div class="summary-box">
+        <div>Total Amount: <span id="lblTotalAmount">-</span></div>
+        <div>No of Month: <span id="lblTotalMonth">-</span></div>
+        <div>Per Month Inst: <span id="lblPerMonthInst">-</span></div>
+        <div>Starting Month: <span id="lblStartMonth">-</span></div>
+        <div>Ending Month: <span id="lblEndMonth">-</span></div>
+      </div>
+    </div>
+
+    <div id="loading" class="loading">Account No enter karein upar box mein.</div>
+
+    <div class="table-container">
+      <table id="ledgerTable" style="display: none;">
+        <thead>
+          <tr>
+            <th class="col-date">Date</th>
+            <th class="col-voucher">Voucher No</th>
+            <th class="col-type">Type</th>
+            <th>Particulars / Description</th>
+            <th class="number col-amount">Debit (In)</th>
+            <th class="number col-amount">Credit (Out)</th>
+            <th class="number col-amount">Balance</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerTableBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
     let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
+    let currentLedgerData = null;
 
     let urlParams = new URLSearchParams(window.location.search);
     let accNo = urlParams.get('accNo') || urlParams.get('acc') || "";
@@ -146,6 +229,19 @@
         loadLedgerForAccount();
       }
     };
+
+    function toggleMobileView() {
+      document.body.classList.toggle('mobile-mode');
+      const isMobile = document.body.classList.contains('mobile-mode');
+      const btn = document.getElementById('mobileToggleBtn');
+      if (isMobile) {
+        btn.textContent = '💻';
+        btn.title = 'Switch to Desktop View';
+      } else {
+        btn.textContent = '📱';
+        btn.title = 'Switch to Mobile View';
+      }
+    }
 
     function loadLedgerForAccount() {
       accNo = document.getElementById('accNoInput').value.trim();
@@ -158,6 +254,7 @@
       document.getElementById('loading').style.display = 'block';
       document.getElementById('loading').innerHTML = 'Loading customer ledger details... Please wait.';
       document.getElementById('ledgerTable').style.display = 'none';
+      currentLedgerData = null;
 
       fetch(SCRIPT_URL + "?action=getCustomerLedgerData&accNo=" + encodeURIComponent(accNo))
         .then(res => res.json())
@@ -168,12 +265,68 @@
             document.getElementById('loading').innerHTML = '<span style="color:red;">Error: ' + (result ? result.message : 'Data not found') + '</span>';
             return;
           }
+          currentLedgerData = result;
           renderLedger(result);
         })
         .catch(err => {
           document.getElementById('loading').style.display = 'block';
           document.getElementById('loading').innerHTML = '<span style="color:red;">Connection Error: ' + err.message + '</span>';
         });
+    }
+
+    function downloadLedgerPDF() {
+      if (!currentLedgerData) {
+        alert("Pehle koi ledger load karein!");
+        return;
+      }
+
+      let accNum = currentLedgerData.accNo || "Ledger";
+      let accName = currentLedgerData.accTitle || "Customer";
+      let pdfFileName = `${accNum} ${accName}.pdf`;
+
+      let rawMobile = String(currentLedgerData.mobile || "").trim();
+      let cleanMob = rawMobile.replace(/\D/g, '');
+      
+      if (cleanMob.startsWith('92')) {
+        cleanMob = '0' + cleanMob.substring(2);
+      } else if (!cleanMob.startsWith('0') && cleanMob.length === 10) {
+        cleanMob = '0' + cleanMob;
+      }
+
+      if (cleanMob.length >= 11) {
+        document.getElementById('lblMobile').textContent = cleanMob;
+      }
+
+      // Hide elements not needed in PDF
+      document.querySelector('.top-header-container').style.display = 'none';
+      document.querySelector('.search-box-inline').style.display = 'none';
+      const toggleBtn = document.getElementById('mobileToggleBtn');
+      if(toggleBtn) toggleBtn.style.display = 'none';
+
+      const element = document.getElementById('pdfContainer');
+      const opt = {
+        margin:       5,
+        filename:     pdfFileName,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().from(element).set(opt).save().then(() => {
+        // Restore hidden elements after download
+        document.querySelector('.top-header-container').style.display = 'flex';
+        document.querySelector('.search-box-inline').style.display = 'flex';
+        if(toggleBtn) toggleBtn.style.display = 'flex';
+
+        if (cleanMob && cleanMob.length >= 11 && cleanMob.startsWith('0')) {
+          let waNumber = '92' + cleanMob.substring(1);
+          let msg = `Assalam o Alekum ,this is computer gerated ledger plz verify it and if you have any qurey reply in this chat..`;
+          let waUrl = `https://wa.me/${waNumber}?text=` + encodeURIComponent(msg);
+          window.open(waUrl, '_blank');
+        } else {
+          alert("PDF downloaded successfully with name: " + pdfFileName);
+        }
+      });
     }
 
     function formatMonthYear(dateStr) {
@@ -218,17 +371,12 @@
       return '-';
     }
 
-    // Helper to format short product text (Company 4 chars, Category 4 chars, Model)
     function cleanFormattedProduct(productStr) {
       if (!productStr) return "";
-      
-      // If object or array passed
       if (Array.isArray(productStr)) productStr = productStr.join(", ");
-      
       return String(productStr).split(",")
         .map(p => {
           let str = p.trim();
-          // Remove PRD-XXXX raw codes if present
           str = str.replace(/PRD-\d+/gi, "").trim();
           return str;
         })
@@ -241,7 +389,15 @@
       document.getElementById('lblAccTitle').textContent = data.accTitle || '';
       document.getElementById('lblApprovedBy').textContent = data.approvedBy || data.salesman || 'N/A';
       document.getElementById('lblCro').textContent = data.cro || data.subSalesman || 'N/A';
-      document.getElementById('lblMobile').textContent = data.mobile || 'N/A';
+      
+      let rawMob = String(data.mobile || "").trim();
+      let formattedMob = rawMob.replace(/\D/g, '');
+      if (formattedMob.startsWith('92')) {
+        formattedMob = '0' + formattedMob.substring(2);
+      } else if (!formattedMob.startsWith('0') && formattedMob.length === 10) {
+        formattedMob = '0' + formattedMob;
+      }
+      document.getElementById('lblMobile').textContent = (formattedMob && formattedMob.length >= 11) ? formattedMob : (data.mobile || 'N/A');
 
       let entries = data.entries || [];
       let startRaw = '-';
@@ -272,7 +428,6 @@
       let totalDebit = 0;
       let totalCredit = 0;
 
-      // Extract best product description from data object
       let mainProductDesc = data.productFormatted || data.product || data.productName || data.products || "";
       if (typeof mainProductDesc === 'object') {
         if (Array.isArray(mainProductDesc)) mainProductDesc = mainProductDesc.join(", ");
@@ -285,7 +440,6 @@
 
         let particularText = entry.particulars || '';
 
-        // If particularText is PRD code or contains PRD-XXXX, replace with formatted product text
         if (/^PRD-\d+/i.test(particularText.trim()) || particularText.trim() === '') {
           if (entry.productFormatted) {
             particularText = entry.productFormatted;
