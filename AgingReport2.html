@@ -7,9 +7,11 @@
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f4f6f9;
-      margin: 0;
+      margin: 8px auto;
+      max-width: 1300px;
       padding: 5px;
       color: #333;
+      transition: all 0.3s ease;
     }
     .container {
       max-width: 100%;
@@ -19,12 +21,59 @@
       border-radius: 6px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       box-sizing: border-box;
+      position: relative;
     }
+    
+    /* Mobile View Mode Styles */
+    body.mobile-mode .container {
+      max-width: 420px !important;
+      padding: 8px !important;
+    }
+    body.mobile-mode .filters-grid {
+      grid-template-columns: 1fr !important;
+      gap: 6px !important;
+    }
+    body.mobile-mode .button-group {
+      justify-content: space-between;
+      width: 100%;
+    }
+    body.mobile-mode .button-group button {
+      flex: 1;
+    }
+    body.mobile-mode .table-container {
+      max-height: 400px !important;
+      overflow-x: auto !important;
+    }
+
+    .floating-mobile-toggle {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: #1b5e20;
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 100;
+      transition: background 0.2s;
+    }
+    .floating-mobile-toggle:hover {
+      background: #144316;
+    }
+
     h2 {
       text-align: center;
       color: #1b5e20;
-      margin: 0 0 8px 0;
+      margin: 0 0 12px 0;
       font-size: 18px;
+      padding-right: 35px;
     }
     .filters-grid {
       display: grid;
@@ -145,24 +194,24 @@
     th.col-accNo, td.col-accNo { width: 55px; }         /* Acct Num */
     th.col-accTitle, td.col-accTitle { width: 120px; }  /* Acct Title */
     th.col-approvedBy, td.col-approvedBy { width: 55px; } /* Aprv by */
-    th.col-cro, td.col-cro { width: 32px; }             /* CRO */
+    th.col-cro, td.col-cro { width: 32px; }               /* CRO */
     th.col-mobile, td.col-mobile { width: 75px; }       /* Mobile Nu */
     th.col-monthlyInst, td.col-monthlyInst { width: 50px; } /* M Inst */
     th.col-remarks, td.col-remarks { width: 120px; }    /* Remarks */
-    th.col-cmd, td.col-cmd { width: 55px; }             /* CMD */
+    th.col-cmd, td.col-cmd { width: 55px; }               /* CMD */
     th.col-plan, td.col-plan { width: 32px; text-align: center; } /* Plan */
     th.col-totalSales, td.col-totalSales { width: 60px; } /* Total Sale */
     th.col-totalReceived, td.col-totalReceived { width: 60px; } /* Total Paid */
     th.col-balance, td.col-balance { width: 55px; }     /* T Balance */
-    th.col-lpd, td.col-lpd { width: 60px; }             /* LPD */
+    th.col-lpd, td.col-lpd { width: 60px; }               /* LPD */
     th.col-lpAmount, td.col-lpAmount { width: 55px; }   /* L.Pamount */
     th.col-deliveryDate, td.col-deliveryDate { width: 60px; } /* Deliv Date */
     th.col-endingMonth, td.col-endingMonth { width: 60px; } /* End */
     th.col-product, td.col-product { width: 55px; }     /* Product */
-    th.col-m4, td.col-m4 { width: 45px; }               /* M-4 */
-    th.col-m3, td.col-m3 { width: 45px; }               /* M-3 */
-    th.col-m2, td.col-m2 { width: 52px; }               /* M-2 */
-    th.col-m1, td.col-m1 { width: 52px; }               /* M-1 */
+    th.col-m4, td.col-m4 { width: 45px; }                /* M-4 */
+    th.col-m3, td.col-m3 { width: 45px; }                /* M-3 */
+    th.col-m2, td.col-m2 { width: 52px; }                /* M-2 */
+    th.col-m1, td.col-m1 { width: 52px; }                /* M-1 */
 
     .sticky-header {
       background-color: #1b5e20 !important;
@@ -400,7 +449,7 @@
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      button, .filters-grid, .filter-header-row, #loadingContainer, .excel-popup, .ledger-modal, .table-footer-row, .col-product, .col-m1 { 
+      button, .filters-grid, .filter-header-row, #loadingContainer, .excel-popup, .ledger-modal, .table-footer-row, .col-product, .col-m1, .floating-mobile-toggle { 
         display: none !important; 
       }
       .container { 
@@ -454,6 +503,11 @@
   </div>
 
   <div class="container">
+    <!-- Floating Mobile View Toggle Button with FontAwesome Icon -->
+    <button class="floating-mobile-toggle" onclick="toggleMobileView()" id="mobileToggleBtn" title="Switch Mobile/Desktop View">
+      <i class="fa fa-mobile-alt" id="toggleIcon"></i>
+    </button>
+
     <h2>Al-Meezan Electronics - Customer Aging Report</h2>
     
     <div class="filters-grid">
@@ -619,6 +673,20 @@
 
     let WEB_APP_URL = localStorage.getItem('erp_script_url') || "";
 
+    function toggleMobileView() {
+      document.body.classList.toggle('mobile-mode');
+      const isMobile = document.body.classList.contains('mobile-mode');
+      const icon = document.getElementById('toggleIcon');
+      const btn = document.getElementById('mobileToggleBtn');
+      if (isMobile) {
+        icon.className = "fa fa-desktop";
+        btn.title = 'Switch to Desktop View';
+      } else {
+        icon.className = "fa fa-mobile-alt";
+        btn.title = 'Switch to Mobile View';
+      }
+    }
+
     function parseCustomDate(dateString) {
       if (!dateString) return null;
       if (dateString instanceof Date) return isNaN(dateString.getTime()) ? null : dateString;
@@ -731,7 +799,6 @@
       if (loadingContainer) loadingContainer.style.display = 'block';
       if (loadingMsg) loadingMsg.innerText = "Fetching aging records... Please wait.";
 
-      // 1. If inside Google Apps Script Web App environment
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(function(res) {
@@ -753,7 +820,6 @@
         return;
       }
 
-      // 2. Standalone HTML mode via fetch
       let targetUrl = WEB_APP_URL ? (WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + "action=getAgingReportData") : "?action=getAgingReportData";
 
       if (!WEB_APP_URL) {
@@ -798,7 +864,6 @@
       return isNaN(num) || num <= 0 ? 12 : num;
     }
 
-    // Monthly Installment = (Total Sale - Advance - Proc Fee) / Plan Months
     function calculateMonthlyInstallment(row) {
       let totalSale = Number(row.totalSales) || 0;
       let advVal = Number(row.advance !== undefined ? row.advance : (row.adv || 0));
@@ -810,23 +875,18 @@
       return Math.round(netPrincipal / planMonths);
     }
 
-    // Ending Month Calculation Logic
     function calculateEndingMonthObject(row) {
       let firstPaid = Number(row.firstInstPaid !== undefined ? row.firstInstPaid : (row['1st Instalment paid'] || row['1st Inst Paid'] || 0));
       let firstMonthRaw = row.firstInstMonth !== undefined && row.firstInstMonth !== null ? row.firstInstMonth : (row['1st installment date'] || row['1st inst month'] || '');
       let nextInstRaw = row.nextInstMonth !== undefined && row.nextInstMonth !== null ? row.nextInstMonth : (row.nextInst || row['Next Inst Month'] || '');
 
       let baseDate = null;
-
-      // 1. Agar 1st Inst Paid (Col T) mein amount > 0 ho, to 1st installment month Col U (firstInstMonth) hoga
-      // 2. Agar 1st Inst Paid (Col T) khali / 0 ho, to 1st installment month Col Q (nextInstMonth) hoga
       if (firstPaid > 0 && firstMonthRaw) {
         baseDate = parseCustomDate(firstMonthRaw);
       } else if (nextInstRaw) {
         baseDate = parseCustomDate(nextInstRaw);
       }
 
-      // Fallbacks
       if (!baseDate || isNaN(baseDate.getTime())) {
         if (firstMonthRaw) {
           baseDate = parseCustomDate(firstMonthRaw);
