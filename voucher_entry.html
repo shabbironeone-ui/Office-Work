@@ -113,11 +113,11 @@
         .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
         .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
         
-        /* History & Filter Control Section */
         .history-section {
             margin-top: 25px;
             border-top: 2px solid #eee;
             padding-top: 15px;
+            display: block;
         }
         .filter-bar {
             background-color: #f8fafc;
@@ -174,20 +174,24 @@
         .table-container {
             max-height: 350px;
             overflow-y: auto;
+            overflow-x: hidden;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
             position: relative;
         }
         table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
             background: white;
         }
         th, td {
-            padding: 8px 10px;
+            padding: 7px 8px;
             text-align: left;
             border-bottom: 1px solid #e5e7eb;
-            font-size: 12px;
+            font-size: 11px;
+            overflow: hidden;
+            text-overflow: ellipsis;
             white-space: nowrap;
         }
         th {
@@ -202,7 +206,6 @@
             background-color: #f9fafb;
         }
 
-        /* Spinner & Overlay */
         #loadingSpinner {
             display: none;
             text-align: center;
@@ -226,23 +229,6 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-
-        .badge-balanced {
-            background-color: #d1fae5;
-            color: #065f46;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-        .badge-imbalanced {
-            background-color: #fee2e2;
-            color: #991b1b;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -314,13 +300,17 @@
             </div>
         </form>
 
-        <!-- Dynamic History & Contra Ledger Section -->
-        <div class="history-section" id="historySection" style="display: none;">
+        <div class="history-section" id="historySection">
             <div class="filter-bar">
                 <div class="filter-item" style="flex: 1.5;">
-                    <label>SELECT CONTRA / ACCOUNT HEAD</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label>SELECT CONTRA / ACCOUNT HEAD</label>
+                        <label style="font-size: 11px; cursor: pointer; color: #2563eb; display: flex; align-items: center; gap: 4px; margin: 0;">
+                            <input type="checkbox" id="showAllCheckbox" onchange="toggleShowAll(this)" style="width: 13px; height: 13px; margin: 0; cursor: pointer;"> Show All
+                        </label>
+                    </div>
                     <select id="ledgerHeadFilter">
-                        <option value="ALL_CONTRA">-- ALL CONTRA ACCOUNTS (Combined) --</option>
+                        <option value="Contra">Contra</option>
                     </select>
                 </div>
                 <div class="filter-item">
@@ -344,11 +334,16 @@
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <span style="font-size: 13px; font-weight: bold; color: #333;">
-                    &#128179; Statement for: <span id="selectedHeadName" style="color: #2563eb;">ALL CONTRA ACCOUNTS</span>
+                    &#128179; Statement for: <span id="selectedHeadName" style="color: #2563eb;">Contra</span>
                 </span>
-                <span id="balanceCheckBadge"></span>
+                
+                <div style="display: flex; gap: 35px; font-weight: bold; font-size: 13px; color: #1e293b; padding-right: 25px;">
+                    <span id="lblTotalIn" style="color: #16a34a;">0</span>
+                    <span id="lblTotalOut" style="color: #dc2626;">0</span>
+                    <span id="lblClosingBalance" style="color: #2563eb;">0</span>
+                </div>
             </div>
 
             <div class="table-container">
@@ -357,15 +352,25 @@
                     <div style="font-size: 12px; color: #2563eb; margin-top: 6px; font-weight: bold;">Loading Ledger Statements...</div>
                 </div>
                 <table>
+                    <colgroup>
+                        <col style="width: 10%;">
+                        <col style="width: 9%;">
+                        <col style="width: 15%;">
+                        <col style="width: 25%;">
+                        <col style="width: 10%;">
+                        <col style="width: 10%;">
+                        <col style="width: 11%;">
+                        <col style="width: 10%;">
+                    </colgroup>
                     <thead>
                         <tr>
                             <th>Date</th>
                             <th>Voucher No</th>
-                            <th>Account Name / Leg</th>
-                            <th>Particulars / Flow Narration</th>
-                            <th style="text-align: right;">Amount IN (Debit)</th>
-                            <th style="text-align: right;">Amount OUT (Credit)</th>
-                            <th style="text-align: right;">Running Balance</th>
+                            <th>Account Name</th>
+                            <th>Particulars</th>
+                            <th style="text-align: right;">IN (Debit)</th>
+                            <th style="text-align: right;">OUT (Credit)</th>
+                            <th style="text-align: right;">Balance</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
@@ -387,6 +392,7 @@
           localStorage.setItem('erp_script_url', val);
           document.getElementById('configBox').classList.remove('show');
           loadSettingsData();
+          fetchBackendRecords();
         }
 
         const mainType = document.getElementById('mainType');
@@ -398,8 +404,9 @@
         const voucherForm = document.getElementById('voucherForm');
         const submitBtn = document.getElementById('submitBtn');
         const ledgerHeadFilter = document.getElementById('ledgerHeadFilter');
+        const showAllCheckbox = document.getElementById('showAllCheckbox');
 
-        let settingsData = { vendors: [], expenses: [], payables: [], investments: [], payModes: [] };
+        let settingsData = { vendors: [], expenses: [], payables: [], investments: [], payModes: [], ledgerAccounts: [] };
 
         dateInput.valueAsDate = new Date();
 
@@ -430,19 +437,34 @@
         }
 
         function populateLedgerFilterDropdown() {
-            ledgerHeadFilter.innerHTML = `<option value="ALL_CONTRA">-- ALL CONTRA ACCOUNTS (Combined) --</option>`;
-            if (settingsData.payModes && settingsData.payModes.length > 0) {
-                settingsData.payModes.forEach(mode => {
-                    const opt = document.createElement('option');
-                    opt.value = mode;
-                    opt.textContent = mode;
-                    ledgerHeadFilter.appendChild(opt);
-                });
+            ledgerHeadFilter.innerHTML = `<option value="Contra">Contra</option>`;
+            let accountsToUse = settingsData.ledgerAccounts && settingsData.ledgerAccounts.length > 0 
+                ? settingsData.ledgerAccounts 
+                : (settingsData.payModes || []);
+
+            accountsToUse.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item;
+                opt.textContent = item;
+                ledgerHeadFilter.appendChild(opt);
+            });
+        }
+
+        function toggleShowAll(checkbox) {
+            if (checkbox.checked) {
+                ledgerHeadFilter.value = 'Contra';
+                ledgerHeadFilter.disabled = true;
+            } else {
+                ledgerHeadFilter.disabled = false;
             }
+            applyLedgerFilter(true);
         }
 
         window.addEventListener('load', function() {
-            if(SCRIPT_URL) loadSettingsData();
+            if(SCRIPT_URL) {
+                loadSettingsData();
+                fetchBackendRecords();
+            }
         });
 
         mainType.addEventListener('change', function() {
@@ -450,7 +472,6 @@
             subType.disabled = false;
             accName.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
             accName.disabled = true;
-            document.getElementById('historySection').style.display = 'block';
 
             if (this.value === 'Payments') {
                 subType.innerHTML += `
@@ -471,7 +492,7 @@
                     <option value="BankToBank">Bank to Bank Transfer</option>
                 `;
             }
-            fetchBackendRecords();
+            // Upar wala dropdown change hone par neechay wala table fetch ya reload nahi hoga
         });
 
         subType.addEventListener('change', function() {
@@ -544,28 +565,30 @@
 
         function renderFilteredTable() {
             const selectedHead = ledgerHeadFilter.value;
+            const isShowAll = showAllCheckbox.checked;
             const fromDate = document.getElementById('fromDateFilter').value;
             const toDate = document.getElementById('toDateFilter').value;
             const tbody = document.getElementById('historyTableBody');
-            const badgeBox = document.getElementById('balanceCheckBadge');
 
             document.getElementById('selectedHeadName').textContent = 
-                selectedHead === 'ALL_CONTRA' ? 'ALL CONTRA ACCOUNTS' : selectedHead;
+                (isShowAll || selectedHead === 'Contra') ? 'Contra' : selectedHead;
 
             let filtered = globalBackendRecords.filter(item => {
-                // STRICT CONTRA FILTERING: ALL_CONTRA or Contra Flow strictly gets 'Contra' sheet entries only
-                if (selectedHead === 'ALL_CONTRA' || mainType.value === 'Contra') {
-                    if (item.sheetSource !== 'Contra') return false;
-                }
-                
-                if (selectedHead !== 'ALL_CONTRA') {
-                    const acc = (item.account_name || item.vendor_name || "").trim().toLowerCase();
-                    if (acc !== selectedHead.trim().toLowerCase()) return false;
+                if (!isShowAll) {
+                    const destAcct = (item.destination_acct || "").trim().toLowerCase();
+                    const filterVal = selectedHead.trim().toLowerCase();
+                    if (selectedHead === 'Contra') {
+                        const accNoCol = (item.acc_no || "").trim().toLowerCase();
+                        if (destAcct !== filterVal && accNoCol !== filterVal) return false;
+                    } else {
+                        if (destAcct !== filterVal) return false;
+                    }
                 }
 
                 if (fromDate || toDate) {
                     if (!item.date || item.date === '-') return false;
-                    let rowDate = new Date(item.date);
+                    let parts = item.date.split('-');
+                    let rowDate = new Date(parts[0], parts[1] - 1, parts[2]);
                     if (fromDate && rowDate < new Date(fromDate)) return false;
                     if (toDate && rowDate > new Date(toDate)) return false;
                 }
@@ -576,47 +599,50 @@
 
             if (filtered.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#6b7280; padding:15px;">No matching ledger records found.</td></tr>`;
-                badgeBox.innerHTML = "";
+                document.getElementById('lblTotalIn').textContent = '0';
+                document.getElementById('lblTotalOut').textContent = '0';
+                document.getElementById('lblClosingBalance').textContent = '0';
                 showSpinner(false);
                 return;
             }
 
-            let totalIn = 0;
-            let totalOut = 0;
-            let runningBal = 0;
+            let sumIn = 0;
+            let sumOut = 0;
+            let lastRunningBalance = 0;
 
             filtered.forEach(row => {
-                let amtIn = Number(row.credit || 0);  // Amount IN
-                let amtOut = Number(row.debit || 0);  // Amount OUT
+                let amtIn = row.cash_debit + row.bank_debit;
+                let amtOut = row.cash_credit + row.bank_credit;
+                let balance = row.cash_balance + row.bank_balance;
+
+                sumIn += amtIn;
+                sumOut += amtOut;
+                lastRunningBalance = balance;
+
+                let narrationParts = [];
+                if (row.acc_no) narrationParts.push(row.acc_no);
+                if (row.account_title) narrationParts.push(row.account_title);
+                if (row.particulars && row.particulars !== row.account_title) narrationParts.push(row.particulars);
                 
-                totalIn += amtIn;
-                totalOut += amtOut;
-                runningBal = runningBal + amtIn - amtOut;
+                let combinedNarration = narrationParts.length > 0 ? narrationParts.join(' - ') : '-';
 
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${row.date || '-'}</td>
-                    <td><b>${row.voucherNo || '-'}</b></td>
-                    <td><b>${row.account_name || '-'}</b></td>
-                    <td>${row.particulars || '-'}</td>
-                    <td style="text-align: right; color: ${amtIn > 0 ? '#16a34a' : '#9ca3af'}; font-weight: ${amtIn > 0 ? 'bold' : 'normal'};">${amtIn > 0 ? amtIn.toLocaleString() : '-'}</td>
-                    <td style="text-align: right; color: ${amtOut > 0 ? '#dc2626' : '#9ca3af'}; font-weight: ${amtOut > 0 ? 'bold' : 'normal'};">${amtOut > 0 ? amtOut.toLocaleString() : '-'}</td>
-                    <td style="text-align: right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
-                    <td style="font-style: italic; color: #4b5563;">${row.remarks || '-'}</td>
+                    <td title="${row.date || '-'}">${row.date || '-'}</td>
+                    <td title="${row.voucherNo || '-'}"><b>${row.voucherNo || '-'}</b></td>
+                    <td title="${row.destination_acct || '-'}"><b>${row.destination_acct || '-'}</b></td>
+                    <td title="${combinedNarration}">${combinedNarration}</td>
+                    <td style="text-align: right; color: ${amtIn > 0 ? '#16a34a' : '#9ca3af'}; font-weight: ${amtIn > 0 ? 'bold' : 'normal'};" title="${amtIn > 0 ? amtIn.toLocaleString() : '-'}">${amtIn > 0 ? amtIn.toLocaleString() : '-'}</td>
+                    <td style="text-align: right; color: ${amtOut > 0 ? '#dc2626' : '#9ca3af'}; font-weight: ${amtOut > 0 ? 'bold' : 'normal'};" title="${amtOut > 0 ? amtOut.toLocaleString() : '-'}">${amtOut > 0 ? amtOut.toLocaleString() : '-'}</td>
+                    <td style="text-align: right; font-weight: bold; color: #2563eb;" title="${balance.toLocaleString()}">${balance.toLocaleString()}</td>
+                    <td style="font-style: italic; color: #4b5563;" title="${row.particulars || '-'}">${row.particulars || '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });
 
-            if (selectedHead === 'ALL_CONTRA' || mainType.value === 'Contra') {
-                let diff = Math.abs(totalIn - totalOut);
-                if (diff === 0) {
-                    badgeBox.innerHTML = `<span class="badge-balanced">✓ Balanced (Diff: 0.00)</span>`;
-                } else {
-                    badgeBox.innerHTML = `<span class="badge-imbalanced">⚠ Imbalanced! Diff: ${diff.toLocaleString()}</span>`;
-                }
-            } else {
-                badgeBox.innerHTML = "";
-            }
+            document.getElementById('lblTotalIn').textContent = sumIn.toLocaleString();
+            document.getElementById('lblTotalOut').textContent = sumOut.toLocaleString();
+            document.getElementById('lblClosingBalance').textContent = lastRunningBalance.toLocaleString();
 
             showSpinner(false);
         }
@@ -624,7 +650,9 @@
         function resetLedgerFilters() {
             document.getElementById('fromDateFilter').value = '';
             document.getElementById('toDateFilter').value = '';
-            ledgerHeadFilter.value = 'ALL_CONTRA';
+            showAllCheckbox.checked = false;
+            ledgerHeadFilter.disabled = false;
+            ledgerHeadFilter.value = 'Contra';
             applyLedgerFilter(true);
         }
 
@@ -632,12 +660,7 @@
             document.getElementById('loadingSpinner').style.display = show ? 'flex' : 'none';
         }
 
-        accName.addEventListener('change', function() {
-            if(this.value) {
-                ledgerHeadFilter.value = this.value;
-                applyLedgerFilter(true);
-            }
-        });
+        // Upar wala account select hone par neechay wala table ab auto-change nahi hoga (Link mukammal khatam kar diya gaya hai)
 
         voucherForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -676,7 +699,7 @@
                         dateInput.valueAsDate = new Date();
                         submitBtn.disabled = false;
                         submitBtn.innerText = "Save Voucher";
-                        fetchBackendRecords(); // Auto refresh history records
+                        fetchBackendRecords();
                     } else {
                         alert("Error: " + (response ? response.message : "Unknown error"));
                         submitBtn.disabled = false;
@@ -701,6 +724,8 @@
           if (!savedUrl) {
             var box = document.getElementById('configBox');
             if (box) box.classList.add('show');
+          } else {
+            fetchBackendRecords();
           }
         });
     </script>
