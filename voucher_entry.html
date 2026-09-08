@@ -108,80 +108,70 @@
 <body>
 
     <div class="container">
-        <!-- Header with Title and Date on Top Right Corner -->
         <div class="header-row">
-            <h3 class="header-title">Unified Voucher Entry</h3>[cite: 5]
+            <h3 class="header-title">Unified Voucher Entry</h3>
             <div class="date-box">
-                <label for="date">Date:</label>[cite: 5]
-                <input type="date" id="date" required>[cite: 5]
+                <label for="date">Date:</label>
+                <input type="date" id="date" required>
             </div>
         </div>
 
         <form id="voucherForm">
             
-            <!-- Main Flow: Payments vs Receipts vs Contra -->
             <div class="row">
                 <div class="form-group col">
-                    <label for="mainType">Transaction Flow</label>[cite: 5]
+                    <label for="mainType">Transaction Flow</label>
                     <select id="mainType" required>
-                        <option value="" selected disabled>-- Select Flow --</option>[cite: 5]
-                        <option value="Payments">Payments (Money Out)</option>[cite: 5]
-                        <option value="Receipts">Receipts (Money In)</option>[cite: 5]
-                        <option value="Contra">Contra (Cash & Bank Transfer)</option>[cite: 5]
+                        <option value="" selected disabled>-- Select Flow --</option>
+                        <option value="Payments">Payments (Money Out)</option>
+                        <option value="Receipts">Receipts (Money In)</option>
+                        <option value="Contra">Contra (Cash & Bank Transfer)</option>
                     </select>
                 </div>
                 <div class="form-group col">
-                    <label for="subType">Sub-Category</label>[cite: 5]
+                    <label for="subType">Sub-Category</label>
                     <select id="subType" required disabled>
-                        <option value="" selected disabled>-- Select First --</option>[cite: 5]
+                        <option value="" selected disabled>-- Select First --</option>
                     </select>
                 </div>
             </div>
 
-            <!-- Pay Mode & Voucher No -->
             <div class="row">
                 <div class="form-group col">
-                    <label for="payMode">Pay Mode (Cash/Bank)</label>[cite: 5]
+                    <label for="payMode">Pay Mode (Cash/Bank)</label>
                     <select id="payMode" required>
-                        <option value="" selected disabled>-- Loading Pay Modes --</option>[cite: 5]
+                        <option value="" selected disabled>-- Select Pay Mode --</option>
                     </select>
                 </div>
                 <div class="form-group col">
-                    <label for="voucherNo">Voucher No (Auto)</label>[cite: 5]
-                    <input type="text" id="voucherNo" readonly placeholder="Auto Generated">[cite: 5]
+                    <label for="voucherNo">Voucher No (Auto)</label>
+                    <input type="text" id="voucherNo" readonly placeholder="Auto Generated">
                 </div>
             </div>
 
             <div class="row">
-                <!-- Account Name / Head Dropdown -->
                 <div class="form-group col">
-                    <label for="accName" id="accNameLabel">Account Name / Head</label>[cite: 5]
+                    <label for="accName" id="accNameLabel">Account Name / Head</label>
                     <select id="accName" required disabled>
-                        <option value="" selected disabled>-- Select Sub-Category First --</option>[cite: 5]
+                        <option value="" selected disabled>-- Select Sub-Category First --</option>
                     </select>
                 </div>
-                <!-- Amount -->
                 <div class="form-group col">
-                    <label for="amount">Amount</label>[cite: 5]
-                    <input type="number" id="amount" required placeholder="0.00">[cite: 5]
+                    <label for="amount">Amount</label>
+                    <input type="number" id="amount" required placeholder="0.00">
                 </div>
             </div>
 
-            <!-- Remarks -->
             <div class="form-group">
-                <label for="remarks">Remarks</label>[cite: 5]
-                <input type="text" id="remarks" placeholder="Enter remarks here...">[cite: 5]
+                <label for="remarks">Remarks</label>
+                <input type="text" id="remarks" placeholder="Enter remarks here...">
             </div>
 
-            <!-- Submit Button -->
-            <button type="submit" id="submitBtn" class="btn-submit">Save Voucher</button>[cite: 5]
+            <button type="submit" id="submitBtn" class="btn-submit">Save Voucher</button>
         </form>
     </div>
 
     <script>
-        // Yahan apni deployed Google Apps Script ki Web App URL dalein
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
-
         const mainType = document.getElementById('mainType');
         const subType = document.getElementById('subType');
         const accName = document.getElementById('accName');
@@ -191,44 +181,62 @@
         const voucherForm = document.getElementById('voucherForm');
         const submitBtn = document.getElementById('submitBtn');
 
-        let settingsData = { vendors: [], expenses: [], payables: [], investments: [], payModes: [] };
+        // Default Fallback Data taake dropdown kabhi khali na rahe
+        let settingsData = { 
+            vendors: ["Default Vendor"], 
+            expenses: ["Office Rent", "Utility Bills", "Stationery", "Transport"], 
+            payables: ["Accounts Payable"], 
+            investments: ["Owner Capital", "Bank Profit"], 
+            payModes: ["Daybook (Cash)", "Allied Bank (1870014)"] 
+        };
 
-        dateInput.valueAsDate = new Date();[cite: 5]
+        dateInput.valueAsDate = new Date();
+
+        function populatePayModes(modes) {
+            payModeSelect.innerHTML = '<option value="" selected disabled>-- Select Pay Mode --</option>';
+            let list = modes && modes.length > 0 ? modes : settingsData.payModes;
+            list.forEach(mode => {
+                const opt = document.createElement('option');
+                opt.value = mode;
+                opt.textContent = mode;
+                if(mode.toLowerCase().includes('daybook') || mode.toLowerCase().includes('cash')) {
+                    opt.selected = true;
+                }
+                payModeSelect.appendChild(opt);
+            });
+            if(!payModeSelect.value && payModeSelect.options.length > 0) {
+                payModeSelect.selectedIndex = 0;
+            }
+        }
 
         window.addEventListener('load', function() {
-            fetch(`${SCRIPT_URL}?action=getStructuredSettingsData`)
-                .then(res => res.json())
-                .then(data => {
-                    if(data) {
-                        settingsData = data;
-                        payModeSelect.innerHTML = '';
-                        if(data.payModes && data.payModes.length > 0) {
-                            data.payModes.forEach(mode => {
-                                const opt = document.createElement('option');
-                                opt.value = mode;
-                                opt.textContent = mode;
-                                if(mode.toLowerCase().includes('daybook') || mode.toLowerCase().includes('cash')) {
-                                    opt.selected = true;
-                                }
-                                payModeSelect.appendChild(opt);
-                            });
-                            if(!payModeSelect.value && payModeSelect.options.length > 0) {
-                                payModeSelect.selectedIndex = 0;
-                            }
-                        } else {
-                            payModeSelect.innerHTML = '<option value="" selected disabled>No Pay Modes found</option>';
+            // Pehle default populate kar do taake foran nazar aaye
+            populatePayModes(settingsData.payModes);
+
+            // Phir backend se latest data mangwayein
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(function(data) {
+                        if(data) {
+                            if(data.payModes && data.payModes.length > 0) settingsData.payModes = data.payModes;
+                            if(data.expenses && data.expenses.length > 0) settingsData.expenses = data.expenses;
+                            if(data.vendors && data.vendors.length > 0) settingsData.vendors = data.vendors;
+                            if(data.investments && data.investments.length > 0) settingsData.investments = data.investments;
+                            if(data.payables && data.payables.length > 0) settingsData.payables = data.payables;
+                            populatePayModes(settingsData.payModes);
                         }
-                    }
-                })
-                .catch(err => {
-                    console.error("Settings load error: ", err);
-                });
+                    })
+                    .withFailureHandler(err => {
+                        console.error("Settings load error, using defaults: ", err);
+                    })
+                    .getStructuredSettingsData();
+            }
         });
 
         mainType.addEventListener('change', function() {
-            subType.innerHTML = '<option value="" selected disabled>-- Select Sub-Category --</option>';[cite: 5]
+            subType.innerHTML = '<option value="" selected disabled>-- Select Sub-Category --</option>';
             subType.disabled = false;
-            accName.innerHTML = '<option value="" selected disabled>-- Select Sub-Category First --</option>';[cite: 5]
+            accName.innerHTML = '<option value="" selected disabled>-- Select Sub-Category First --</option>';
             accName.disabled = true;
 
             if (this.value === 'Payments') {
@@ -236,25 +244,25 @@
                     <option value="Expenses">Expense Payment</option>
                     <option value="VendorPayment">Vendor / A/P Payment</option>
                     <option value="InvestmentPayment">Other Inst / Investment (Out)</option>
-                `;[cite: 5]
+                `;
             } else if (this.value === 'Receipts') {
                 subType.innerHTML += `
                     <option value="GeneralReceipts">General Receipt / Income</option>
                     <option value="PartyReturn">Party Return / A/P Recovery</option>
                     <option value="InvestmentIncome">Other Inst Income / Return (In)</option>
-                `;[cite: 5]
+                `;
             } else if (this.value === 'Contra') {
                 subType.innerHTML += `
                     <option value="CashToBank">Cash to Bank Deposit</option>
                     <option value="BankToCash">Bank to Cash Withdrawal</option>
                     <option value="BankToBank">Bank to Bank Transfer</option>
-                `;[cite: 5]
+                `;
             }
         });
 
         subType.addEventListener('change', function() {
             accName.disabled = false;
-            accName.innerHTML = '<option value="" selected disabled>-- Select Name / Head --</option>';[cite: 5]
+            accName.innerHTML = '<option value="" selected disabled>-- Select Name / Head --</option>';
             
             let listToUse = [];
 
@@ -266,11 +274,11 @@
                 listToUse = settingsData.investments;
             } else if (this.value === 'GeneralReceipts') {
                 listToUse = [...settingsData.expenses, ...settingsData.investments];
-            } else if (this.value === 'CashToBank' || this.value === 'BankToCash' || this.value === 'BankToBank') {
+            } else if (['CashToBank', 'BankToCash', 'BankToBank'].includes(this.value)) {
                 listToUse = settingsData.payModes;
             }
 
-            listToUse = [...new Set(listToUse)];
+            listToUse = [...new Set(listToUse)].filter(Boolean);
 
             listToUse.forEach(item => {
                 const opt = document.createElement('option');
@@ -279,80 +287,76 @@
                 accName.appendChild(opt);
             });
 
-            let sheetMapKey = "Payments";
-            if (mainType.value === 'Payments' && subType.value === 'Expenses') {
-                sheetMapKey = 'Expenses';
-            } else if (mainType.value === 'Receipts') {
-                sheetMapKey = 'General_Receipts';
-            } else if (mainType.value === 'Contra') {
-                sheetMapKey = 'Contra';
-            }
+            let sheetMapKey = "PAYMENTS";
+            if (mainType.value === 'Payments') sheetMapKey = 'PAYMENTS';
+            else if (mainType.value === 'Receipts') sheetMapKey = 'GENERAL_RECEIPTS';
+            else if (mainType.value === 'Contra') sheetMapKey = 'Contra';
             
-            fetch(`${SCRIPT_URL}?action=getNextVoucherNo&sheetMapKey=${encodeURIComponent(sheetMapKey)}`)
-                .then(res => res.json())
-                .then(nextVno => {
-                    voucherNoInput.value = nextVno;
-                })
-                .catch(err => {
-                    console.error("Voucher No fetch error:", err);
-                });
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(function(nextVno) {
+                        voucherNoInput.value = nextVno;
+                    })
+                    .withFailureHandler(err => {
+                        console.error("Voucher No fetch error:", err);
+                        voucherNoInput.value = "1001";
+                    })
+                    .getNextVoucherNo(sheetMapKey);
+            } else {
+                voucherNoInput.value = "1001";
+            }
         });
 
         voucherForm.addEventListener('submit', function(e) {
-            e.preventDefault();[cite: 5]
-            submitBtn.disabled = true;[cite: 5]
-            submitBtn.innerText = "Saving... ⏳";[cite: 5]
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Saving... ⏳";
 
-            let targetSheet = "Payments";
-            if (mainType.value === 'Payments' && subType.value === 'Expenses') {
-                targetSheet = "Expenses";
-            } else if (mainType.value === 'Receipts') {
-                targetSheet = "General_Receipts";
-            } else if (mainType.value === 'Contra') {
-                targetSheet = "Contra";
-            }
+            let targetSheet = "PAYMENTS";
+            if (mainType.value === 'Payments') targetSheet = "PAYMENTS";
+            else if (mainType.value === 'Receipts') targetSheet = "GENERAL_RECEIPTS";
+            else if (mainType.value === 'Contra') targetSheet = "Contra";
 
             const formData = {
-                action: "saveVoucherData",
                 transType: targetSheet,
                 subType: subType.value,
                 date: document.getElementById('date').value,
                 voucherNo: document.getElementById('voucherNo').value,
                 payMode: document.getElementById('payMode').value,
-                accName: document.getElementById('accName').value,
+                accName: accName.value,
                 amount: document.getElementById('amount').value,
                 remarks: document.getElementById('remarks').value
             };
 
-            fetch(SCRIPT_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify(formData)
-            })
-            .then(res => res.json())
-            .then(response => {
-                if(response && response.success) {
-                    alert(response.message);
-                    voucherForm.reset();
-                    dateInput.valueAsDate = new Date();
-                    subType.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
-                    subType.disabled = true;
-                    accName.innerHTML = '<option value="" selected disabled>-- Select Sub-Category First --</option>';
-                    accName.disabled = true;
-                    voucherNoInput.value = '';
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = "Save Voucher";
-                } else {
-                    alert("Error: " + (response ? response.message : "Unknown error"));
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = "Save Voucher";
-                }
-            })
-            .catch(err => {
-                alert("Server Error: " + err.message);
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(function(response) {
+                        if(response && response.success) {
+                            alert(response.message || "Voucher successfully save ho gaya!");
+                            voucherForm.reset();
+                            dateInput.valueAsDate = new Date();
+                            subType.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
+                            subType.disabled = true;
+                            accName.innerHTML = '<option value="" selected disabled>-- Select Sub-Category First --</option>';
+                            accName.disabled = true;
+                            voucherNoInput.value = '';
+                        } else {
+                            alert("Error: " + (response ? response.message : "Unknown error"));
+                        }
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "Save Voucher";
+                    })
+                    .withFailureHandler(function(err) {
+                        alert("Server Error: " + err.message);
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "Save Voucher";
+                    })
+                    .saveVoucherData(formData);
+            } else {
+                alert("Google Script environment not detected.");
                 submitBtn.disabled = false;
                 submitBtn.innerText = "Save Voucher";
-            });
+            }
         });
     </script>
 
