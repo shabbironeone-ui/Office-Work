@@ -11,6 +11,7 @@
             margin: 0;
             padding: 15px;
             color: #333;
+            transition: all 0.3s ease;
         }
         .container {
             max-width: 1150px;
@@ -19,7 +20,65 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin: auto;
+            position: relative;
+            transition: max-width 0.3s ease;
         }
+
+        /* Mobile View Mode Class */
+        body.mobile-mode .container {
+            max-width: 420px !important;
+            padding: 12px !important;
+        }
+        body.mobile-mode .row {
+            flex-direction: column !important;
+            gap: 8px !important;
+        }
+        body.mobile-mode .col {
+            min-width: 100% !important;
+            max-width: 100% !important;
+        }
+        body.mobile-mode .filter-bar {
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        body.mobile-mode .filter-item {
+            width: 100% !important;
+        }
+        body.mobile-mode .totals-bar-grid {
+            grid-template-columns: 20% 20% 20% 40% !important;
+            font-size: 11px !important;
+        }
+        body.mobile-mode .table-container {
+            overflow-x: auto !important;
+        }
+        body.mobile-mode table {
+            width: 850px !important;
+            max-width: none !important;
+        }
+
+        .floating-mobile-toggle {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 100;
+            transition: background 0.2s;
+        }
+        .floating-mobile-toggle:hover {
+            background: #1d4ed8;
+        }
+
         .header-row {
             display: flex;
             justify-content: space-between;
@@ -27,6 +86,7 @@
             border-bottom: 2px solid #eee;
             padding-bottom: 10px;
             margin-bottom: 15px;
+            padding-right: 45px;
         }
         .header-title {
             font-size: 16px;
@@ -108,6 +168,46 @@
             cursor: not-allowed;
         }
 
+        /* Remarks Input with Mic Wrapper Styles */
+        .remarks-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .remarks-wrapper input {
+            padding-right: 40px;
+        }
+        .mic-btn {
+            position: absolute;
+            right: 6px;
+            background: #e2e8f0;
+            border: none;
+            color: #475569;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .mic-btn:hover {
+            background: #cbd5e1;
+            color: #1e293b;
+        }
+        .mic-btn.listening {
+            background: #dc2626;
+            color: white;
+            animation: pulse-mic 1.2s infinite;
+        }
+        @keyframes pulse-mic {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+
         .config-box { background: #fff3cd; border: 1px solid #ffe69c; padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; display: none; }
         .config-box.show { display: block; }
         .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
@@ -176,7 +276,7 @@
         .table-container {
             max-height: 450px;
             overflow-y: auto;
-            overflow-x: hidden;
+            overflow-x: auto;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
             position: relative;
@@ -277,6 +377,11 @@
 <body>
 
     <div class="container">
+        <!-- Floating Mobile View Toggle Button -->
+        <button class="floating-mobile-toggle" onclick="toggleMobileView()" id="mobileToggleBtn" title="Switch Mobile/Desktop View">
+            <i class="fa fa-mobile-alt" id="mobileToggleIcon"></i>
+        </button>
+
         <div class="change-url-link" onclick="showUrlConfig()" style="cursor:pointer; color:#2563eb; font-size:12px; margin-bottom:5px;">&#9881; Change Deployment URL</div>
         <div id="configBox" class="config-box">
             <b>Setup:</b> Apps Script Deployment URL enter karein.
@@ -334,7 +439,12 @@
             <div class="row">
                 <div class="form-group col" style="flex: 3;">
                     <label for="remarks">Remarks</label>
-                    <input type="text" id="remarks" placeholder="Enter remarks here...">
+                    <div class="remarks-wrapper">
+                        <input type="text" id="remarks" placeholder="Enter remarks here...">
+                        <button type="button" class="mic-btn" id="micBtn" onclick="toggleSpeechRecognition()" title="Voice Input">
+                            <i class="fa fa-microphone" id="micIcon"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group col" style="flex: 1; display: flex; align-items: flex-end;">
                     <button type="submit" id="submitBtn" class="btn-submit" style="margin-top: 0;">Save Voucher</button>
@@ -447,6 +557,73 @@
         let appliedOpeningBalance = null;
         let currentSortColumn = 0;
         let currentSortAsc = false;
+        let recognition = null;
+        let isListening = false;
+
+        function toggleMobileView() {
+            document.body.classList.toggle('mobile-mode');
+            const isMobile = document.body.classList.contains('mobile-mode');
+            const icon = document.getElementById('mobileToggleIcon');
+            if (isMobile) {
+                icon.className = "fa fa-desktop";
+            } else {
+                icon.className = "fa fa-mobile-alt";
+            }
+        }
+
+        // Voice Speech Recognition Setup
+        function toggleSpeechRecognition() {
+            const micBtn = document.getElementById('micBtn');
+            const micIcon = document.getElementById('micIcon');
+            const remarksInput = document.getElementById('remarks');
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
+                return;
+            }
+
+            if (isListening) {
+                if (recognition) recognition.stop();
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-US'; // You can change to 'ur-PK' or 'en-GB' if preferred
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = function() {
+                isListening = true;
+                micBtn.classList.add('listening');
+                micIcon.className = "fa fa-microphone-slash";
+            };
+
+            recognition.onresult = function(event) {
+                const speechText = event.results[0][0].transcript;
+                let existing = remarksInput.value.trim();
+                remarksInput.value = existing ? existing + " " + speechText : speechText;
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Speech recognition error", event.error);
+                stopMicUI();
+            };
+
+            recognition.onend = function() {
+                stopMicUI();
+            };
+
+            recognition.start();
+        }
+
+        function stopMicUI() {
+            isListening = false;
+            const micBtn = document.getElementById('micBtn');
+            const micIcon = document.getElementById('micIcon');
+            if (micBtn) micBtn.classList.remove('listening');
+            if (micIcon) micIcon.className = "fa fa-microphone";
+        }
 
         function saveScriptUrl() {
           const val = document.getElementById('scriptUrlInput').value.trim();
@@ -738,7 +915,6 @@
                 toDate = new Date(fromDate);
             }
 
-            // First, filter all raw records matching the selected account head/contra
             let headFiltered = globalBackendRecords.filter(item => {
                 if (!isShowAll) {
                     const destAcct = (item.destination_acct || "").trim().toLowerCase();
@@ -753,7 +929,6 @@
                 return true;
             });
 
-            // Calculate original opening balance from records strictly BEFORE fromDate if fromDate is provided
             let calculatedOpeningBal = 0;
             let calculatedOpeningDate = fromDateStr || '-';
             
@@ -770,7 +945,6 @@
                 });
             }
 
-            // Determine active opening balance to display
             let activeOpBalance = 0;
             let activeOpDate = '-';
 
@@ -782,7 +956,6 @@
                 activeOpDate = calculatedOpeningDate;
             }
 
-            // Now filter records for the display table based on Date Range
             let filtered = headFiltered.filter(item => {
                 if (fromDateStr || toDateStr) {
                     if (!item.date || item.date === '-') return false;
@@ -795,7 +968,6 @@
                 return true;
             });
 
-            // Chronological balance map (Oldest to Newest) using active opening balance
             let chronologicalFiltered = [...filtered].sort((a, b) => {
                 let dateA = new Date(a.date || '1970-01-01');
                 let dateB = new Date(b.date || '1970-01-01');
@@ -826,7 +998,6 @@
 
             tbody.innerHTML = "";
 
-            // Render Opening Balance row at the top if user-defined or if fromDate is specified
             let showOpRow = (enableOpeningBal.checked && appliedOpeningBalance) || fromDateStr;
             if (showOpRow) {
                 let opTr = document.createElement('tr');
