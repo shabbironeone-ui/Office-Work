@@ -12,7 +12,7 @@
             color: #333;
         }
         .container {
-            max-width: 600px;
+            max-width: 1100px;
             background: #ffffff;
             padding: 20px;
             border-radius: 8px;
@@ -49,6 +49,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 13px;
+            width: auto;
         }
         .form-group {
             margin-bottom: 12px;
@@ -80,9 +81,11 @@
         .row {
             display: flex;
             gap: 15px;
+            flex-wrap: wrap;
         }
         .col {
             flex: 1;
+            min-width: 150px;
         }
         .btn-submit {
             background-color: #28a745;
@@ -103,84 +106,179 @@
             background-color: #6c757d;
             cursor: not-allowed;
         }
+
+        .config-box { background: #fff3cd; border: 1px solid #ffe69c; padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; display: none; }
+        .config-box.show { display: block; }
+        .config-box input { width: 100%; padding: 6px 8px; margin-top: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
+        .config-box button { margin-top: 6px; padding: 6px 14px; background: #1b5e20; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        
+        .history-section {
+            margin-top: 25px;
+            border-top: 2px solid #eee;
+            padding-top: 15px;
+        }
+        .history-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .table-container {
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f8fafc;
+            font-weight: bold;
+            color: #374151;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:hover {
+            background-color: #f9fafb;
+        }
+    
+        .auto-mic-wrap { position: relative; display: inline-block; width: 100%; }
+        .auto-mic-btn {
+          position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+          width: 20px; height: 20px; padding: 0; border: none; background: transparent;
+          cursor: pointer; font-size: 12px; line-height: 1; z-index: 5; opacity: 0.55;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .auto-mic-btn:hover { opacity: 1; }
+        .auto-mic-btn.listening {
+          background: #c62828; border-radius: 50%; color: #fff; opacity: 1;
+          animation: autoMicPulse 1s infinite;
+        }
+        @keyframes autoMicPulse {
+          0% { box-shadow: 0 0 0 0 rgba(198,40,40,0.5); }
+          70% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
+          100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
+        <div class="change-url-link" onclick="showUrlConfig()" style="cursor:pointer; color:#2563eb; font-size:12px; margin-bottom:5px;">&#9881; Change Deployment URL</div>
+        <div id="configBox" class="config-box">
+            <b>Setup:</b> Agar data load na ho to apna Apps Script URL neeche update karein.
+            <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+            <button onclick="saveScriptUrl()">Save URL</button>
+        </div>
+
         <!-- Header with Title and Date on Top Right Corner -->
         <div class="header-row">
-            <h3 class="header-title">Unified Voucher Entry</h3>[cite: 5]
+            <h3 class="header-title">Unified Voucher Entry</h3>
             <div class="date-box">
-                <label for="date">Date:</label>[cite: 5]
-                <input type="date" id="date" required>[cite: 5]
+                <label for="date">Date:</label>
+                <input type="date" id="date" required>
             </div>
         </div>
 
         <form id="voucherForm">
             
-            <!-- Main Flow: Payments vs Receipts vs Contra -->
+            <!-- All Input Boxes in 1 Single Line Grid Row -->
             <div class="row">
                 <div class="form-group col">
-                    <label for="mainType">Transaction Flow</label>[cite: 5]
+                    <label for="mainType">Transaction Flow</label>
                     <select id="mainType" required>
-                        <option value="" selected disabled>-- Select Flow --</option>[cite: 5]
-                        <option value="Payments">Payments (Money Out)</option>[cite: 5]
-                        <option value="Receipts">Receipts (Money In)</option>[cite: 5]
-                        <option value="Contra">Contra (Cash & Bank Transfer)</option>[cite: 5]
+                        <option value="" selected disabled>-- Select Flow --</option>
+                        <option value="Payments">Payments (Money Out)</option>
+                        <option value="Receipts">Receipts (Money In)</option>
+                        <option value="Contra">Contra (Cash & Bank)</option>
                     </select>
                 </div>
                 <div class="form-group col">
-                    <label for="subType">Sub-Category</label>[cite: 5]
+                    <label for="subType">Sub-Category</label>
                     <select id="subType" required disabled>
-                        <option value="" selected disabled>-- Select First --</option>[cite: 5]
+                        <option value="" selected disabled>-- Select First --</option>
                     </select>
                 </div>
-            </div>
-
-            <!-- Pay Mode & Voucher No -->
-            <div class="row">
                 <div class="form-group col">
-                    <label for="payMode">Pay Mode (Cash/Bank)</label>[cite: 5]
+                    <label for="payMode">Pay Mode (Cash/Bank)</label>
                     <select id="payMode" required>
-                        <option value="" selected disabled>-- Loading Pay Modes --</option>[cite: 5]
+                        <option value="" selected disabled>-- Loading --</option>
                     </select>
                 </div>
-                <div class="form-group col">
-                    <label for="voucherNo">Voucher No (Auto)</label>[cite: 5]
-                    <input type="text" id="voucherNo" readonly placeholder="Auto Generated">[cite: 5]
+                <div class="form-group col" style="max-width: 110px;">
+                    <label for="voucherNo">Voucher No</label>
+                    <input type="text" id="voucherNo" readonly placeholder="Auto">
                 </div>
-            </div>
-
-            <div class="row">
-                <!-- Account Name / Head Dropdown -->
                 <div class="form-group col">
-                    <label for="accName" id="accNameLabel">Account Name / Head</label>[cite: 5]
+                    <label for="accName" id="accNameLabel">Account Name / Head</label>
                     <select id="accName" required disabled>
-                        <option value="" selected disabled>-- Select Sub-Category First --</option>[cite: 5]
+                        <option value="" selected disabled>-- Select First --</option>
                     </select>
                 </div>
-                <!-- Amount -->
-                <div class="form-group col">
-                    <label for="amount">Amount</label>[cite: 5]
-                    <input type="number" id="amount" required placeholder="0.00">[cite: 5]
+                <div class="form-group col" style="max-width: 140px;">
+                    <label for="amount">Amount</label>
+                    <input type="number" id="amount" required placeholder="0.00">
                 </div>
             </div>
 
-            <!-- Remarks -->
-            <div class="form-group">
-                <label for="remarks">Remarks</label>[cite: 5]
-                <input type="text" id="remarks" placeholder="Enter remarks here...">[cite: 5]
+            <!-- Remarks & Save Button in Next Line -->
+            <div class="row">
+                <div class="form-group col" style="flex: 3;">
+                    <label for="remarks">Remarks</label>
+                    <input type="text" id="remarks" placeholder="Enter remarks here...">
+                </div>
+                <div class="form-group col" style="flex: 1; display: flex; align-items: flex-end;">
+                    <button type="submit" id="submitBtn" class="btn-submit" style="margin-top: 0;">Save Voucher</button>
+                </div>
             </div>
-
-            <!-- Submit Button -->
-            <button type="submit" id="submitBtn" class="btn-submit">Save Voucher</button>[cite: 5]
         </form>
+
+        <!-- Ledger View Section for Selected Account Head -->
+        <div class="history-section" id="historySection" style="display: none;">
+            <div class="history-title"><i class="fas fa-file-invoice-dollar"></i> Ledger Statement for: <span id="selectedHeadName" style="color: #2563eb;">-</span></div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Bill / Voucher No</th>
+                            <th>Particulars / Description</th>
+                            <th style="text-align: right;">Debit (Paid)</th>
+                            <th style="text-align: right;">Credit (Purchase)</th>
+                            <th style="text-align: right;">Balance Due</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <!-- Loaded dynamically as a proper ledger -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Yahan apni deployed Google Apps Script ki Web App URL dalein
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqIsbieX-bO0HmW9vt6GiBP2mYX8T2MLgmwpKFodIXHdk0XUXWYMphf4HvU_98Ws803Q/exec";
+        let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
+
+        function saveScriptUrl() {
+          const val = document.getElementById('scriptUrlInput').value.trim();
+          if (!val) { alert("URL enter karein"); return; }
+          SCRIPT_URL = val;
+          localStorage.setItem('erp_script_url', val);
+          document.getElementById('configBox').classList.remove('show');
+          loadSettingsData();
+        }
 
         const mainType = document.getElementById('mainType');
         const subType = document.getElementById('subType');
@@ -193,26 +291,28 @@
 
         let settingsData = { vendors: [], expenses: [], payables: [], investments: [], payModes: [] };
 
-        dateInput.valueAsDate = new Date();[cite: 5]
+        dateInput.valueAsDate = new Date();
 
-        window.addEventListener('load', function() {
-            fetch(`${SCRIPT_URL}?action=getStructuredSettingsData`)
+        function loadSettingsData() {
+            if(!SCRIPT_URL) return;
+            fetch(SCRIPT_URL + "?action=getStructuredSettingsData")
                 .then(res => res.json())
-                .then(data => {
-                    if(data) {
+                .then(res => {
+                    const data = res && res.data ? res.data : res;
+                    if (data) {
                         settingsData = data;
                         payModeSelect.innerHTML = '';
-                        if(data.payModes && data.payModes.length > 0) {
+                        if (data.payModes && data.payModes.length > 0) {
                             data.payModes.forEach(mode => {
                                 const opt = document.createElement('option');
                                 opt.value = mode;
                                 opt.textContent = mode;
-                                if(mode.toLowerCase().includes('daybook') || mode.toLowerCase().includes('cash')) {
+                                if (mode.toLowerCase().includes('daybook') || mode.toLowerCase().includes('cash')) {
                                     opt.selected = true;
                                 }
                                 payModeSelect.appendChild(opt);
                             });
-                            if(!payModeSelect.value && payModeSelect.options.length > 0) {
+                            if (!payModeSelect.value && payModeSelect.options.length > 0) {
                                 payModeSelect.selectedIndex = 0;
                             }
                         } else {
@@ -220,41 +320,45 @@
                         }
                     }
                 })
-                .catch(err => {
-                    console.error("Settings load error: ", err);
-                });
+                .catch(err => console.error("Settings load error: ", err));
+        }
+
+        window.addEventListener('load', function() {
+            if(SCRIPT_URL) loadSettingsData();
         });
 
         mainType.addEventListener('change', function() {
-            subType.innerHTML = '<option value="" selected disabled>-- Select Sub-Category --</option>';[cite: 5]
+            subType.innerHTML = '<option value="" selected disabled>-- Select Sub-Category --</option>';
             subType.disabled = false;
-            accName.innerHTML = '<option value="" selected disabled>-- Select Sub-Category First --</option>';[cite: 5]
+            accName.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
             accName.disabled = true;
+            document.getElementById('historySection').style.display = 'none';
 
             if (this.value === 'Payments') {
                 subType.innerHTML += `
                     <option value="Expenses">Expense Payment</option>
                     <option value="VendorPayment">Vendor / A/P Payment</option>
                     <option value="InvestmentPayment">Other Inst / Investment (Out)</option>
-                `;[cite: 5]
+                `;
             } else if (this.value === 'Receipts') {
                 subType.innerHTML += `
                     <option value="GeneralReceipts">General Receipt / Income</option>
                     <option value="PartyReturn">Party Return / A/P Recovery</option>
                     <option value="InvestmentIncome">Other Inst Income / Return (In)</option>
-                `;[cite: 5]
+                `;
             } else if (this.value === 'Contra') {
                 subType.innerHTML += `
                     <option value="CashToBank">Cash to Bank Deposit</option>
                     <option value="BankToCash">Bank to Cash Withdrawal</option>
                     <option value="BankToBank">Bank to Bank Transfer</option>
-                `;[cite: 5]
+                `;
             }
         });
 
         subType.addEventListener('change', function() {
             accName.disabled = false;
-            accName.innerHTML = '<option value="" selected disabled>-- Select Name / Head --</option>';[cite: 5]
+            accName.innerHTML = '<option value="" selected disabled>-- Select Name / Head --</option>';
+            document.getElementById('historySection').style.display = 'none';
             
             let listToUse = [];
 
@@ -266,11 +370,11 @@
                 listToUse = settingsData.investments;
             } else if (this.value === 'GeneralReceipts') {
                 listToUse = [...settingsData.expenses, ...settingsData.investments];
-            } else if (this.value === 'CashToBank' || this.value === 'BankToCash' || this.value === 'BankToBank') {
+            } else if (['CashToBank', 'BankToCash', 'BankToBank'].includes(this.value)) {
                 listToUse = settingsData.payModes;
             }
 
-            listToUse = [...new Set(listToUse)];
+            listToUse = [...new Set(listToUse)].filter(Boolean);
 
             listToUse.forEach(item => {
                 const opt = document.createElement('option');
@@ -287,21 +391,70 @@
             } else if (mainType.value === 'Contra') {
                 sheetMapKey = 'Contra';
             }
-            
-            fetch(`${SCRIPT_URL}?action=getNextVoucherNo&sheetMapKey=${encodeURIComponent(sheetMapKey)}`)
+
+            fetch(SCRIPT_URL + "?action=getNextVoucherNo&sheetMapKey=" + encodeURIComponent(sheetMapKey))
                 .then(res => res.json())
-                .then(nextVno => {
-                    voucherNoInput.value = nextVno;
+                .then(res => {
+                    voucherNoInput.value = res.voucherNo || res;
+                })
+                .catch(err => console.error("Voucher No error:", err));
+        });
+
+        // Fetch and display full ledger statement for the selected account head with flexible key matching
+        accName.addEventListener('change', function() {
+            const selectedHead = this.value.trim().toLowerCase();
+            if (!selectedHead) return;
+
+            document.getElementById('selectedHeadName').textContent = this.value;
+            document.getElementById('historySection').style.display = 'block';
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#6b7280;">Loading ledger statement...</td></tr>`;
+
+            fetch(SCRIPT_URL + "?action=getVendorLedgerRecords")
+                .then(res => res.json())
+                .then(res => {
+                    tbody.innerHTML = "";
+                    const allData = res && res.data ? res.data : (Array.isArray(res) ? res : []);
+                    
+                    // Flexible filtering across potential property names for account/vendor name
+                    const headData = allData.filter(item => {
+                        const vName = (item.vendor_name || item.account_name || item.name || item.head || item.party || "").trim().toLowerCase();
+                        return vName === selectedHead;
+                    });
+
+                    if (headData.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#6b7280;">No ledger records found for this account head.</td></tr>`;
+                        return;
+                    }
+
+                    let runningBal = 0;
+                    headData.forEach(row => {
+                        let d = Number(row.debit || row.paid || 0) || 0;
+                        let c = Number(row.credit || row.amount || 0) || 0;
+                        runningBal = runningBal + c - d;
+
+                        let tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${row.date || '-'}</td>
+                            <td>${row.bill_no || row.voucherNo || '-'}</td>
+                            <td>${row.particulars || row.subType || '-'}</td>
+                            <td style="text-align: right; color: ${d > 0 ? '#16a34a' : '#6b7280'};">${d > 0 ? d.toLocaleString() : '-'}</td>
+                            <td style="text-align: right; color: ${c > 0 ? '#dc2626' : '#6b7280'}; font-weight: ${c > 0 ? 'bold' : 'normal'};">${c > 0 ? c.toLocaleString() : '-'}</td>
+                            <td style="text-align: right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
+                            <td style="font-style: italic; color: #4b5563;">${row.remarks || '-'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
                 })
                 .catch(err => {
-                    console.error("Voucher No fetch error:", err);
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Failed to load ledger statement.</td></tr>`;
                 });
         });
 
         voucherForm.addEventListener('submit', function(e) {
-            e.preventDefault();[cite: 5]
-            submitBtn.disabled = true;[cite: 5]
-            submitBtn.innerText = "Saving... ⏳";[cite: 5]
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Saving... ⏳";
 
             let targetSheet = "Payments";
             if (mainType.value === 'Payments' && subType.value === 'Expenses') {
@@ -313,7 +466,6 @@
             }
 
             const formData = {
-                action: "saveVoucherData",
                 transType: targetSheet,
                 subType: subType.value,
                 date: document.getElementById('date').value,
@@ -325,36 +477,132 @@
             };
 
             fetch(SCRIPT_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify(formData)
+                method: 'POST',
+                body: JSON.stringify({ action: 'saveVoucherData', data: formData })
             })
-            .then(res => res.json())
-            .then(response => {
-                if(response && response.success) {
-                    alert(response.message);
-                    voucherForm.reset();
-                    dateInput.valueAsDate = new Date();
-                    subType.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
-                    subType.disabled = true;
-                    accName.innerHTML = '<option value="" selected disabled>-- Select Sub-Category First --</option>';
-                    accName.disabled = true;
-                    voucherNoInput.value = '';
+                .then(res => res.json())
+                .then(response => {
+                    if (response && response.success) {
+                        alert(response.message);
+                        voucherForm.reset();
+                        dateInput.valueAsDate = new Date();
+                        subType.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
+                        subType.disabled = true;
+                        accName.innerHTML = '<option value="" selected disabled>-- Select First --</option>';
+                        accName.disabled = true;
+                        document.getElementById('historySection').style.display = 'none';
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "Save Voucher";
+                    } else {
+                        alert("Error: " + (response ? response.message : "Unknown error"));
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "Save Voucher";
+                    }
+                })
+                .catch(err => {
+                    alert("Server Error: " + err.message);
                     submitBtn.disabled = false;
                     submitBtn.innerText = "Save Voucher";
-                } else {
-                    alert("Error: " + (response ? response.message : "Unknown error"));
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = "Save Voucher";
-                }
-            })
-            .catch(err => {
-                alert("Server Error: " + err.message);
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Save Voucher";
-            });
+                });
         });
-    </script>
+    
+        // ===== Deployment URL config =====
+        function showUrlConfig() {
+          var inp = document.getElementById('scriptUrlInput');
+          if (inp) inp.value = SCRIPT_URL;
+          var box = document.getElementById('configBox');
+          if (box) box.classList.add('show');
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+          var savedUrl = localStorage.getItem('erp_script_url');
+          if (!savedUrl) {
+            var box = document.getElementById('configBox');
+            if (box) box.classList.add('show');
+          }
+        });
 
+        // ================= UNIVERSAL MIC INPUT =================
+        (function() {
+          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+          let activeRec = null, activeBtn = null, activeInput = null;
+
+          function cleanNumeric(t) { return t.replace(/[^\d\-]/g, '').trim(); }
+
+          function stopActiveMic() {
+            if (activeRec) {
+              activeRec.onend = null; activeRec.onresult = null;
+              try { activeRec.abort(); } catch (e) {}
+              activeRec = null;
+            }
+            if (activeBtn) activeBtn.classList.remove('listening');
+            if (activeInput) activeInput.placeholder = activeInput.dataset.origPh || activeInput.placeholder;
+            activeBtn = null; activeInput = null;
+          }
+
+          function toggleMic(input, btn) {
+            if (!SR) { alert('Ye browser voice input support nahi karta.'); return; }
+            const isNumeric = input.type === 'number';
+
+            if (btn.classList.contains('listening')) { stopActiveMic(); return; }
+            stopActiveMic();
+
+            const rec = new SR();
+            rec.lang = 'en-US';
+            rec.continuous = true;
+            rec.interimResults = true;
+            let finalText = '';
+
+            activeRec = rec; activeBtn = btn; activeInput = input;
+            btn.classList.add('listening');
+            input.dataset.origPh = input.placeholder || '';
+            input.placeholder = 'Sun raha hoon...';
+
+            rec.onresult = function(ev) {
+              let interim = '';
+              for (let i = ev.resultIndex; i < ev.results.length; i++) {
+                const t = ev.results[i][0].transcript;
+                if (ev.results[i].isFinal) finalText += t + ' '; else interim += t;
+              }
+              let text = (finalText + interim).trim();
+              if (isNumeric) text = cleanNumeric(text);
+              input.value = text;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+            rec.onend = function() {
+              btn.classList.remove('listening');
+              input.placeholder = input.dataset.origPh || '';
+              if (isNumeric) input.value = cleanNumeric(input.value);
+            };
+            try { rec.start(); } catch (e) {}
+          }
+
+          function attachMic(input) {
+            if (!input || input.dataset.autoMic) return;
+            if (input.type === 'date' || input.type === 'hidden' || input.readOnly || input.disabled) return;
+            if (input.closest('#configBox')) return;
+
+            input.dataset.autoMic = '1';
+            const wrap = document.createElement('span');
+            wrap.className = 'auto-mic-wrap';
+            input.parentNode.insertBefore(wrap, input);
+            wrap.appendChild(input);
+
+            input.style.paddingRight = '24px';
+            input.style.boxSizing = 'border-box';
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'auto-mic-btn';
+            btn.title = 'Voice input';
+            btn.innerHTML = '&#127908;';
+            btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); toggleMic(input, btn); };
+            wrap.appendChild(btn);
+          }
+
+          document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])').forEach(attachMic);
+          });
+        })();
+    </script>
 </body>
 </html>
