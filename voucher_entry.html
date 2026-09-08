@@ -170,9 +170,11 @@
         .btn-refresh:hover { background-color: #047857; }
         .btn-reset { background-color: #475569; }
         .btn-reset:hover { background-color: #334155; }
+        .btn-apply { background-color: #0d9488; height: 32px; padding: 0 10px; font-size: 12px; }
+        .btn-apply:hover { background-color: #0f766e; }
 
         .table-container {
-            max-height: 350px;
+            max-height: 450px;
             overflow-y: auto;
             overflow-x: hidden;
             border: 1px solid #e5e7eb;
@@ -205,15 +207,32 @@
             user-select: none;
         }
         th:hover {
-            background-color: #f1f5f9;
+            background-color: #e2e8f0;
         }
-        th span.sort-icon {
-            float: right;
-            color: #94a3b8;
-            font-size: 10px;
+        th i {
+            margin-left: 5px;
+            color: #64748b;
         }
         tr:hover {
             background-color: #f9fafb;
+        }
+
+        .voucher-group-row {
+            background-color: #f8fafc !important;
+            font-weight: bold;
+            cursor: pointer;
+            color: #1e293b;
+        }
+        .voucher-group-row:hover {
+            background-color: #f1f5f9 !important;
+        }
+        .toggle-btn {
+            display: inline-block;
+            width: 16px;
+            text-align: center;
+            font-weight: bold;
+            margin-right: 4px;
+            color: #2563eb;
         }
 
         .totals-bar-grid {
@@ -325,7 +344,7 @@
 
         <div class="history-section" id="historySection">
             <div class="filter-bar">
-                <div class="filter-item" style="flex: 1.5;">
+                <div class="filter-item" style="flex: 1.1;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <label>SELECT CONTRA / ACCOUNT HEAD</label>
                         <label style="font-size: 11px; cursor: pointer; color: #2563eb; display: flex; align-items: center; gap: 4px; margin: 0;">
@@ -336,6 +355,21 @@
                         <!-- Options populated dynamically -->
                     </select>
                 </div>
+
+                <!-- Opening Balance Section -->
+                <div class="filter-item" style="flex: 1.4; background: #f1f5f9; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label style="color: #1e293b; font-weight: bold; display: flex; align-items: center; gap: 4px; margin: 0; cursor: pointer;">
+                            <input type="checkbox" id="enableOpeningBal" onchange="toggleOpeningBalanceFields(this)" style="width: 13px; height: 13px; margin: 0; cursor: pointer;"> Opening Balance
+                        </label>
+                    </div>
+                    <div style="display: flex; gap: 5px; margin-top: 4px; align-items: center;">
+                        <input type="date" id="openingBalDate" disabled style="width: 110px; background: #fff;" title="Opening Balance Date">
+                        <input type="number" id="openingBalAmount" placeholder="Amount" disabled style="width: 90px; background: #fff;" title="Opening Balance Amount">
+                        <button class="btn-icon btn-apply" id="applyOpeningBtn" onclick="applyOpeningBalance()" disabled title="Apply Opening Balance"><i class="fa fa-check"></i> Apply</button>
+                    </div>
+                </div>
+
                 <div class="filter-item">
                     <label>FROM DATE</label>
                     <input type="date" id="fromDateFilter">
@@ -390,14 +424,14 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th onclick="sortTable(0)">Date <span class="sort-icon">↕</span></th>
-                            <th onclick="sortTable(1)">Voucher No <span class="sort-icon">↕</span></th>
-                            <th onclick="sortTable(2)">Account Name <span class="sort-icon">↕</span></th>
-                            <th onclick="sortTable(3)">Particulars <span class="sort-icon">↕</span></th>
-                            <th style="text-align: right;" onclick="sortTable(4)">IN (Debit) <span class="sort-icon">↕</span></th>
-                            <th style="text-align: right;" onclick="sortTable(5)">OUT (Credit) <span class="sort-icon">↕</span></th>
-                            <th style="text-align: right;" onclick="sortTable(6)">Balance <span class="sort-icon">↕</span></th>
-                            <th onclick="sortTable(7)">Remarks <span class="sort-icon">↕</span></th>
+                            <th onclick="sortTable(0)">Date <i class="fa fa-sort" id="sort_icon_0"></i></th>
+                            <th onclick="sortTable(1)">Voucher No <i class="fa fa-sort" id="sort_icon_1"></i></th>
+                            <th onclick="sortTable(2)">Account Name <i class="fa fa-sort" id="sort_icon_2"></i></th>
+                            <th onclick="sortTable(3)">Particulars <i class="fa fa-sort" id="sort_icon_3"></i></th>
+                            <th onclick="sortTable(4)" style="text-align: right;">IN (Debit) <i class="fa fa-sort" id="sort_icon_4"></i></th>
+                            <th onclick="sortTable(5)" style="text-align: right;">OUT (Credit) <i class="fa fa-sort" id="sort_icon_5"></i></th>
+                            <th onclick="sortTable(6)" style="text-align: right;">Balance <i class="fa fa-sort" id="sort_icon_6"></i></th>
+                            <th onclick="sortTable(7)">Remarks <i class="fa fa-sort" id="sort_icon_7"></i></th>
                         </tr>
                     </thead>
                     <tbody id="historyTableBody">
@@ -410,8 +444,9 @@
     <script>
         let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
         let globalBackendRecords = [];
-        let currentSortColumn = 0;   // Default sort column (Date)
-        let currentSortAsc = false;  // Default sort order (Latest date first / Descending)
+        let appliedOpeningBalance = null;
+        let currentSortColumn = 0;
+        let currentSortAsc = false;
 
         function saveScriptUrl() {
           const val = document.getElementById('scriptUrlInput').value.trim();
@@ -433,10 +468,44 @@
         const submitBtn = document.getElementById('submitBtn');
         const ledgerHeadFilter = document.getElementById('ledgerHeadFilter');
         const showAllCheckbox = document.getElementById('showAllCheckbox');
+        const enableOpeningBal = document.getElementById('enableOpeningBal');
+        const openingBalDate = document.getElementById('openingBalDate');
+        const openingBalAmount = document.getElementById('openingBalAmount');
+        const applyOpeningBtn = document.getElementById('applyOpeningBtn');
 
         let settingsData = { vendors: [], expenses: [], payables: [], investments: [], payModes: [], ledgerAccounts: [] };
 
         dateInput.valueAsDate = new Date();
+        openingBalDate.valueAsDate = new Date();
+
+        function toggleOpeningBalanceFields(checkbox) {
+            if (checkbox.checked) {
+                openingBalDate.disabled = false;
+                openingBalAmount.disabled = false;
+                applyOpeningBtn.disabled = false;
+            } else {
+                openingBalDate.disabled = true;
+                openingBalAmount.disabled = true;
+                applyOpeningBtn.disabled = true;
+                openingBalAmount.value = '';
+                appliedOpeningBalance = null;
+                applyLedgerFilter(false);
+            }
+        }
+
+        function applyOpeningBalance() {
+            if (!enableOpeningBal.checked) return;
+            let amt = parseFloat(openingBalAmount.value);
+            if (isNaN(amt)) {
+                alert("Please enter a valid opening balance amount.");
+                return;
+            }
+            appliedOpeningBalance = {
+                date: openingBalDate.value || '-',
+                amount: amt
+            };
+            applyLedgerFilter(true);
+        }
 
         function loadSettingsData() {
             if(!SCRIPT_URL) return;
@@ -610,6 +679,42 @@
             }
         }
 
+        function is5OrMoreDigitReceipt(row) {
+            let vNo = String(row.voucherNo || "").trim();
+            let isNumeric = /^\d+$/.test(vNo);
+            if (!isNumeric || vNo.length < 5) return false;
+            return true;
+        }
+
+        function isProsAdvInst(row) {
+            let vNo = String(row.voucherNo || "").trim().toLowerCase();
+            let part = String(row.particulars || "").trim().toLowerCase();
+            let combined = vNo + " " + part;
+
+            let hasTerm = combined.includes('prs') || combined.includes('pro') || combined.includes('pros') || combined.includes('1st inst') || combined.includes('1stinst') || combined.includes('ist inst') || combined.includes('istinst') || combined.includes('adv') || combined.includes('advance') || combined.includes('inst');
+            return hasTerm;
+        }
+
+        function sortTable(colIndex) {
+            if (currentSortColumn === colIndex) {
+                currentSortAsc = !currentSortAsc;
+            } else {
+                currentSortColumn = colIndex;
+                currentSortAsc = (colIndex === 0) ? false : true;
+            }
+
+            for (let i = 0; i <= 7; i++) {
+                let icon = document.getElementById(`sort_icon_${i}`);
+                if (icon) icon.className = "fa fa-sort";
+            }
+            let activeIcon = document.getElementById(`sort_icon_${colIndex}`);
+            if (activeIcon) {
+                activeIcon.className = currentSortAsc ? "fa fa-sort-up" : "fa fa-sort-down";
+            }
+
+            renderFilteredTable();
+        }
+
         function renderFilteredTable() {
             const selectedHead = ledgerHeadFilter.value;
             const isShowAll = showAllCheckbox.checked;
@@ -633,7 +738,8 @@
                 toDate = new Date(fromDate);
             }
 
-            let filtered = globalBackendRecords.filter(item => {
+            // First, filter all raw records matching the selected account head/contra
+            let headFiltered = globalBackendRecords.filter(item => {
                 if (!isShowAll) {
                     const destAcct = (item.destination_acct || "").trim().toLowerCase();
                     const filterVal = selectedHead.trim().toLowerCase();
@@ -644,7 +750,40 @@
                         if (destAcct !== filterVal) return false;
                     }
                 }
+                return true;
+            });
 
+            // Calculate original opening balance from records strictly BEFORE fromDate if fromDate is provided
+            let calculatedOpeningBal = 0;
+            let calculatedOpeningDate = fromDateStr || '-';
+            
+            if (fromDateStr) {
+                headFiltered.forEach(item => {
+                    if (item.date && item.date !== '-') {
+                        let rDate = parseLocalDate(item.date);
+                        if (rDate && rDate < fromDate) {
+                            let inAmt = item.cash_debit + item.bank_debit;
+                            let outAmt = item.cash_credit + item.bank_credit;
+                            calculatedOpeningBal += (inAmt - outAmt);
+                        }
+                    }
+                });
+            }
+
+            // Determine active opening balance to display
+            let activeOpBalance = 0;
+            let activeOpDate = '-';
+
+            if (enableOpeningBal.checked && appliedOpeningBalance) {
+                activeOpBalance = appliedOpeningBalance.amount;
+                activeOpDate = appliedOpeningBalance.date;
+            } else if (fromDateStr) {
+                activeOpBalance = calculatedOpeningBal;
+                activeOpDate = calculatedOpeningDate;
+            }
+
+            // Now filter records for the display table based on Date Range
+            let filtered = headFiltered.filter(item => {
                 if (fromDateStr || toDateStr) {
                     if (!item.date || item.date === '-') return false;
                     let rowDate = parseLocalDate(item.date);
@@ -656,26 +795,23 @@
                 return true;
             });
 
-            // 1st Phase: Chronological order (Oldest to Newest) mein running balance calculate karne ke liye temporary sort
+            // Chronological balance map (Oldest to Newest) using active opening balance
             let chronologicalFiltered = [...filtered].sort((a, b) => {
                 let dateA = new Date(a.date || '1970-01-01');
                 let dateB = new Date(b.date || '1970-01-01');
                 return dateA - dateB;
             });
 
-            // Running balance map tayyar karna taake har record ka sahi chronological balance pata ho
             let balanceMap = new Map();
-            let runningBalance = 0;
+            let runningBalance = activeOpBalance;
+            
             chronologicalFiltered.forEach(row => {
                 let amtIn = row.cash_debit + row.bank_debit;
                 let amtOut = row.cash_credit + row.bank_credit;
                 runningBalance += (amtIn - amtOut);
-                // Unique key ke tor par voucherNo + date + index ya reference use karen
-                let uniqueKey = row.voucherNo + "_" + row.date + "_" + amtIn + "_" + amtOut;
                 balanceMap.set(row, runningBalance);
             });
 
-            // Total IN and OUT
             let sumIn = 0;
             let sumOut = 0;
             filtered.forEach(row => {
@@ -683,80 +819,257 @@
                 sumOut += (row.cash_credit + row.bank_credit);
             });
 
-            // 2nd Phase: User ki pasandida sorting (Default: Latest Date on top / Descending) apply karna
-            filtered.sort((a, b) => {
-                let valA, valB;
-                let narA = [a.acc_no, a.account_title, a.particulars].filter(Boolean).join(' - ');
-                let narB = [b.acc_no, b.account_title, b.particulars].filter(Boolean).join(' - ');
-
-                if (currentSortColumn === 0) { valA = a.date || ''; valB = b.date || ''; }
-                else if (currentSortColumn === 1) { valA = String(a.voucherNo || ''); valB = String(b.voucherNo || ''); }
-                else if (currentSortColumn === 2) { valA = a.destination_acct || ''; valB = b.destination_acct || ''; }
-                else if (currentSortColumn === 3) { valA = narA; valB = narB; }
-                else if (currentSortColumn === 4) { valA = a.cash_debit + a.bank_debit; valB = b.cash_debit + b.bank_debit; }
-                else if (currentSortColumn === 5) { valA = a.cash_credit + a.bank_credit; valB = b.cash_credit + b.bank_credit; }
-                else if (currentSortColumn === 6) { valA = balanceMap.get(a); valB = balanceMap.get(b); }
-                else if (currentSortColumn === 7) { valA = a.particulars || ''; valB = b.particulars || ''; }
-
-                if (typeof valA === 'number' && typeof valB === 'number') {
-                    return currentSortAsc ? valA - valB : valB - valA;
-                } else {
-                    return currentSortAsc ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
-                }
-            });
+            let finalDisplayBalance = runningBalance;
+            document.getElementById('lblTotalIn').textContent = sumIn.toLocaleString();
+            document.getElementById('lblTotalOut').textContent = sumOut.toLocaleString();
+            document.getElementById('lblClosingBalance').textContent = finalDisplayBalance.toLocaleString();
 
             tbody.innerHTML = "";
 
+            // Render Opening Balance row at the top if user-defined or if fromDate is specified
+            let showOpRow = (enableOpeningBal.checked && appliedOpeningBalance) || fromDateStr;
+            if (showOpRow) {
+                let opTr = document.createElement('tr');
+                opTr.style.backgroundColor = '#fef3c7';
+                let opLabelText = (enableOpeningBal.checked && appliedOpeningBalance) ? 'User Defined Opening Balance' : 'Opening Balance (As of ' + fromDateStr + ')';
+                opTr.innerHTML = `
+                    <td title="${activeOpDate}">${activeOpDate}</td>
+                    <td><b>Op.Bal</b></td>
+                    <td><b>Opening Balance</b></td>
+                    <td style="font-style: italic;">${opLabelText}</td>
+                    <td style="text-align: right; color: #16a34a;">-</td>
+                    <td style="text-align: right; color: #dc2626;">-</td>
+                    <td style="text-align: right; font-weight: bold; color: #2563eb;" title="${activeOpBalance.toLocaleString()}">${activeOpBalance.toLocaleString()}</td>
+                    <td>-</td>
+                `;
+                tbody.appendChild(opTr);
+            }
+
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#6b7280; padding:15px;">No matching ledger records found.</td></tr>`;
-                document.getElementById('lblTotalIn').textContent = '0';
-                document.getElementById('lblTotalOut').textContent = '0';
-                document.getElementById('lblClosingBalance').textContent = '0';
+                if (!showOpRow) {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#6b7280; padding:15px;">No matching ledger records found.</td></tr>`;
+                }
                 showSpinner(false);
                 return;
             }
 
+            if (currentSortColumn !== 0) {
+                filtered.sort((a, b) => {
+                    let valA, valB;
+                    let rowBalA = balanceMap.get(a) || 0;
+                    let rowBalB = balanceMap.get(b) || 0;
+
+                    if (currentSortColumn === 1) {
+                        valA = a.voucherNo || '';
+                        valB = b.voucherNo || '';
+                    } else if (currentSortColumn === 2) {
+                        valA = a.destination_acct || '';
+                        valB = b.destination_acct || '';
+                    } else if (currentSortColumn === 3) {
+                        let nPartsA = [];
+                        if (a.acc_no) nPartsA.push(a.acc_no);
+                        if (a.account_title) nPartsA.push(a.account_title);
+                        if (a.particulars && a.particulars !== a.account_title) nPartsA.push(a.particulars);
+                        valA = nPartsA.join(' - ');
+
+                        let nPartsB = [];
+                        if (b.acc_no) nPartsB.push(b.acc_no);
+                        if (b.account_title) nPartsB.push(b.account_title);
+                        if (b.particulars && b.particulars !== b.account_title) nPartsB.push(b.particulars);
+                        valB = nPartsB.join(' - ');
+                    } else if (currentSortColumn === 4) {
+                        valA = (a.cash_debit + a.bank_debit);
+                        valB = (b.cash_debit + b.bank_debit);
+                    } else if (currentSortColumn === 5) {
+                        valA = (a.cash_credit + a.bank_credit);
+                        valB = (b.cash_credit + b.bank_credit);
+                    } else if (currentSortColumn === 6) {
+                        valA = rowBalA;
+                        valB = rowBalB;
+                    } else if (currentSortColumn === 7) {
+                        valA = a.particulars || '';
+                        valB = b.particulars || '';
+                    }
+
+                    if (typeof valA === 'number' && typeof valB === 'number') {
+                        return currentSortAsc ? valA - valB : valB - valA;
+                    } else {
+                        let res = String(valA).localeCompare(String(valB));
+                        return currentSortAsc ? res : -res;
+                    }
+                });
+            } else {
+                filtered.sort((a, b) => {
+                    let dateA = new Date(a.date || '1970-01-01');
+                    let dateB = new Date(b.date || '1970-01-01');
+                    return currentSortAsc ? dateA - dateB : dateB - dateA;
+                });
+            }
+
+            let receiptDateMap = {};
+            let prosDateMap = {};
+
             filtered.forEach(row => {
+                let d = row.date || 'No Date';
+                if (isProsAdvInst(row)) {
+                    if (!prosDateMap[d]) prosDateMap[d] = [];
+                    prosDateMap[d].push(row);
+                } else if (is5OrMoreDigitReceipt(row)) {
+                    if (!receiptDateMap[d]) receiptDateMap[d] = [];
+                    receiptDateMap[d].push(row);
+                }
+            });
+
+            let renderedReceiptDates = new Set();
+            let renderedProsDates = new Set();
+
+            filtered.forEach((row, index) => {
                 let amtIn = row.cash_debit + row.bank_debit;
                 let amtOut = row.cash_credit + row.bank_credit;
                 let rowBalance = balanceMap.get(row);
+                let rowDate = row.date || 'No Date';
 
-                let narrationParts = [];
-                if (row.acc_no) narrationParts.push(row.acc_no);
-                if (row.account_title) narrationParts.push(row.account_title);
-                if (row.particulars && row.particulars !== row.account_title) narrationParts.push(row.particulars);
-                
-                let combinedNarration = narrationParts.length > 0 ? narrationParts.join(' - ') : '-';
+                if (currentSortColumn === 0 && isProsAdvInst(row)) {
+                    if (renderedProsDates.has(rowDate)) return;
+                    renderedProsDates.add(rowDate);
 
-                let tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td title="${row.date || '-'}">${row.date || '-'}</td>
-                    <td title="${row.voucherNo || '-'}"><b>${row.voucherNo || '-'}</b></td>
-                    <td title="${row.destination_acct || '-'}"><b>${row.destination_acct || '-'}</b></td>
-                    <td title="${combinedNarration}">${combinedNarration}</td>
-                    <td style="text-align: right; color: ${amtIn > 0 ? '#16a34a' : '#9ca3af'}; font-weight: ${amtIn > 0 ? 'bold' : 'normal'};" title="${amtIn > 0 ? amtIn.toLocaleString() : '-'}">${amtIn > 0 ? amtIn.toLocaleString() : '-'}</td>
-                    <td style="text-align: right; color: ${amtOut > 0 ? '#dc2626' : '#9ca3af'}; font-weight: ${amtOut > 0 ? 'bold' : 'normal'};" title="${amtOut > 0 ? amtOut.toLocaleString() : '-'}">${amtOut > 0 ? amtOut.toLocaleString() : '-'}</td>
-                    <td style="text-align: right; font-weight: bold; color: #2563eb;" title="${rowBalance.toLocaleString()}">${rowBalance.toLocaleString()}</td>
-                    <td style="font-style: italic; color: #4b5563;" title="${row.particulars || '-'}">${row.particulars || '-'}</td>
-                `;
-                tbody.appendChild(tr);
+                    let groupRows = prosDateMap[rowDate];
+                    let gIn = groupRows.reduce((acc, r) => acc + (r.cash_debit + r.bank_debit), 0);
+                    let gOut = groupRows.reduce((acc, r) => acc + (r.cash_credit + r.bank_credit), 0);
+                    let lastGroupRowBalance = balanceMap.get(groupRows[groupRows.length - 1]);
+
+                    let groupTr = document.createElement('tr');
+                    groupTr.className = 'voucher-group-row';
+                    let groupId = `pros_group_${index}`;
+                    groupTr.innerHTML = `
+                        <td title="${rowDate}">${rowDate}</td>
+                        <td colspan="3"><span class="toggle-btn" id="btn_${groupId}">+</span> <b>pros,adv,1st inst (${groupRows.length} items)</b></td>
+                        <td style="text-align: right; color: #16a34a;"><b>${gIn > 0 ? gIn.toLocaleString() : '-'}</b></td>
+                        <td style="text-align: right; color: #dc2626;"><b>${gOut > 0 ? gOut.toLocaleString() : '-'}</b></td>
+                        <td style="text-align: right; font-weight: bold; color: #2563eb;" title="${lastGroupRowBalance ? lastGroupRowBalance.toLocaleString() : '-'}">${lastGroupRowBalance ? lastGroupRowBalance.toLocaleString() : '-'}</td>
+                        <td></td>
+                    `;
+                    tbody.appendChild(groupTr);
+
+                    let subContainer = document.createElement('tbody');
+                    subContainer.id = groupId;
+                    subContainer.style.display = 'none';
+
+                    groupTr.onclick = function() {
+                        let isHidden = subContainer.style.display === 'none';
+                        subContainer.style.display = isHidden ? '' : 'none';
+                        document.getElementById(`btn_${groupId}`).textContent = isHidden ? '-' : '+';
+                    };
+
+                    groupRows.forEach(gRow => {
+                        let gAmtIn = gRow.cash_debit + gRow.bank_debit;
+                        let gAmtOut = gRow.cash_credit + gRow.bank_credit;
+                        let gBalance = balanceMap.get(gRow);
+
+                        let narrationParts = [];
+                        if (gRow.acc_no) narrationParts.push(gRow.acc_no);
+                        if (gRow.account_title) narrationParts.push(gRow.account_title);
+                        if (gRow.particulars && gRow.particulars !== gRow.account_title) narrationParts.push(gRow.particulars);
+                        let combinedNarration = narrationParts.length > 0 ? narrationParts.join(' - ') : '-';
+
+                        let tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td title="${gRow.date || '-'}">${gRow.date || '-'}</td>
+                            <td title="${gRow.voucherNo || '-'}"><b>${gRow.voucherNo || '-'}</b></td>
+                            <td title="${gRow.destination_acct || '-'}"><b>${gRow.destination_acct || '-'}</b></td>
+                            <td title="${combinedNarration}">${combinedNarration}</td>
+                            <td style="text-align: right; color: ${gAmtIn > 0 ? '#16a34a' : '#9ca3af'}; font-weight: ${gAmtIn > 0 ? 'bold' : 'normal'};" title="${gAmtIn > 0 ? gAmtIn.toLocaleString() : '-'}">${gAmtIn > 0 ? gAmtIn.toLocaleString() : '-'}</td>
+                            <td style="text-align: right; color: ${gAmtOut > 0 ? '#dc2626' : '#9ca3af'}; font-weight: ${gAmtOut > 0 ? 'bold' : 'normal'};" title="${gAmtOut > 0 ? gAmtOut.toLocaleString() : '-'}">${gAmtOut > 0 ? gAmtOut.toLocaleString() : '-'}</td>
+                            <td style="text-align: right; font-weight: bold; color: #2563eb;" title="${gBalance.toLocaleString()}">${gBalance.toLocaleString()}</td>
+                            <td style="font-style: italic; color: #4b5563;" title="${gRow.particulars || '-'}">${gRow.particulars || '-'}</td>
+                        `;
+                        subContainer.appendChild(tr);
+                    });
+
+                    tbody.appendChild(subContainer);
+
+                } else if (currentSortColumn === 0 && is5OrMoreDigitReceipt(row)) {
+                    if (renderedReceiptDates.has(rowDate)) return;
+                    renderedReceiptDates.add(rowDate);
+
+                    let groupRows = receiptDateMap[rowDate];
+                    let gIn = groupRows.reduce((acc, r) => acc + (r.cash_debit + r.bank_debit), 0);
+                    let gOut = groupRows.reduce((acc, r) => acc + (r.cash_credit + r.bank_credit), 0);
+                    let lastGroupRowBalance = balanceMap.get(groupRows[groupRows.length - 1]);
+
+                    let groupTr = document.createElement('tr');
+                    groupTr.className = 'voucher-group-row';
+                    let groupId = `v_group_${index}`;
+                    groupTr.innerHTML = `
+                        <td title="${rowDate}">${rowDate}</td>
+                        <td colspan="3"><span class="toggle-btn" id="btn_${groupId}">+</span> <b>Receipts Group (${groupRows.length} items)</b></td>
+                        <td style="text-align: right; color: #16a34a;"><b>${gIn > 0 ? gIn.toLocaleString() : '-'}</b></td>
+                        <td style="text-align: right; color: #dc2626;"><b>${gOut > 0 ? gOut.toLocaleString() : '-'}</b></td>
+                        <td style="text-align: right; font-weight: bold; color: #2563eb;" title="${lastGroupRowBalance ? lastGroupRowBalance.toLocaleString() : '-'}">${lastGroupRowBalance ? lastGroupRowBalance.toLocaleString() : '-'}</td>
+                        <td></td>
+                    `;
+                    tbody.appendChild(groupTr);
+
+                    let subContainer = document.createElement('tbody');
+                    subContainer.id = groupId;
+                    subContainer.style.display = 'none';
+
+                    groupTr.onclick = function() {
+                        let isHidden = subContainer.style.display === 'none';
+                        subContainer.style.display = isHidden ? '' : 'none';
+                        document.getElementById(`btn_${groupId}`).textContent = isHidden ? '-' : '+';
+                    };
+
+                    groupRows.forEach(gRow => {
+                        let gAmtIn = gRow.cash_debit + gRow.bank_debit;
+                        let gAmtOut = gRow.cash_credit + gRow.bank_credit;
+                        let gBalance = balanceMap.get(gRow);
+
+                        let narrationParts = [];
+                        if (gRow.acc_no) narrationParts.push(gRow.acc_no);
+                        if (gRow.account_title) narrationParts.push(gRow.account_title);
+                        if (gRow.particulars && gRow.particulars !== gRow.account_title) narrationParts.push(gRow.particulars);
+                        let combinedNarration = narrationParts.length > 0 ? narrationParts.join(' - ') : '-';
+
+                        let tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td title="${gRow.date || '-'}">${gRow.date || '-'}</td>
+                            <td title="${gRow.voucherNo || '-'}"><b>${gRow.voucherNo || '-'}</b></td>
+                            <td title="${gRow.destination_acct || '-'}"><b>${gRow.destination_acct || '-'}</b></td>
+                            <td title="${combinedNarration}">${combinedNarration}</td>
+                            <td style="text-align: right; color: ${gAmtIn > 0 ? '#16a34a' : '#9ca3af'}; font-weight: ${gAmtIn > 0 ? 'bold' : 'normal'};" title="${gAmtIn > 0 ? gAmtIn.toLocaleString() : '-'}">${gAmtIn > 0 ? gAmtIn.toLocaleString() : '-'}</td>
+                            <td style="text-align: right; color: ${gAmtOut > 0 ? '#dc2626' : '#9ca3af'}; font-weight: ${gAmtOut > 0 ? 'bold' : 'normal'};" title="${gAmtOut > 0 ? gAmtOut.toLocaleString() : '-'}">${gAmtOut > 0 ? gAmtOut.toLocaleString() : '-'}</td>
+                            <td style="text-align: right; font-weight: bold; color: #2563eb;" title="${gBalance.toLocaleString()}">${gBalance.toLocaleString()}</td>
+                            <td style="font-style: italic; color: #4b5563;" title="${gRow.particulars || '-'}">${gRow.particulars || '-'}</td>
+                        `;
+                        subContainer.appendChild(tr);
+                    });
+
+                    tbody.appendChild(subContainer);
+
+                } else {
+                    let narrationParts = [];
+                    if (row.acc_no) narrationParts.push(row.acc_no);
+                    if (row.account_title) narrationParts.push(row.account_title);
+                    if (row.particulars && row.particulars !== row.account_title) narrationParts.push(row.particulars);
+                    let combinedNarration = narrationParts.length > 0 ? narrationParts.join(' - ') : '-';
+
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td title="${row.date || '-'}">${row.date || '-'}</td>
+                        <td title="${row.voucherNo || '-'}"><b>${row.voucherNo || '-'}</b></td>
+                        <td title="${row.destination_acct || '-'}"><b>${row.destination_acct || '-'}</b></td>
+                        <td title="${combinedNarration}">${combinedNarration}</td>
+                        <td style="text-align: right; color: ${amtIn > 0 ? '#16a34a' : '#9ca3af'}; font-weight: ${amtIn > 0 ? 'bold' : 'normal'};" title="${amtIn > 0 ? amtIn.toLocaleString() : '-'}">${amtIn > 0 ? amtIn.toLocaleString() : '-'}</td>
+                        <td style="text-align: right; color: ${amtOut > 0 ? '#dc2626' : '#9ca3af'}; font-weight: ${amtOut > 0 ? 'bold' : 'normal'};" title="${amtOut > 0 ? amtOut.toLocaleString() : '-'}">${amtOut > 0 ? amtOut.toLocaleString() : '-'}</td>
+                        <td style="text-align: right; font-weight: bold; color: #2563eb;" title="${rowBalance.toLocaleString()}">${rowBalance.toLocaleString()}</td>
+                        <td style="font-style: italic; color: #4b5563;" title="${row.particulars || '-'}">${row.particulars || '-'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
             });
 
-            document.getElementById('lblTotalIn').textContent = sumIn.toLocaleString();
-            document.getElementById('lblTotalOut').textContent = sumOut.toLocaleString();
-            document.getElementById('lblClosingBalance').textContent = runningBalance.toLocaleString();
-
             showSpinner(false);
-        }
-
-        function sortTable(columnIndex) {
-            if (currentSortColumn === columnIndex) {
-                currentSortAsc = !currentSortAsc;
-            } else {
-                currentSortColumn = columnIndex;
-                currentSortAsc = true;
-            }
-            renderFilteredTable();
         }
 
         function resetLedgerFilters() {
@@ -764,10 +1077,21 @@
             document.getElementById('toDateFilter').value = '';
             showAllCheckbox.checked = false;
             ledgerHeadFilter.disabled = false;
-            
-            // Reset par dobara default view (Latest date on top) set kar diya gaya hai
+            enableOpeningBal.checked = false;
+            openingBalDate.disabled = true;
+            openingBalAmount.disabled = true;
+            applyOpeningBtn.disabled = true;
+            openingBalAmount.value = '';
+            appliedOpeningBalance = null;
             currentSortColumn = 0;
             currentSortAsc = false;
+
+            for (let i = 0; i <= 7; i++) {
+                let icon = document.getElementById(`sort_icon_${i}`);
+                if (icon) icon.className = "fa fa-sort";
+            }
+            let dateIcon = document.getElementById(`sort_icon_0`);
+            if (dateIcon) dateIcon.className = "fa fa-sort-down";
             
             let firstNonContraOpt = Array.from(ledgerHeadFilter.options).find(opt => opt.value.toLowerCase() !== 'contra');
             if (firstNonContraOpt) {
