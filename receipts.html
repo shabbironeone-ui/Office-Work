@@ -26,22 +26,6 @@
       font-size: 13px;
     }
 
-    /* Dim screen overlay with spinning loader */
-    body.is-working::after, body.is-saving::after {
-      content: "";
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.35);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    body.is-working, body.is-saving, body.is-working *, body.is-saving * {
-      cursor: progress !important;
-    }
-
     /* Global Center Spinner Overlay */
     #globalSpinnerOverlay {
       display: none;
@@ -403,8 +387,8 @@
       font-size: 11px;
     }
 
-    table.edit-table th, table.edit-table td,
-    table.batch-table th, table.batch-table td {
+    table.edit-table th, table.batch-table th,
+    table.edit-table td, table.batch-table td {
       border: 1px solid #ddd;
       padding: 4px 6px;
       text-align: center;
@@ -419,9 +403,6 @@
       z-index: 1;
       cursor: pointer;
     }
-    table.edit-table th:hover {
-      background-color: #e2f0d9;
-    }
 
     .recent-section {
       margin-top: 16px;
@@ -432,7 +413,28 @@
       margin: 0 0 8px 0;
       font-size: 14px;
       color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
+
+    /* Saving Indicator for bottom history */
+    #savingIndicator {
+      display: none;
+      font-size: 11px;
+      color: var(--danger);
+      font-weight: normal;
+      background: #ffebee;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #ffcdd2;
+    }
+    #savingIndicator.show {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     .recent-filters {
       display: flex;
       gap: 8px;
@@ -483,12 +485,6 @@
 </head>
 <body>
 
-<!-- Global Dim Screen & Spinning Bowl Overlay -->
-<div id="globalSpinnerOverlay">
-  <div class="big-spinner"></div>
-  <div>Processing, please wait...</div>
-</div>
-
 <div class="container">
   <button class="floating-mobile-toggle" onclick="toggleMobileView()" id="mobileToggleBtn" title="Switch to Mobile View">
     <i class="fa fa-mobile-alt" id="toggleIcon"></i>
@@ -507,8 +503,6 @@
     <div class="tab active" onclick="switchTab('new')"><i class="fas fa-file-invoice"></i> New Receipts Entry</div>
     <div class="tab" onclick="switchTab('edit')"><i class="fas fa-edit"></i> Edit & Search Receipts</div>
   </div>
-
-  <div id="loader" class="loader"><span class="spinner"></span>Processing, please wait...</div>
 
   <!-- SECTION 1: NEW RECEIPTS ENTRY -->
   <div id="sectionNew" class="form-section active">
@@ -544,8 +538,8 @@
             <tr>
               <th style="width: 15%;">Account No</th>
               <th style="width: 10%;">Amount</th>
-              <th style="width: 11%;">Receipt No</th>
-              <th style="width: 21%;">Customer Name</th>
+              <th style="width: 15%;">Receipt No / Quick Select</th>
+              <th style="width: 17%;">Customer Name</th>
               <th style="width: 7%;">Inst</th>
               <th style="width: 12%;">Total Sale Amount</th>
               <th style="width: 10%;">Paid Amount</th>
@@ -573,7 +567,10 @@
 
     <!-- RECENT SAVED RECEIPTS -->
     <div class="recent-section">
-      <h3>Recent Saved Receipts</h3>
+      <h3>
+        <span>Recent Saved Receipts</span>
+        <span id="savingIndicator"><span class="spinner" style="width:10px; height:10px; border-width:1.5px;"></span> Saving to Sheet...</span>
+      </h3>
       <div class="recent-filters">
         <div class="form-group">
           <label>From Date</label>
@@ -733,16 +730,6 @@
   let customerCache = {}; 
   let isSubmitting = false;
 
-  function setWorking(active) {
-    if (active) {
-      document.body.classList.add('is-working');
-      document.getElementById('globalSpinnerOverlay').classList.add('show');
-    } else {
-      document.body.classList.remove('is-working');
-      document.getElementById('globalSpinnerOverlay').classList.remove('show');
-    }
-  }
-
   function loadInitialData() {
     if (!SCRIPT_URL) return;
 
@@ -782,7 +769,9 @@
     if (rows.length > 0) {
       let mostRecentRow = isMobile ? rows[0] : rows[rows.length - 1];
       let lastRctInput = mostRecentRow.querySelector('.batch-rct');
-      if (lastRctInput) lastReceiptNo = lastRctInput.value;
+      if (lastRctInput && !['Processing Fee', 'Advance', '1st Installment'].includes(lastRctInput.value)) {
+        lastReceiptNo = lastRctInput.value;
+      }
     }
 
     let row = document.createElement('tr');
@@ -800,9 +789,17 @@
         </div>
       </td>
       <td data-label="Receipt No">
-        <div class="input-with-mic">
-          <input type="text" class="batch-rct" value="${lastReceiptNo}" placeholder="Receipt No" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'rct')" onblur="if(this.value.trim()){ checkDuplicateReceipt(this.value.trim(), this); }" inputmode="numeric">
-          <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, false)"><i class="fas fa-microphone"></i></button>
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <select class="batch-rct-select" style="padding:2px; font-size:11px; background:#f1f8e9; color:#1b5e20; font-weight:bold;" onchange="onReceiptSelectChange(this)">
+            <option value="">-- Manual / Type --</option>
+            <option value="Processing Fee">Processing Fee</option>
+            <option value="Advance">Advance</option>
+            <option value="1st Installment">1st Installment</option>
+          </select>
+          <div class="input-with-mic">
+            <input type="text" class="batch-rct" value="${lastReceiptNo}" placeholder="Receipt No" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'rct')" onblur="if(this.value.trim()){ checkDuplicateReceipt(this.value.trim(), this); }" inputmode="numeric">
+            <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, false)"><i class="fas fa-microphone"></i></button>
+          </div>
         </div>
       </td>
       <td data-label="Customer Name"><input type="text" class="batch-title" readonly placeholder="Auto..." style="background-color: #eaeded; text-align: left;"></td>
@@ -819,6 +816,17 @@
     }
     calculateBatchTotal();
     return row;
+  }
+
+  function onReceiptSelectChange(selectEl) {
+    let val = selectEl.value;
+    if (!val) return;
+    let row = selectEl.closest('tr');
+    let rctInput = row.querySelector('.batch-rct');
+    if (rctInput) {
+      rctInput.value = val;
+      calculateBatchTotal();
+    }
   }
 
   function handleBatchKey(event, inputElement, fieldType) {
@@ -846,7 +854,9 @@
         if (rctInput) { rctInput.focus(); rctInput.select(); }
       } else if (fieldType === 'rct') {
         let rctVal = inputElement.value.trim();
-        if (rctVal) checkDuplicateReceipt(rctVal, inputElement);
+        if (rctVal && !['Processing Fee', 'Advance', '1st Installment'].includes(rctVal)) {
+          checkDuplicateReceipt(rctVal, inputElement);
+        }
         let tbody = document.getElementById('batchTableBody');
         let isMobile = document.body.classList.contains('mobile-mode');
         let isLastRow = isMobile ? (currentRow === tbody.firstElementChild) : (currentRow === tbody.lastElementChild);
@@ -1072,18 +1082,22 @@
 
     if (entries.length === 0) { alert("Kam az kam aik mukammal row enter karein!"); return; }
 
+    // Instant UI Update: Foran form clear karein taake uper wala hissa agli entry ke liye free ho jaye
+    addEntriesToLocalRecentList(entries, commonDate, commonSuffix);
+    clearBatchForm();
+
+    // Background mein Google Sheet par save karein aur neeche spinning wheel dikhayein
     isSubmitting = true;
-    setWorking(true);
     let saveBtn = document.getElementById('saveBatchBtn');
     saveBtn.disabled = true;
+    let savingIndicator = document.getElementById('savingIndicator');
+    savingIndicator.classList.add('show');
 
     function saveNext(i) {
       if (i >= entries.length) {
         isSubmitting = false;
-        setWorking(false);
         saveBtn.disabled = false;
-        addEntriesToLocalRecentList(entries, commonDate, commonSuffix);
-        clearBatchForm();
+        savingIndicator.classList.remove('show');
         return;
       }
       fetch(SCRIPT_URL, {
@@ -1126,7 +1140,8 @@
 
   function clearBatchForm() {
     document.getElementById('batchTableBody').innerHTML = '';
-    addBatchRow();
+    let newR = addBatchRow();
+    newR.querySelector('.batch-acc').focus();
     calculateBatchTotal();
     document.getElementById('batchRemarks').value = '';
     document.getElementById('batchReceiptDate').value = new Date().toISOString().split('T')[0];
@@ -1140,12 +1155,10 @@
     if (!SCRIPT_URL) return;
     const tbody = document.getElementById('recentReceiptsBody');
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading recent receipts...</td></tr>';
-    setWorking(true);
 
     fetch(SCRIPT_URL + "?action=getAllReceiptsForReport")
       .then(res => res.json())
       .then(res => {
-        setWorking(false);
         if (res && res.success) {
           recentReceiptsData = res.data || [];
           renderRecentReceipts();
@@ -1154,7 +1167,6 @@
         }
       })
       .catch(err => {
-        setWorking(false);
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">' + err.message + '</td></tr>';
       });
   }
@@ -1258,7 +1270,6 @@
     if (!confirm(`Kya aap waqai select ki gayi ${checkboxes.length} receipts delete karna chahte hain?`)) return;
 
     if (!SCRIPT_URL) return;
-    setWorking(true);
 
     let promises = [];
     checkboxes.forEach(chk => {
@@ -1284,7 +1295,6 @@
     });
 
     Promise.all(promises).then(() => {
-      setWorking(false);
       alert("Selected receipts delete ho gayi hain.");
       loadRecentReceipts();
     });
@@ -1366,12 +1376,9 @@
       return;
     }
 
-    setWorking(true);
-    // Fetch all receipts to securely perform frontend matching for both receipt number and account number
     fetch(SCRIPT_URL + "?action=getAllReceiptsForReport")
       .then(res => res.json())
       .then(res => {
-        setWorking(false);
         if (res && res.success && res.data) {
           let allData = res.data;
           let matchedRows = allData.filter(item => {
@@ -1382,13 +1389,10 @@
           });
 
           if (matchedRows.length > 0) {
-            // Fetch precise row indices using searchReceipt endpoint for editing support
             let queryParam = rctNo ? ("?action=searchReceipt&rctNo=" + encodeURIComponent(rctNo)) : ("?action=searchReceipt&rctNo=" + encodeURIComponent(matchedRows[0].receiptNo));
-            setWorking(true);
             fetch(SCRIPT_URL + queryParam)
               .then(r => r.json())
               .then(detailRes => {
-                setWorking(false);
                 if (detailRes && detailRes.success && detailRes.entries) {
                   let entries = detailRes.entries;
                   if (accNo) {
@@ -1399,7 +1403,6 @@
                   }
                   editTabResultsData = entries;
                 } else {
-                  // Fallback map from allData report
                   editTabResultsData = matchedRows.map((m, idx) => ({
                     rowIndex: m.rowIndex || (idx + 2),
                     date: m.dateStr,
@@ -1413,7 +1416,6 @@
                 }
                 renderEditTabResults();
               }).catch(() => {
-                setWorking(false);
                 editTabResultsData = matchedRows.map((m, idx) => ({
                   rowIndex: m.rowIndex || (idx + 2),
                   date: m.dateStr,
@@ -1438,7 +1440,6 @@
         }
       })
       .catch(err => {
-        setWorking(false);
         alert("Error: " + err.message);
       });
   }
@@ -1571,7 +1572,6 @@
     };
 
     btn.disabled = true;
-    setWorking(true);
     fetch(SCRIPT_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'updateAllReceiptEntries', data: [updatePayload] })
@@ -1579,7 +1579,6 @@
       .then(res => res.json())
       .then(res => {
         btn.disabled = false;
-        setWorking(false);
         if (res && res.success) {
           entry.date = newDate;
           entry.receiptNo = newRct;
@@ -1595,7 +1594,6 @@
       })
       .catch(err => {
         btn.disabled = false;
-        setWorking(false);
         alert("Server Error: " + err.message);
       });
   }
@@ -1604,14 +1602,12 @@
     if (!confirm("Kya aap waqai is entry ko delete karna chahte hain?")) return;
     if (!SCRIPT_URL) return;
 
-    setWorking(true);
     fetch(SCRIPT_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'deleteReceiptEntry', data: { rowIndex: rowIndex } })
     })
       .then(res => res.json())
       .then(res => {
-        setWorking(false);
         if (res && res.success) {
           searchReceiptsForEditTab();
           loadRecentReceipts();
@@ -1620,7 +1616,6 @@
         }
       })
       .catch(err => {
-        setWorking(false);
         alert("Error: " + err.message);
       });
   }
@@ -1636,7 +1631,6 @@
     let rowIndices = [];
     checkboxes.forEach(chk => rowIndices.push(Number(chk.value)));
 
-    setWorking(true);
     let promiseChain = Promise.resolve();
     rowIndices.forEach(idx => {
       promiseChain = promiseChain.then(() => {
@@ -1648,7 +1642,6 @@
     });
 
     promiseChain.then(() => {
-      setWorking(false);
       alert("Selected receipts delete ho gayi hain.");
       searchReceiptsForEditTab();
       loadRecentReceipts();
