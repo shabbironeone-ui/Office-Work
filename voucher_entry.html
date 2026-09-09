@@ -477,7 +477,7 @@
                 </div>
                 <div class="form-col" style="max-width: 80px;">
                     <label for="voucherNo">Receipt No</label>
-                    <input type="text" id="voucherNo" readonly placeholder="Auto">
+                    <input type="text" id="voucherNo" placeholder="Auto">
                 </div>
                 <div class="form-col" style="max-width: 90px;">
                     <label for="amount">Amount</label>
@@ -669,6 +669,7 @@
         const payModeSelect = document.getElementById('payMode');
         const voucherNoInput = document.getElementById('voucherNo');
         const dateInput = document.getElementById('date');
+        const amountInput = document.getElementById('amount');
         const remarksInput = document.getElementById('remarks');
         const voucherForm = document.getElementById('voucherForm');
         const ledgerHeadFilter = document.getElementById('ledgerHeadFilter');
@@ -769,7 +770,18 @@
                 fetch(SCRIPT_URL + "?action=getNextVoucherNo&sheetMapKey=" + encodeURIComponent(sheetMapKey))
                     .then(res => res.json())
                     .then(res => {
-                        voucherNoInput.value = res.voucherNo || res;
+                        let baseNo = res.voucherNo || res;
+                        if (voucherQueue.length > 0 && !isNaN(baseNo)) {
+                            // Agar queue mein items hain toh last item ke voucher no mein +1 kar ke dikhayein
+                            let lastVNo = parseInt(voucherQueue[voucherQueue.length - 1].voucherNo);
+                            if (!isNaN(lastVNo)) {
+                                voucherNoInput.value = lastVNo + 1;
+                            } else {
+                                voucherNoInput.value = baseNo;
+                            }
+                        } else {
+                            voucherNoInput.value = baseNo;
+                        }
                     })
                     .catch(err => console.error("Voucher No error:", err));
             }
@@ -857,7 +869,7 @@
 
         function addRowToQueue() {
             const accVal = $(accName).val();
-            const amtVal = document.getElementById('amount').value;
+            const amtVal = amountInput.value;
 
             if (!accVal || !amtVal || parseFloat(amtVal) <= 0) {
                 alert("Please select Account Name and enter a valid Amount.");
@@ -871,7 +883,7 @@
             const item = {
                 transType: targetSheet,
                 subType: subType.value,
-                date: document.getElementById('date').value,
+                date: dateInput.value,
                 voucherNo: voucherNoInput.value,
                 payMode: payModeSelect.value,
                 accName: accVal,
@@ -882,15 +894,22 @@
             voucherQueue.push(item);
             renderQueueTable();
 
-            document.getElementById('amount').value = '';
+            // Agli row ke liye Voucher No khud-ba-khud increment kar dein
+            let currentVNo = parseInt(voucherNoInput.value);
+            if (!isNaN(currentVNo)) {
+                voucherNoInput.value = currentVNo + 1;
+            }
+
+            amountInput.value = '';
             remarksInput.value = '';
             $(accName).val(null).trigger('change');
-            dateInput.focus();
+            $(accName).select2('open'); // Focus wapis Account Name par le aayein taake speed bani rahay
         }
 
         function removeQueueItem(index) {
             voucherQueue.splice(index, 1);
             renderQueueTable();
+            updateAccountNameList(); // Agar queue clear ho ya item delete ho toh voucher number adjust ho jaye
         }
 
         function renderQueueTable() {
@@ -928,13 +947,14 @@
         }
 
         function resetCurrentRowInputs() {
-            document.getElementById('amount').value = '';
+            amountInput.value = '';
             remarksInput.value = '';
             $(mainType).val('Receipts').trigger('change');
             $(subType).val('GeneralReceipts').trigger('change');
             $(payModeSelect).val(null).trigger('change');
             $(accName).val(null).trigger('change');
             dateInput.valueAsDate = new Date();
+            updateAccountNameList();
             dateInput.focus();
         }
 
@@ -977,10 +997,39 @@
                 });
         }
 
-        voucherForm.addEventListener('keydown', function(e) {
+        // --- ENTER KEY NAVIGATION ACROSS FORM FIELDS ---
+        document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
+                let target = e.target;
+
+                // Agar user select2 dropdown ke search box mein hai
+                if (target.classList.contains('select2-search__field')) {
+                    return; // Select2 apna enter handle karega
+                }
+
+                // Agar user history filter mein ya kisi aur jagah hai toh skip karein
+                if (!target.closest('#voucherForm')) return;
+
                 e.preventDefault();
-                addRowToQueue();
+
+                if (target === dateInput) {
+                    $(mainType).select2('open');
+                } else if (target === mainType) {
+                    $(payModeSelect).select2('open');
+                } else if (target === payModeSelect) {
+                    $(subType).select2('open');
+                } else if (target === subType) {
+                    $(accName).select2('open');
+                } else if (target === accName || target.classList.contains('select2-selection__rendered')) {
+                    voucherNoInput.focus();
+                } else if (target === voucherNoInput) {
+                    amountInput.focus();
+                } else if (target === amountInput) {
+                    remarksInput.focus();
+                } else if (target === remarksInput) {
+                    // Jab remarks par enter ho toh row queue mein add ho jaye
+                    addRowToQueue();
+                }
             }
         });
 
