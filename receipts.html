@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <title>Al Meezan ERP Receipts</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
@@ -74,6 +75,84 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       max-width: 1250px;
       margin: auto;
+      position: relative;
+    }
+
+    .floating-mobile-toggle {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 100;
+      transition: background 0.2s;
+    }
+    .floating-mobile-toggle:hover {
+      background: var(--primary-hover);
+    }
+
+    /* ===== Mobile View Mode ===== */
+    body.mobile-mode {
+      padding: 2px !important;
+      overflow-x: hidden !important;
+    }
+    body.mobile-mode .container {
+      max-width: 100% !important;
+      width: 100% !important;
+      padding: 6px 8px !important;
+      border-radius: 0 !important;
+      box-sizing: border-box !important;
+    }
+    body.mobile-mode h2 {
+      font-size: 14px !important;
+      padding-right: 36px !important;
+    }
+    body.mobile-mode .nav-bar-container {
+      gap: 4px !important;
+    }
+    body.mobile-mode .tab {
+      font-size: 10.5px !important;
+      padding: 6px 3px !important;
+    }
+    body.mobile-mode .container [style*="display: flex"] {
+      flex-wrap: wrap !important;
+    }
+    body.mobile-mode .recent-filters,
+    body.mobile-mode .btn-row,
+    body.mobile-mode .search-box-card > div {
+      flex-wrap: wrap !important;
+    }
+    body.mobile-mode .recent-filters input[type="date"] {
+      width: 130px !important;
+    }
+    body.mobile-mode .action-btn {
+      font-size: 10.5px !important;
+      padding: 6px 6px !important;
+    }
+    body.mobile-mode .table-responsive {
+      max-height: 55vh !important;
+      -webkit-overflow-scrolling: touch;
+    }
+    body.mobile-mode table.edit-table th, body.mobile-mode table.edit-table td,
+    body.mobile-mode table.batch-table th, body.mobile-mode table.batch-table td {
+      font-size: 10px !important;
+      padding: 3px 4px !important;
+    }
+    body.mobile-mode input, body.mobile-mode select {
+      font-size: 12px !important;
+    }
+    body.mobile-mode label {
+      font-size: 10.5px !important;
     }
 
     h2 {
@@ -358,12 +437,15 @@
 </div>
 
 <div class="container">
+  <button class="floating-mobile-toggle" onclick="toggleMobileView()" id="mobileToggleBtn" title="Switch to Mobile View">
+    <i class="fa fa-mobile-alt" id="toggleIcon"></i>
+  </button>
   <h2>Al Meezan ERP Receipts</h2>
 
   <div class="change-url-link" onclick="showUrlConfig()" style="cursor:pointer; font-size:11px; color:#1b5e20; margin-bottom:4px;">&#9881; Change Deployment URL</div>
   <div id="configBox" class="config-box">
     <b>Setup:</b> Pehli baar use karne ke liye apna Apps Script Web App URL neeche paste karein aur Save dabayein.
-    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec" inputmode="url">
     <button onclick="saveScriptUrl()">Save URL</button>
   </div>
   
@@ -425,7 +507,7 @@
       <div style="margin-top: 8px;">
         <label for="batchRemarks">Remarks (Common for all entries)</label>
         <div class="input-with-mic">
-          <input type="text" id="batchRemarks" placeholder="Enter remarks (optional)..." onkeydown="handleRemarksKey(event)">
+          <input type="text" id="batchRemarks" placeholder="Enter remarks (optional)..." onkeydown="handleRemarksKey(event)" inputmode="text">
           <button type="button" class="mic-btn" onclick="startCleanVoiceInput('batchRemarks', false)"><i class="fas fa-microphone"></i></button>
         </div>
       </div>
@@ -450,7 +532,7 @@
         </div>
         <div class="form-group">
           <label>Search Receipt No</label>
-          <input type="text" id="recentSearchRct" placeholder="Receipt No..." oninput="renderRecentReceipts()" style="width:140px;">
+          <input type="text" id="recentSearchRct" placeholder="Receipt No..." oninput="renderRecentReceipts()" style="width:140px;" inputmode="numeric">
         </div>
         
         <div class="form-group" style="flex-direction:row; align-items:center; gap:6px; padding-bottom:6px;">
@@ -498,11 +580,11 @@
       <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
         <div style="flex:1; min-width:180px;">
           <label>Search by Receipt Number</label>
-          <input type="text" id="editSearchReceiptNo" placeholder="Enter Receipt No..." onkeydown="if(event.key==='Enter') searchReceiptsForEditTab()">
+          <input type="text" id="editSearchReceiptNo" placeholder="Enter Receipt No..." onkeydown="if(event.key==='Enter') searchReceiptsForEditTab()" inputmode="numeric">
         </div>
         <div style="flex:1; min-width:180px;">
           <label>Search by Account Number</label>
-          <input type="text" id="editSearchAccountNo" placeholder="Enter Account No (786...)" onkeydown="if(event.key==='Enter') searchReceiptsForEditTab()">
+          <input type="text" id="editSearchAccountNo" placeholder="Enter Account No (786...)" onkeydown="if(event.key==='Enter') searchReceiptsForEditTab()" inputmode="numeric">
         </div>
         <div style="display:flex; gap:5px;">
           <button class="action-btn btn-primary" style="height:30px;" onclick="searchReceiptsForEditTab()"><i class="fas fa-search"></i> Search</button>
@@ -543,6 +625,20 @@
 
 <script>
   let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
+
+  function toggleMobileView() {
+    document.body.classList.toggle('mobile-mode');
+    const isMobile = document.body.classList.contains('mobile-mode');
+    const icon = document.getElementById('toggleIcon');
+    const btn = document.getElementById('mobileToggleBtn');
+    if (isMobile) {
+      icon.className = "fa fa-desktop";
+      btn.title = 'Switch to Desktop View';
+    } else {
+      icon.className = "fa fa-mobile-alt";
+      btn.title = 'Switch to Mobile View';
+    }
+  }
 
   window.onload = function() {
     if (!SCRIPT_URL) {
@@ -638,19 +734,19 @@
     row.innerHTML = `
       <td>
         <div class="input-with-mic">
-          <input type="text" class="batch-acc" value="786" oninput="onBatchAccountInput(this)" onblur="onBatchAccountBlur(this)" onkeydown="handleBatchKey(event, this, 'acc')" placeholder="786XXXX">
+          <input type="text" class="batch-acc" value="786" oninput="onBatchAccountInput(this)" onblur="onBatchAccountBlur(this)" onkeydown="handleBatchKey(event, this, 'acc')" placeholder="786XXXX" inputmode="numeric">
           <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, true)"><i class="fas fa-microphone"></i></button>
         </div>
       </td>
       <td>
         <div class="input-with-mic">
-          <input type="number" class="batch-amt" placeholder="" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'amt')">
+          <input type="number" class="batch-amt" placeholder="" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'amt')" inputmode="decimal">
           <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, true)"><i class="fas fa-microphone"></i></button>
         </div>
       </td>
       <td>
         <div class="input-with-mic">
-          <input type="text" class="batch-rct" value="${lastReceiptNo}" placeholder="Receipt No" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'rct')" onblur="if(this.value.trim()){ checkDuplicateReceipt(this.value.trim(), this); }">
+          <input type="text" class="batch-rct" value="${lastReceiptNo}" placeholder="Receipt No" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'rct')" onblur="if(this.value.trim()){ checkDuplicateReceipt(this.value.trim(), this); }" inputmode="numeric">
           <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, false)"><i class="fas fa-microphone"></i></button>
         </div>
       </td>
@@ -1369,14 +1465,14 @@
     selectHtml += `</select>`;
 
     tr.querySelector('.edit-cell-date').innerHTML = `<input type="date" value="${entry.date || ''}" class="edit-date-input" style="padding:2px; width:110px;">`;
-    tr.querySelector('.edit-cell-rct').innerHTML = `<input type="text" value="${entry.receiptNo || ''}" class="edit-rct-input" style="padding:2px; width:65px; text-align:center;">`;
-    tr.querySelector('.edit-cell-acc').innerHTML = `<input type="text" value="${entry.accountNo || ''}" class="edit-acc-input" style="padding:2px; width:75px;">`;
+    tr.querySelector('.edit-cell-rct').innerHTML = `<input type="text" value="${entry.receiptNo || ''}" class="edit-rct-input" style="padding:2px; width:65px; text-align:center;" inputmode="numeric">`;
+    tr.querySelector('.edit-cell-acc').innerHTML = `<input type="text" value="${entry.accountNo || ''}" class="edit-acc-input" style="padding:2px; width:75px;" inputmode="numeric">`;
     tr.querySelector('.edit-cell-title').innerHTML = `
       <input type="text" value="${entry.accountTitle || ''}" disabled style="padding:2px; width:100%; background:#eee; margin-bottom:2px;">
-      <input type="text" value="${entry.remarks || ''}" class="edit-remarks-input" placeholder="Remarks" style="padding:2px; width:100%; font-size:10px;">
+      <input type="text" value="${entry.remarks || ''}" class="edit-remarks-input" placeholder="Remarks" style="padding:2px; width:100%; font-size:10px;" inputmode="text">
     `;
     tr.querySelector('.edit-cell-mode').innerHTML = selectHtml;
-    tr.querySelector('.edit-cell-amt').innerHTML = `<input type="number" value="${entry.amount || 0}" class="edit-amt-input" style="padding:2px; width:70px; text-align:right;">`;
+    tr.querySelector('.edit-cell-amt').innerHTML = `<input type="number" value="${entry.amount || 0}" class="edit-amt-input" style="padding:2px; width:70px; text-align:right;" inputmode="decimal">`;
 
     btn.innerHTML = '<i class="fas fa-save"></i> Save';
     btn.classList.remove('btn-secondary');
