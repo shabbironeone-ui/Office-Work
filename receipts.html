@@ -148,6 +148,59 @@
       font-size: 10px !important;
       padding: 3px 4px !important;
     }
+
+    /* Batch entry table -> stacked card layout on mobile so inputs are fully visible */
+    body.mobile-mode #batchTableWrapper {
+      overflow-x: visible !important;
+      max-height: none !important;
+    }
+    body.mobile-mode table.batch-table thead {
+      display: none !important;
+    }
+    body.mobile-mode table.batch-table,
+    body.mobile-mode table.batch-table tbody,
+    body.mobile-mode table.batch-table tr,
+    body.mobile-mode table.batch-table td {
+      display: block !important;
+      width: 100% !important;
+    }
+    body.mobile-mode table.batch-table tr {
+      border: 1px solid #d7dbe0 !important;
+      border-radius: 8px !important;
+      margin-bottom: 10px !important;
+      padding: 8px !important;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    body.mobile-mode table.batch-table td {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 8px !important;
+      border: none !important;
+      border-bottom: 1px dashed #eee !important;
+      padding: 6px 2px !important;
+    }
+    body.mobile-mode table.batch-table td:last-child {
+      border-bottom: none !important;
+      justify-content: flex-end !important;
+    }
+    body.mobile-mode table.batch-table td::before {
+      content: attr(data-label);
+      font-weight: bold;
+      font-size: 10.5px !important;
+      color: var(--primary);
+      flex-shrink: 0;
+      width: 100px;
+    }
+    body.mobile-mode table.batch-table td .input-with-mic,
+    body.mobile-mode table.batch-table td input,
+    body.mobile-mode table.batch-table td select {
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+      width: auto !important;
+      font-size: 12px !important;
+    }
     body.mobile-mode input, body.mobile-mode select {
       font-size: 12px !important;
     }
@@ -485,7 +538,7 @@
         Qty: <span id="totalReceiptsQty">0</span> &nbsp;|&nbsp; Amount: <span id="totalReceiptsAmount">0</span>
       </div>
 
-      <div class="table-responsive">
+      <div class="table-responsive" id="batchTableWrapper">
         <table class="batch-table" id="batchTable">
           <thead>
             <tr>
@@ -732,30 +785,30 @@
 
     let row = document.createElement('tr');
     row.innerHTML = `
-      <td>
+      <td data-label="Account No">
         <div class="input-with-mic">
           <input type="text" class="batch-acc" value="786" oninput="onBatchAccountInput(this)" onblur="onBatchAccountBlur(this)" onkeydown="handleBatchKey(event, this, 'acc')" placeholder="786XXXX" inputmode="numeric">
           <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, true)"><i class="fas fa-microphone"></i></button>
         </div>
       </td>
-      <td>
+      <td data-label="Amount">
         <div class="input-with-mic">
           <input type="number" class="batch-amt" placeholder="" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'amt')" inputmode="decimal">
           <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, true)"><i class="fas fa-microphone"></i></button>
         </div>
       </td>
-      <td>
+      <td data-label="Receipt No">
         <div class="input-with-mic">
           <input type="text" class="batch-rct" value="${lastReceiptNo}" placeholder="Receipt No" oninput="calculateBatchTotal()" onkeydown="handleBatchKey(event, this, 'rct')" onblur="if(this.value.trim()){ checkDuplicateReceipt(this.value.trim(), this); }" inputmode="numeric">
           <button type="button" class="mic-btn" onclick="startCleanVoiceInputForElement(this, false)"><i class="fas fa-microphone"></i></button>
         </div>
       </td>
-      <td><input type="text" class="batch-title" readonly placeholder="Auto..." style="background-color: #eaeded; text-align: left;"></td>
-      <td><input type="text" class="batch-inst" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
-      <td><input type="text" class="batch-total-sale" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
-      <td><input type="text" class="batch-paid-amt" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
-      <td><input type="text" class="batch-bal" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
-      <td><button type="button" class="action-btn btn-danger" style="padding: 2px 5px; font-size: 10px;" onclick="removeBatchRow(this)"><i class="fas fa-trash"></i></button></td>
+      <td data-label="Customer Name"><input type="text" class="batch-title" readonly placeholder="Auto..." style="background-color: #eaeded; text-align: left;"></td>
+      <td data-label="Inst"><input type="text" class="batch-inst" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
+      <td data-label="Total Sale Amount"><input type="text" class="batch-total-sale" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
+      <td data-label="Paid Amount"><input type="text" class="batch-paid-amt" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
+      <td data-label="Balance"><input type="text" class="batch-bal" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
+      <td data-label="Action"><button type="button" class="action-btn btn-danger" style="padding: 2px 5px; font-size: 10px;" onclick="removeBatchRow(this)"><i class="fas fa-trash"></i></button></td>
     `;
     tbody.appendChild(row);
     calculateBatchTotal();
