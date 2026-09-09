@@ -777,9 +777,11 @@
   function addBatchRow() {
     let tbody = document.getElementById('batchTableBody');
     let rows = tbody.querySelectorAll('tr');
+    let isMobile = document.body.classList.contains('mobile-mode');
     let lastReceiptNo = "";
     if (rows.length > 0) {
-      let lastRctInput = rows[rows.length - 1].querySelector('.batch-rct');
+      let mostRecentRow = isMobile ? rows[0] : rows[rows.length - 1];
+      let lastRctInput = mostRecentRow.querySelector('.batch-rct');
       if (lastRctInput) lastReceiptNo = lastRctInput.value;
     }
 
@@ -810,7 +812,11 @@
       <td data-label="Balance"><input type="text" class="batch-bal" readonly placeholder="--" style="background-color: #eaeded; text-align: center;"></td>
       <td data-label="Action"><button type="button" class="action-btn btn-danger" style="padding: 2px 5px; font-size: 10px;" onclick="removeBatchRow(this)"><i class="fas fa-trash"></i></button></td>
     `;
-    tbody.appendChild(row);
+    if (isMobile && tbody.firstChild) {
+      tbody.insertBefore(row, tbody.firstChild);
+    } else {
+      tbody.appendChild(row);
+    }
     calculateBatchTotal();
     return row;
   }
@@ -842,12 +848,14 @@
         let rctVal = inputElement.value.trim();
         if (rctVal) checkDuplicateReceipt(rctVal, inputElement);
         let tbody = document.getElementById('batchTableBody');
-        let isLastRow = (currentRow === tbody.lastElementChild);
+        let isMobile = document.body.classList.contains('mobile-mode');
+        let isLastRow = isMobile ? (currentRow === tbody.firstElementChild) : (currentRow === tbody.lastElementChild);
         if (isLastRow) {
           let newRow = addBatchRow();
           newRow.querySelector('.batch-acc').focus();
         } else {
-          currentRow.nextElementSibling.querySelector('.batch-acc').focus();
+          let nextRow = isMobile ? currentRow.previousElementSibling : currentRow.nextElementSibling;
+          if (nextRow) nextRow.querySelector('.batch-acc').focus();
         }
       }
     }
