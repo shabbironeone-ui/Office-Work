@@ -24,7 +24,7 @@
       position: relative;
     }
     
-    /* Compact Mobile View Mode Styles */
+    /* Compact Mobile View Mode Styles (Only when mobile-mode class is active) */
     body.mobile-mode {
       margin: 2px !important;
       padding: 2px !important;
@@ -37,13 +37,16 @@
     }
     body.mobile-mode .filters-grid {
       grid-template-columns: 1fr 1fr !important;
-      gap: 4px !important;
+      gap: 6px !important;
     }
-    body.mobile-mode .filters-grid .input-group:nth-child(n+3) {
-      grid-column: span 2;
+    body.mobile-mode .input-group {
+      grid-column: span 1 !important;
+    }
+    body.mobile-mode .input-group:nth-child(n+3) {
+      grid-column: span 2 !important;
     }
     body.mobile-mode .button-group {
-      grid-column: span 2;
+      grid-column: span 2 !important;
       display: flex;
       justify-content: space-between;
       width: 100%;
@@ -525,8 +528,8 @@
   </div>
 
   <div class="container">
-    <!-- Floating Mobile View Toggle Button with FontAwesome Icon -->
-    <button class="floating-mobile-toggle" onclick="toggleMobileView()" id="mobileToggleBtn" title="Switch Mobile/Desktop View">
+    <!-- Floating View Toggle Button (Starts in Desktop View by default) -->
+    <button class="floating-mobile-toggle" onclick="toggleMobileView()" id="mobileToggleBtn" title="Switch to Mobile View">
       <i class="fa fa-mobile-alt" id="toggleIcon"></i>
     </button>
 
