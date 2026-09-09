@@ -117,7 +117,7 @@
         }
         .form-col {
             flex: 1;
-            min-width: 100px;
+            min-width: 90px;
         }
         label {
             display: block;
@@ -442,7 +442,7 @@
         <form id="voucherForm">
             <!-- All form inputs in a single line -->
             <div class="form-row-single">
-                <div class="form-col" style="max-width: 120px;">
+                <div class="form-col" style="max-width: 110px;">
                     <label for="date">Receipt Date</label>
                     <input type="date" id="date" required>
                 </div>
@@ -475,13 +475,17 @@
                         <option value="" selected disabled>-- Select Head --</option>
                     </select>
                 </div>
-                <div class="form-col" style="max-width: 90px;">
+                <div class="form-col" style="max-width: 80px;">
                     <label for="voucherNo">Receipt No</label>
                     <input type="text" id="voucherNo" readonly placeholder="Auto">
                 </div>
-                <div class="form-col" style="max-width: 100px;">
+                <div class="form-col" style="max-width: 90px;">
                     <label for="amount">Amount</label>
                     <input type="number" id="amount" required placeholder="0.00">
+                </div>
+                <div class="form-col" style="max-width: 130px;">
+                    <label for="remarks">Remarks</label>
+                    <input type="text" id="remarks" placeholder="Remarks">
                 </div>
                 <div style="flex: 0 0 auto;">
                     <label>&nbsp;</label>
@@ -498,10 +502,11 @@
                     <table class="queue-table">
                         <thead>
                             <tr>
-                                <th style="width: 25%;">Account Name / Head</th>
-                                <th style="width: 15%;">Amount</th>
-                                <th style="width: 15%;">Receipt No</th>
-                                <th style="width: 35%;">Sub-Category / Flow</th>
+                                <th style="width: 20%;">Account Name / Head</th>
+                                <th style="width: 12%;">Amount</th>
+                                <th style="width: 12%;">Receipt No</th>
+                                <th style="width: 26%;">Sub-Category / Flow</th>
+                                <th style="width: 20%;">Remarks</th>
                                 <th style="width: 10%; text-align: center;">Action</th>
                             </tr>
                         </thead>
@@ -664,6 +669,7 @@
         const payModeSelect = document.getElementById('payMode');
         const voucherNoInput = document.getElementById('voucherNo');
         const dateInput = document.getElementById('date');
+        const remarksInput = document.getElementById('remarks');
         const voucherForm = document.getElementById('voucherForm');
         const ledgerHeadFilter = document.getElementById('ledgerHeadFilter');
         const showAllCheckbox = document.getElementById('showAllCheckbox');
@@ -870,13 +876,14 @@
                 payMode: payModeSelect.value,
                 accName: accVal,
                 amount: amtVal,
-                remarks: ''
+                remarks: remarksInput.value.trim()
             };
 
             voucherQueue.push(item);
             renderQueueTable();
 
             document.getElementById('amount').value = '';
+            remarksInput.value = '';
             $(accName).val(null).trigger('change');
             dateInput.focus();
         }
@@ -913,6 +920,7 @@
                     <td style="font-weight: bold; color: #16a34a;">${Number(q.amount).toLocaleString()}</td>
                     <td>${q.voucherNo}</td>
                     <td><small style="color:#64748b">${q.transType} / ${q.subType}</small></td>
+                    <td><small style="color:#333">${q.remarks || '-'}</small></td>
                     <td style="text-align: center;"><button type="button" class="btn-del-row" onclick="removeQueueItem(${idx})"><i class="fa fa-trash"></i></button></td>
                 `;
                 queueBody.appendChild(tr);
@@ -921,6 +929,7 @@
 
         function resetCurrentRowInputs() {
             document.getElementById('amount').value = '';
+            remarksInput.value = '';
             $(mainType).val('Receipts').trigger('change');
             $(subType).val('GeneralReceipts').trigger('change');
             $(payModeSelect).val(null).trigger('change');
