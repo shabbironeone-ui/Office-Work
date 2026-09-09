@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <base target="_top">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
@@ -28,6 +29,7 @@
     body.mobile-mode {
       margin: 2px !important;
       padding: 2px !important;
+      overflow-x: hidden !important;
     }
     body.mobile-mode .container {
       max-width: 100% !important;
@@ -68,6 +70,17 @@
     body.mobile-mode h2 {
       font-size: 15px !important;
       margin-bottom: 8px !important;
+    }
+    body.mobile-mode .excel-popup {
+      width: 85vw !important;
+      max-width: 300px !important;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    body.mobile-mode .ledger-modal-content {
+      width: 94% !important;
+      margin: 4% auto !important;
+      padding: 10px !important;
     }
 
     .floating-mobile-toggle {
@@ -193,6 +206,7 @@
       border-radius: 4px;
       margin-top: 4px;
       position: relative;
+      -webkit-overflow-scrolling: touch;
     }
     table {
       width: 100%;
@@ -322,6 +336,7 @@
       font-size: 11px;
       text-align: left;
       color: #333;
+      box-sizing: border-box;
     }
     .excel-popup.active {
       display: block;
@@ -389,6 +404,7 @@
       max-height: 80vh;
       display: flex;
       flex-direction: column;
+      box-sizing: border-box;
     }
     .ledger-header {
       display: flex;
@@ -546,19 +562,19 @@
       </div>
       <div class="input-group">
         <label>ACCOUNT NO</label>
-        <input type="text" id="searchAccInput" placeholder="Acc No...">
+        <input type="text" id="searchAccInput" placeholder="Acc No..." inputmode="numeric" pattern="[0-9]*">
       </div>
       <div class="input-group">
         <label>ACCOUNT TITLE / NAME</label>
-        <input type="text" id="searchTitleInput" placeholder="Name / Title...">
+        <input type="text" id="searchTitleInput" placeholder="Name / Title..." inputmode="text" autocapitalize="words">
       </div>
       <div class="input-group">
         <label>MOBILE NO</label>
-        <input type="text" id="searchMobileInput" placeholder="Mobile No...">
+        <input type="text" id="searchMobileInput" placeholder="Mobile No..." inputmode="tel" pattern="[0-9]*">
       </div>
       <div class="input-group">
         <label>START FROM ACCT</label>
-        <input type="text" id="startFromAcctInput" placeholder="From Acc No...">
+        <input type="text" id="startFromAcctInput" placeholder="From Acc No..." inputmode="numeric" pattern="[0-9]*">
       </div>
       <div class="button-group">
         <button onclick="fetchAndFilterData(true)" title="Reload Data"><i class="fa fa-sync"></i></button>
@@ -600,27 +616,27 @@
             <th class="col-m1" id="thM1">M-1</th>
           </tr>
           <tr class="filter-header-row">
-            <th class="col-accNo"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="accNo" placeholder="Filter..."><button class="excel-filter-btn" id="btn_accNo" onclick="toggleExcelPopup(event, 'accNo')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-accTitle"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="accTitle" placeholder="Filter..."><button class="excel-filter-btn" id="btn_accTitle" onclick="toggleExcelPopup(event, 'accTitle')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-approvedBy"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="approvedBy" placeholder="Filter..."><button class="excel-filter-btn" id="btn_approvedBy" onclick="toggleExcelPopup(event, 'approvedBy')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-cro"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="cro" placeholder="Filter..."><button class="excel-filter-btn" id="btn_cro" onclick="toggleExcelPopup(event, 'cro')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-mobile"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="mobile" placeholder="Filter..."><button class="excel-filter-btn" id="btn_mobile" onclick="toggleExcelPopup(event, 'mobile')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-monthlyInst"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="monthlyInst" placeholder="Filter..."><button class="excel-filter-btn" id="btn_monthlyInst" onclick="toggleExcelPopup(event, 'monthlyInst', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-remarks"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="remarks" placeholder="Filter..."></div></th>
-            <th class="col-cmd"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="cmd" placeholder="Filter..."><button class="excel-filter-btn" id="btn_cmd" onclick="toggleExcelPopup(event, 'cmd', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-plan"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="plan" placeholder="Filter..."><button class="excel-filter-btn" id="btn_plan" onclick="toggleExcelPopup(event, 'plan', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-totalSales"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="totalSales" placeholder="Filter..."><button class="excel-filter-btn" id="btn_totalSales" onclick="toggleExcelPopup(event, 'totalSales', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-totalReceived"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="totalReceived" placeholder="Filter..."><button class="excel-filter-btn" id="btn_totalReceived" onclick="toggleExcelPopup(event, 'totalReceived', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-balance"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="balance" placeholder="Filter..."><button class="excel-filter-btn" id="btn_balance" onclick="toggleExcelPopup(event, 'balance', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-lpd"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="lpd" placeholder="Filter..."><button class="excel-filter-btn" id="btn_lpd" onclick="toggleExcelPopup(event, 'lpd')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-lpAmount"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="lpAmount" placeholder="Filter..."><button class="excel-filter-btn" id="btn_lpAmount" onclick="toggleExcelPopup(event, 'lpAmount', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-deliveryDate"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="deliveryDate" placeholder="Filter..."><button class="excel-filter-btn" id="btn_deliveryDate" onclick="toggleExcelPopup(event, 'deliveryDate')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-endingMonth"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="endingMonth" placeholder="Filter..."><button class="excel-filter-btn" id="btn_endingMonth" onclick="toggleExcelPopup(event, 'endingMonth')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-product"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="product" placeholder="Filter..."><button class="excel-filter-btn" id="btn_product" onclick="toggleExcelPopup(event, 'product')"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-m4"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m4Received" placeholder="Filter..."><button class="excel-filter-btn" id="btn_m4Received" onclick="toggleExcelPopup(event, 'm4Received', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-m3"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m3Received" placeholder="Filter..."><button class="excel-filter-btn" id="btn_m3Received" onclick="toggleExcelPopup(event, 'm3Received', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-m2"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m2Received" placeholder="Filter..."><button class="excel-filter-btn" id="btn_m2Received" onclick="toggleExcelPopup(event, 'm2Received', true)"><i class="fa fa-filter"></i></button></div></th>
-            <th class="col-m1"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m1Received" placeholder="Filter..."><button class="excel-filter-btn" id="btn_m1Received" onclick="toggleExcelPopup(event, 'm1Received', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-accNo"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="accNo" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_accNo" onclick="toggleExcelPopup(event, 'accNo')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-accTitle"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="accTitle" placeholder="Filter..." inputmode="text"><button class="excel-filter-btn" id="btn_accTitle" onclick="toggleExcelPopup(event, 'accTitle')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-approvedBy"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="approvedBy" placeholder="Filter..." inputmode="text"><button class="excel-filter-btn" id="btn_approvedBy" onclick="toggleExcelPopup(event, 'approvedBy')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-cro"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="cro" placeholder="Filter..." inputmode="text"><button class="excel-filter-btn" id="btn_cro" onclick="toggleExcelPopup(event, 'cro')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-mobile"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="mobile" placeholder="Filter..." inputmode="tel"><button class="excel-filter-btn" id="btn_mobile" onclick="toggleExcelPopup(event, 'mobile')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-monthlyInst"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="monthlyInst" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_monthlyInst" onclick="toggleExcelPopup(event, 'monthlyInst', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-remarks"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="remarks" placeholder="Filter..." inputmode="text"></div></th>
+            <th class="col-cmd"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="cmd" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_cmd" onclick="toggleExcelPopup(event, 'cmd', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-plan"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="plan" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_plan" onclick="toggleExcelPopup(event, 'plan', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-totalSales"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="totalSales" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_totalSales" onclick="toggleExcelPopup(event, 'totalSales', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-totalReceived"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="totalReceived" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_totalReceived" onclick="toggleExcelPopup(event, 'totalReceived', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-balance"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="balance" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_balance" onclick="toggleExcelPopup(event, 'balance', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-lpd"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="lpd" placeholder="Filter..." inputmode="text"><button class="excel-filter-btn" id="btn_lpd" onclick="toggleExcelPopup(event, 'lpd')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-lpAmount"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="lpAmount" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_lpAmount" onclick="toggleExcelPopup(event, 'lpAmount', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-deliveryDate"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="deliveryDate" placeholder="Filter..." inputmode="text"><button class="excel-filter-btn" id="btn_deliveryDate" onclick="toggleExcelPopup(event, 'deliveryDate')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-endingMonth"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="endingMonth" placeholder="Filter..." inputmode="text"><button class="excel-filter-btn" id="btn_endingMonth" onclick="toggleExcelPopup(event, 'endingMonth')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-product"><div class="filter-cell-wrapper"><input type="text" class="col-filter" data-col="product" placeholder="Filter..." inputmode="text"><button class="excel-filter-btn" id="btn_product" onclick="toggleExcelPopup(event, 'product')"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-m4"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m4Received" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_m4Received" onclick="toggleExcelPopup(event, 'm4Received', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-m3"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m3Received" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_m3Received" onclick="toggleExcelPopup(event, 'm3Received', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-m2"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m2Received" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_m2Received" onclick="toggleExcelPopup(event, 'm2Received', true)"><i class="fa fa-filter"></i></button></div></th>
+            <th class="col-m1"><div class="filter-cell-wrapper"><input type="text" class="col-filter numeric-filter" data-col="m1Received" placeholder="Filter..." inputmode="numeric"><button class="excel-filter-btn" id="btn_m1Received" onclick="toggleExcelPopup(event, 'm1Received', true)"><i class="fa fa-filter"></i></button></div></th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -645,12 +661,12 @@
         <option value="lte">Less Than or Equal (&lt;=)</option>
         <option value="between">Between</option>
       </select>
-      <input type="text" id="numVal1" placeholder="Value..." style="margin-bottom:4px;">
-      <input type="text" id="numVal2" placeholder="And Value (for Between)..." style="display:none; margin-bottom:4px;">
+      <input type="text" id="numVal1" placeholder="Value..." style="margin-bottom:4px;" inputmode="decimal">
+      <input type="text" id="numVal2" placeholder="And Value (for Between)..." style="display:none; margin-bottom:4px;" inputmode="decimal">
     </div>
 
     <div id="universalFilterSection">
-      <input type="text" id="popupSearchInput" placeholder="Search (All)..." oninput="filterPopupCheckboxes()">
+      <input type="text" id="popupSearchInput" placeholder="Search (All)..." oninput="filterPopupCheckboxes()" inputmode="text">
       <div class="excel-checkbox-item" style="border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 3px; font-weight: bold;">
         <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAllCheckboxes(this)">
         <label for="selectAllCheckbox" style="cursor: pointer; margin:0;">(Select All)</label>
@@ -1228,7 +1244,7 @@
 
         if (isDateCol) {
           univSec.innerHTML = `
-            <input type="text" id="popupSearchInput" placeholder="Search dates..." oninput="filterDateTree(this.value)">
+            <input type="text" id="popupSearchInput" placeholder="Search dates..." oninput="filterDateTree(this.value)" inputmode="text">
             <div class="excel-checkbox-item" style="border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 3px; font-weight: bold;">
               <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAllCheckboxes(this)">
               <label for="selectAllCheckbox" style="cursor: pointer; margin:0;">(Select All Years/Dates)</label>
@@ -1297,7 +1313,7 @@
 
         } else {
           univSec.innerHTML = `
-            <input type="text" id="popupSearchInput" placeholder="Search (All)..." oninput="filterPopupCheckboxes()">
+            <input type="text" id="popupSearchInput" placeholder="Search (All)..." oninput="filterPopupCheckboxes()" inputmode="text">
             <div class="excel-checkbox-item" style="border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 3px; font-weight: bold;">
               <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAllCheckboxes(this)">
               <label for="selectAllCheckbox" style="cursor: pointer; margin:0;">(Select All)</label>
