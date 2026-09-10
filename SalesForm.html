@@ -632,21 +632,21 @@
     function handleAccountKey(event) {
       if (event.key === 'Enter') {
         event.preventDefault();
-        fetchCustomerDetails();
+        fetchCustomerDetails(false);
       }
     }
 
-    function fetchCustomerDetails() {
+    function fetchCustomerDetails(isEditMode = false) {
       let accNo = document.getElementById("accountNo").value.trim();
       if (!accNo) return;
 
       showLoader(true);
-      fetch(SCRIPT_URL + "?action=getCustomerDetailsForSales" + "&accNo=" + encodeURIComponent(accNo))
+      fetch(SCRIPT_URL + "?action=getCustomerDetailsForSales" + "&accNo=" + encodeURIComponent(accNo) + "&isEditMode=" + isEditMode)
         .then(r => r.json())
         .then(function(res) {
           showLoader(false);
           if (res && res.success) {
-            if (res.alreadySaved) {
+            if (res.alreadySaved && !isEditMode) {
               alert("Error: Sale against this Account Number is already saved!");
               document.getElementById("accountNo").value = "";
               document.getElementById("accountTitle").value = "";
@@ -880,7 +880,6 @@
         });
     }
 
-    // UPDATED: Har individual row ka apna Item Total pass hoga grand total ki bajaye
     function collectFormData() {
       let accNoVal = document.getElementById('accountNo').value.trim();
       let rawDate = document.getElementById('saleDate').value;
@@ -1020,7 +1019,6 @@
       renderSalesTable(recentSalesData);
     }
 
-    // UPDATED: Display row-level specific totals instead of bill grand total
     function renderSalesTable(sales) {
       let tbody = document.getElementById('recentSalesTableBody');
       tbody.innerHTML = '';
@@ -1039,8 +1037,8 @@
           let procFeeVal = Number(s.processingFee || 0);
 
           let rowTotal = (s.rowTotalAmount !== undefined && s.rowTotalAmount !== null) 
-                         ? Number(s.rowTotalAmount) 
-                         : (salesAmtVal + procFeeVal);
+                       ? Number(s.rowTotalAmount) 
+                       : (salesAmtVal + procFeeVal);
 
           sumQty += qtyVal;
           sumSalesAmt += salesAmtVal;
@@ -1083,9 +1081,67 @@
       document.getElementById('totalGrandAmount').innerText = sumTotalAmount ? sumTotalAmount.toLocaleString() : '0';
     }
 
+    // UPDATED: loadSpecificSale اب ڈپلیکیٹ چیک بائی پاس کرنے کے ساتھ ساتھ پروڈکٹ ڈیٹا بھی لوڈ کرے گا
     function loadSpecificSale(accNo) {
       document.getElementById('accountNo').value = accNo;
-      fetchCustomerDetails();
+      
+      // 1. Fetch customer details in edit mode (Bypass duplicate check)
+      fetchCustomerDetails(true);
+
+      // 2. Fetch and populate sale products and details
+      showLoader(true);
+      fetch(SCRIPT_URL + "?action=getSaleDetailsForEdit" + "&accNo=" + encodeURIComponent(accNo))
+        .then(r => r.json())
+        .then(function(res) {
+          showLoader(false);
+          if (res && res.success) {
+            if (res.metadata) {
+              if (res.metadata.date) {
+                let dParts = res.metadata.date.split('/');
+                if (dParts.length === 3) {
+                  let fullYear = dParts[2].length === 2 ? "20" + dParts[2] : dParts[2];
+                  document.getElementById('saleDate').value = fullYear + "-" + dParts[1] + "-" + dParts[0];
+                }
+              }
+              if (res.metadata.nextInstMonth) {
+                populateNextInstMonthDropdown(res.metadata.nextInstMonth);
+              }
+            }
+
+            let tbody = document.getElementById('productTableBody');
+            tbody.innerHTML = '';
+
+            if (res.products && res.products.length > 0) {
+              res.products.forEach(p => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                  <td class="product-cell"><input type="text" class="productId" value="${p.product_id || ''}" placeholder="Product ID" readonly></td>
+                  <td><input type="text" class="companyName" value="${p.companyName || ''}" placeholder="Company" readonly></td>
+                  <td><input type="text" class="productCategory" value="${p.productCategory || ''}" placeholder="Category" readonly></td>
+                  <td><input type="text" class="model" value="${p.model || ''}" placeholder="Model" readonly></td>
+                  <td><input type="text" class="color" value="${p.color || ''}" placeholder="Color" readonly></td>
+                  <td><input type="number" class="qty" value="${p.qty || 1}" oninput="calculateRow(this)" onfocus="this.select()"></td>
+                  <td><input type="number" class="salesRate" value="${p.salesRate || 0}" placeholder="Rate" oninput="calculateRow(this)" onfocus="this.select()"></td>
+                  <td><input type="text" class="salesAmount" value="${p.salesAmt || 0}" readonly tabindex="-1" placeholder="Amt"></td>
+                  <td><input type="number" class="planMonths" value="${p.planMonths || 0}" oninput="calculateRow(this)" onfocus="this.select()"></td>
+                  <td><input type="number" class="advance" value="${p.advance || 0}" oninput="calculateRow(this)" onfocus="this.select()"></td>
+                  <td><input type="text" class="installmentPerMonth" value="${p.installmentPerMonth || 0}" readonly tabindex="-1" placeholder="Inst"></td>
+                  <td><input type="number" class="processingFee" value="${p.processingFee || 0}" oninput="calculateRow(this)" onfocus="this.select()"></td>
+                  <td><input type="text" class="remarks" value="${p.remarks || ''}" placeholder="Remarks"></td>
+                  <td style="text-align: center;"><button type="button" class="del-row-btn" onclick="removeProductRow(this)">X</button></td>
+                `;
+                tbody.appendChild(tr);
+              });
+              calculateTotals();
+            }
+          } else {
+            alert(res.error || "Could not load sale details for editing.");
+          }
+        })
+        .catch(function(err) {
+          showLoader(false);
+          console.error("Error loading sale details for edit:", err);
+        });
     }
 
     // ===== Deployment URL config =====
