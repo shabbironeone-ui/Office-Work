@@ -1027,10 +1027,15 @@
 
         function fetchUnifiedVoucherNo(vnInput) {
             if (!SCRIPT_URL) return;
-            fetch(SCRIPT_URL + "?action=getNormalizedVoucherNo&sheetMapKey=UnifiedGlobal")
+            fetch(SCRIPT_URL + "?action=getNextVoucherNo&sheetMapKey=UnifiedGlobal")
                 .then(res => res.json())
-                .then(res => { vnInput.value = res.voucherNo || res; })
-                .catch(err => console.error("Unified Voucher No error:", err));
+                .then(res => {
+                    let vNum = (typeof res === 'object') ? (res.voucherNo || res.data || '') : res;
+                    vnInput.value = vNum;
+                })
+                .catch(err => {
+                    console.error("Unified Voucher No error:", err);
+                });
         }
 
         function createVoucherRowElement() {
@@ -1137,7 +1142,6 @@
                 if (this.value === 'Expenses') {
                     listToUse = settingsData.expenses;
                 } else if (this.value === 'VendorPayment' || this.value === 'PartyReturn') {
-                    // Combine all setting lists so Baji account, Umair 3, Jafar account etc. are always available
                     listToUse = [
                         ...(settingsData.vendors || []), 
                         ...(settingsData.payables || []), 
@@ -1153,7 +1157,6 @@
                     listToUse = settingsData.payModes;
                 }
 
-                // Fallback if list is empty: pull everything from settingsData
                 if (!listToUse || listToUse.length === 0) {
                     listToUse = [
                         ...(settingsData.vendors || []), 
