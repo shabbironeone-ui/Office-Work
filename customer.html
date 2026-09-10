@@ -188,18 +188,48 @@
       flex: 1;
       transition: background 0.2s;
     }
+    .action-btn:disabled {
+      background-color: #9e9e9e !important;
+      cursor: not-allowed;
+    }
 
     .btn-primary { background-color: var(--primary); }
-    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); }
     .btn-secondary { background-color: #546e7a; }
     .btn-secondary:hover { background-color: #455a64; }
 
-    .loader {
+    /* FULLSCREEN DIM OVERLAY & SPINNING BOWL LOADER */
+    .loading-overlay {
       display: none;
-      text-align: center;
-      color: var(--primary);
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .loading-overlay.show {
+      display: flex;
+    }
+    .spinning-bowl {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #e8f5e9;
+      border-top: 5px solid #1b5e20;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-text {
+      color: #ffffff;
+      font-size: 14px;
       font-weight: bold;
-      margin: 8px 0;
+      letter-spacing: 0.5px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   
     .auto-mic-wrap { position: relative; display: inline-block; width: 100%; }
@@ -223,18 +253,22 @@
 </head>
 <body>
 
+<!-- SCREEN DIM & SPINNING BOWL LOADER OVERLAY -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="spinning-bowl"></div>
+  <div class="loading-text">Saving customer data, please wait...</div>
+</div>
+
 <div class="container">
   <h2>Al Meezan ERP - Customer Register (COA)</h2>
 
   <!-- Ye box sirf tab dikhega jab Apps Script URL set nahi hoga -->
-    <div class="change-url-link" onclick="showUrlConfig()">&#9881; Change Deployment URL</div>
+  <div class="change-url-link" onclick="showUrlConfig()">⚙️ Change Deployment URL</div>
   <div id="configBox" class="config-box">
     <b>Setup:</b> Pehli baar use karne ke liye apna Apps Script Web App URL neeche paste karein aur Save dabayein.
     <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec">
     <button onclick="saveScriptUrl()">Save URL</button>
   </div>
-
-  <div id="loader" class="loader">Saving customer data, please wait...</div>
 
   <!-- BASIC INFORMATION -->
   <fieldset>
@@ -365,17 +399,12 @@
   </fieldset>
 
   <div class="btn-row">
-    <button class="action-btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+    <button id="saveBtn" class="action-btn btn-primary" onclick="saveCustomer()">Save Customer</button>
     <button class="action-btn btn-secondary" onclick="clearForm()">Reset</button>
   </div>
 </div>
 
 <script>
-  // ============================================================
-  // SCRIPT_URL: yahan apna Apps Script Web App URL paste kar dein
-  // (Deploy > New Deployment > Web App se milta hai)
-  // Agar khali chhodenge to app pehli baar khulte hi maangega
-  // ============================================================
   let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
 
   window.onload = function() {
@@ -404,7 +433,6 @@
   let activeRecognition = null;
   let activeBtn = null;
 
-  // Numbers ke liye: spoken result se sirf digits/dash nikal ke saaf karta hai
   function cleanNumericText(text) {
     return text.replace(/[^\d\-]/g, '').trim();
   }
@@ -419,20 +447,18 @@
     const inputEl = document.getElementById(targetId);
     const isNumeric = btn.getAttribute('data-type') === 'number';
 
-    // Agar yahi button dobara dabaya gaya to recording FORCEFULLY ROKO
     if (btn.classList.contains('listening')) {
       forceStopMic(btn, inputEl, isNumeric);
       return;
     }
 
-    // Koi aur mic chal raha ho to pehle usay band karo
     if (activeRecognition && activeBtn) {
       forceStopMic(activeBtn, document.getElementById(activeBtn.getAttribute('data-target')), activeBtn.getAttribute('data-type') === 'number');
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';       // English script mein likhega, Urdu accent theek se samjhega
-    recognition.continuous = true;    // Pause hone par khud band nahi hoga
+    recognition.lang = 'en-US';
+    recognition.continuous = true;
     recognition.interimResults = true;
 
     let finalTranscript = '';
@@ -480,7 +506,7 @@
 
   function forceStopMic(btn, inputEl, isNumeric) {
     if (activeRecognition) {
-      activeRecognition.onend = null;   // duplicate handling se bachne ke liye
+      activeRecognition.onend = null;
       activeRecognition.onresult = null;
       try { activeRecognition.abort(); } catch (e) {}
       activeRecognition = null;
@@ -496,7 +522,7 @@
   }
 
   // ============================================================
-  // BACKEND CALLS (fetch se, google.script.run ki jagah)
+  // BACKEND CALLS
   // ============================================================
 
   function loadNextAccountNo() {
@@ -536,7 +562,15 @@
   }
 
   function showLoader(show) {
-    document.getElementById('loader').style.display = show ? 'block' : 'none';
+    const overlay = document.getElementById('loadingOverlay');
+    const saveBtn = document.getElementById('saveBtn');
+    if (show) {
+      overlay.classList.add('show');
+      saveBtn.disabled = true;
+    } else {
+      overlay.classList.remove('show');
+      saveBtn.disabled = false;
+    }
   }
 
   function saveCustomer() {
@@ -603,7 +637,7 @@
     selects.forEach(select => select.selectedIndex = 0);
   }
 
-    // ===== Deployment URL config (auto-added) =====
+    // ===== Deployment URL config =====
     function showUrlConfig() {
       var inp = document.getElementById('scriptUrlInput');
       if (inp) inp.value = (typeof SCRIPT_URL !== 'undefined' ? SCRIPT_URL : (typeof WEB_APP_URL !== 'undefined' ? WEB_APP_URL : ''));
@@ -625,7 +659,7 @@
       }
     });
 
-    // ================= UNIVERSAL MIC INPUT (auto-added) =================
+    // ================= UNIVERSAL MIC INPUT =================
     (function() {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       let activeRec = null, activeBtn = null, activeInput = null;
@@ -689,7 +723,7 @@
         if (input.type === 'date' || input.type === 'hidden' || input.type === 'checkbox' ||
             input.type === 'radio' || input.type === 'file' || input.readOnly || input.disabled) return;
         if (input.closest('#configBox')) return;
-        if (input.closest('.input-with-mic')) return; // already has a manual mic button
+        if (input.closest('.input-with-mic')) return;
         if (input.parentElement && input.parentElement.querySelector('.mic-btn')) return;
 
         input.dataset.autoMic = '1';
