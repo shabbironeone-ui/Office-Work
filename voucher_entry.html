@@ -1025,6 +1025,14 @@
             });
         }
 
+        function fetchUnifiedVoucherNo(vnInput) {
+            if (!SCRIPT_URL) return;
+            fetch(SCRIPT_URL + "?action=getNormalizedVoucherNo&sheetMapKey=UnifiedGlobal")
+                .then(res => res.json())
+                .then(res => { vnInput.value = res.voucherNo || res; })
+                .catch(err => console.error("Unified Voucher No error:", err));
+        }
+
         function createVoucherRowElement() {
             const rowDiv = document.createElement('div');
             rowDiv.className = 'voucher-entry-row';
@@ -1089,6 +1097,8 @@
             makeSelectSearchable(pmSel, 'Search Pay Mode...');
             makeSelectSearchable(anSel, 'Search Account/Head...');
 
+            fetchUnifiedVoucherNo(vnInput);
+
             mtSel.addEventListener('change', function() {
                 stSel.innerHTML = '<option value="" selected disabled>-- Select Sub-Category --</option>';
                 stSel.disabled = false;
@@ -1116,6 +1126,7 @@
                         <option value="BankToBank">Bank to Bank Transfer</option>
                     `;
                 }
+                refreshCombo(stSel);
             });
 
             stSel.addEventListener('change', function() {
@@ -1126,13 +1137,31 @@
                 if (this.value === 'Expenses') {
                     listToUse = settingsData.expenses;
                 } else if (this.value === 'VendorPayment' || this.value === 'PartyReturn') {
-                    listToUse = [...settingsData.vendors, ...settingsData.payables];
+                    // Combine all setting lists so Baji account, Umair 3, Jafar account etc. are always available
+                    listToUse = [
+                        ...(settingsData.vendors || []), 
+                        ...(settingsData.payables || []), 
+                        ...(settingsData.investments || []), 
+                        ...(settingsData.expenses || []),
+                        ...(settingsData.ledgerAccounts || [])
+                    ];
                 } else if (this.value === 'InvestmentPayment' || this.value === 'InvestmentIncome') {
                     listToUse = settingsData.investments;
                 } else if (this.value === 'GeneralReceipts') {
                     listToUse = [...settingsData.expenses, ...settingsData.investments];
                 } else if (['CashToBank', 'BankToCash', 'BankToBank'].includes(this.value)) {
                     listToUse = settingsData.payModes;
+                }
+
+                // Fallback if list is empty: pull everything from settingsData
+                if (!listToUse || listToUse.length === 0) {
+                    listToUse = [
+                        ...(settingsData.vendors || []), 
+                        ...(settingsData.payables || []), 
+                        ...(settingsData.investments || []), 
+                        ...(settingsData.expenses || []),
+                        ...(settingsData.ledgerAccounts || [])
+                    ];
                 }
 
                 listToUse = [...new Set(listToUse)].filter(Boolean);
@@ -1143,22 +1172,6 @@
                     anSel.appendChild(opt);
                 });
                 refreshCombo(anSel);
-
-                let sheetMapKey = "Payments";
-                if (mtSel.value === 'Payments' && stSel.value === 'Expenses') {
-                    sheetMapKey = 'Expenses';
-                } else if (mtSel.value === 'Receipts') {
-                    sheetMapKey = 'General_Receipts';
-                } else if (mtSel.value === 'Contra') {
-                    sheetMapKey = 'Contra';
-                }
-
-                if (SCRIPT_URL) {
-                    fetch(SCRIPT_URL + "?action=getNextVoucherNo&sheetMapKey=" + encodeURIComponent(sheetMapKey))
-                        .then(res => res.json())
-                        .then(res => { vnInput.value = res.voucherNo || res; })
-                        .catch(err => console.error("Voucher No error:", err));
-                }
             });
 
             anSel.addEventListener('change', function() {
