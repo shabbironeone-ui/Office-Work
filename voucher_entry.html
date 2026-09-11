@@ -775,6 +775,7 @@
         let currentSortColumn = 0;
         let currentSortAsc = false;
         let activeRowForModal = null;
+        let currentBaseVoucherMap = {}; 
 
         function toggleMobileView() {
             document.body.classList.toggle('mobile-mode');
@@ -1025,17 +1026,56 @@
             });
         }
 
-        function fetchUnifiedVoucherNo(vnInput) {
+        function fetchSheetVoucherNo(vnInput, sheetKey) {
             if (!SCRIPT_URL) return;
-            fetch(SCRIPT_URL + "?action=getNextVoucherNo&sheetMapKey=UnifiedGlobal")
+            let key = sheetKey || "Payments";
+            fetch(SCRIPT_URL + "?action=getNextVoucherNo&sheetMapKey=" + encodeURIComponent(key))
                 .then(res => res.json())
                 .then(res => {
                     let vNum = (typeof res === 'object') ? (res.voucherNo || res.data || '') : res;
-                    vnInput.value = vNum;
+                    currentBaseVoucherMap[key] = vNum;
+                    recalculateVouchers();
                 })
                 .catch(err => {
-                    console.error("Unified Voucher No error:", err);
+                    console.error("Voucher No fetch error:", err);
                 });
+        }
+
+        function recalculateVouchers() {
+            let counters = {};
+            for (let key in currentBaseVoucherMap) {
+                let v = currentBaseVoucherMap[key];
+                counters[key] = isNaN(v) ? v : Number(v);
+            }
+
+            const rows = document.querySelectorAll('#voucherRowsContainer .voucher-entry-row');
+            rows.forEach(row => {
+                const mtSel = row.querySelector('.v-mainType');
+                const stSel = row.querySelector('.v-subType');
+                const vnInput = row.querySelector('.v-voucherNo');
+                if (!mtSel || !stSel || !vnInput) return;
+
+                const mtVal = mtSel.value;
+                const stVal = stSel.value;
+                if (!mtVal || !stVal) return;
+
+                let targetSheet = "Payments";
+                if (mtVal === 'Payments' && stVal === 'Expenses') {
+                    targetSheet = "Expenses";
+                } else if (mtVal === 'Receipts') {
+                    targetSheet = "General_Receipts";
+                } else if (mtVal === 'Contra') {
+                    targetSheet = "Contra";
+                }
+
+                if (counters[targetSheet] !== undefined) {
+                    let currentVal = counters[targetSheet];
+                    vnInput.value = currentVal;
+                    if (!isNaN(currentVal)) {
+                        counters[targetSheet] = Number(currentVal) + 1;
+                    }
+                }
+            });
         }
 
         function createVoucherRowElement() {
@@ -1102,7 +1142,7 @@
             makeSelectSearchable(pmSel, 'Search Pay Mode...');
             makeSelectSearchable(anSel, 'Search Account/Head...');
 
-            fetchUnifiedVoucherNo(vnInput);
+            fetchSheetVoucherNo(vnInput, "Payments");
 
             mtSel.addEventListener('change', function() {
                 stSel.innerHTML = '<option value="" selected disabled>-- Select Sub-Category --</option>';
@@ -1138,10 +1178,14 @@
                 anSel.disabled = false;
                 anSel.innerHTML = '<option value="" selected disabled>-- Select Name / Head --</option>';
 
+                let targetSheetKey = "Payments";
                 let listToUse = [];
+
                 if (this.value === 'Expenses') {
+                    targetSheetKey = "Expenses";
                     listToUse = settingsData.expenses;
                 } else if (this.value === 'VendorPayment' || this.value === 'PartyReturn') {
+                    targetSheetKey = "Payments";
                     listToUse = [
                         ...(settingsData.vendors || []), 
                         ...(settingsData.payables || []), 
@@ -1150,10 +1194,13 @@
                         ...(settingsData.ledgerAccounts || [])
                     ];
                 } else if (this.value === 'InvestmentPayment' || this.value === 'InvestmentIncome') {
+                    targetSheetKey = "Payments";
                     listToUse = settingsData.investments;
                 } else if (this.value === 'GeneralReceipts') {
+                    targetSheetKey = "General_Receipts";
                     listToUse = [...settingsData.expenses, ...settingsData.investments];
                 } else if (['CashToBank', 'BankToCash', 'BankToBank'].includes(this.value)) {
+                    targetSheetKey = "Contra";
                     listToUse = settingsData.payModes;
                 }
 
@@ -1175,6 +1222,8 @@
                     anSel.appendChild(opt);
                 });
                 refreshCombo(anSel);
+
+                fetchSheetVoucherNo(vnInput, targetSheetKey);
             });
 
             anSel.addEventListener('change', function() {
@@ -1217,6 +1266,7 @@
                 if (container.children.length > 1) {
                     rowDiv.remove();
                     updateVoucherBatchTotals();
+                    recalculateVouchers();
                 } else {
                     alert("Kam az kam ek entry row zaroori hai.");
                 }
@@ -1323,12 +1373,9 @@
         function addVoucherRow() {
             const container = document.getElementById('voucherRowsContainer');
             const row = createVoucherRowElement();
-            if (container.firstChild) {
-                container.insertBefore(row, container.firstChild);
-            } else {
-                container.appendChild(row);
-            }
+            container.appendChild(row);
             updateVoucherBatchTotals();
+            recalculateVouchers();
             return row;
         }
 
@@ -1981,25 +2028,32 @@
             const newRow = addVoucherRow();
             focusRowFirstField(newRow);
 
-            entries.forEach(function(en) {
+            let index = 0;
+            function sendNext() {
+                if (index >= entries.length) {
+                    scheduleHistoryRefresh();
+                    return;
+                }
+                let en = entries[index++];
                 fetch(SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action: 'saveVoucherData', data: en })
                 })
-                    .then(res => res.json())
-                    .then(response => {
-                        if (response && response.success) {
-                            markPendingRowSaved(en.tempId);
-                        } else {
-                            markPendingRowFailed(en.tempId, response && response.message);
-                        }
-                        scheduleHistoryRefresh();
-                    })
-                    .catch(err => {
-                        markPendingRowFailed(en.tempId, err.message);
-                        scheduleHistoryRefresh();
-                    });
-            });
+                .then(res => res.json())
+                .then(response => {
+                    if (response && response.success) {
+                        markPendingRowSaved(en.tempId);
+                    } else {
+                        markPendingRowFailed(en.tempId, response && response.message);
+                    }
+                    sendNext();
+                })
+                .catch(err => {
+                    markPendingRowFailed(en.tempId, err.message);
+                    sendNext();
+                });
+            }
+            sendNext();
         });
 
         function showUrlConfig() {
