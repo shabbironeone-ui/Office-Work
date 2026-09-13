@@ -290,6 +290,36 @@
             cursor: not-allowed;
         }
 
+        .acc-name-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .acc-name-wrapper .searchable-select-wrap {
+            flex: 1;
+        }
+        .ledger-shortcut-btn {
+            position: absolute;
+            right: 4px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            transition: background 0.2s;
+        }
+        .ledger-shortcut-btn:hover {
+            background-color: #1d4ed8;
+        }
+
         .remarks-wrapper {
             position: relative;
             display: flex;
@@ -1104,9 +1134,12 @@
                     <input type="text" class="v-voucherNo" placeholder="Auto">
                 </div>
                 <div class="form-group col">
-                    <select class="v-accName" required disabled>
-                        <option value="" selected disabled>-- Select First --</option>
-                    </select>
+                    <div class="acc-name-wrapper">
+                        <select class="v-accName" required disabled>
+                            <option value="" selected disabled>-- Select First --</option>
+                        </select>
+                        <button type="button" class="ledger-shortcut-btn v-ledgerBtn" title="Open Ledger Status (L)">L</button>
+                    </div>
                 </div>
                 <div class="form-group col" style="max-width: 130px;">
                     <input type="number" class="v-amount" required placeholder="0.00" inputmode="decimal">
@@ -1133,6 +1166,7 @@
             const amtInput = rowDiv.querySelector('.v-amount');
             const rmkInput = rowDiv.querySelector('.v-remarks');
             const micBtn = rowDiv.querySelector('.v-micBtn');
+            const ledgerBtn = rowDiv.querySelector('.v-ledgerBtn');
             const addBtn = rowDiv.querySelector('.btn-add-row');
             const removeBtn = rowDiv.querySelector('.btn-remove-row');
 
@@ -1155,13 +1189,15 @@
                 if (this.value === 'Payments') {
                     stSel.innerHTML += `
                         <option value="Expenses">Expense Payment</option>
-                        <option value="VendorPayment">Vendor / A/P Payment</option>
+                        <option value="VendorPayment">Vendor Payment</option>
+                        <option value="APPayment">A/P Payment</option>
                         <option value="InvestmentPayment">Other Inst / Investment (Out)</option>
                     `;
                 } else if (this.value === 'Receipts') {
                     stSel.innerHTML += `
                         <option value="GeneralReceipts">General Receipt / Income</option>
-                        <option value="PartyReturn">Party Return / A/P Recovery</option>
+                        <option value="PartyReturn">Party Return</option>
+                        <option value="APRecovery">A/P Recovery</option>
                         <option value="InvestmentIncome">Other Inst Income / Return (In)</option>
                     `;
                 } else if (this.value === 'Contra') {
@@ -1184,7 +1220,7 @@
                 if (this.value === 'Expenses') {
                     targetSheetKey = "Expenses";
                     listToUse = settingsData.expenses;
-                } else if (this.value === 'VendorPayment' || this.value === 'PartyReturn') {
+                } else if (['VendorPayment', 'APPayment', 'PartyReturn', 'APRecovery'].includes(this.value)) {
                     targetSheetKey = "Payments";
                     listToUse = [
                         ...(settingsData.vendors || []), 
@@ -1227,13 +1263,23 @@
             });
 
             anSel.addEventListener('change', function() {
-                if (mtSel.value === 'Receipts' && stSel.value === 'PartyReturn') {
+                if (mtSel.value === 'Receipts' && (stSel.value === 'PartyReturn' || stSel.value === 'APRecovery')) {
                     let partyName = anSel.value;
                     if (partyName) {
                         activeRowForModal = rowDiv;
                         openPartyLedgerModal(partyName);
                     }
                 }
+            });
+
+            ledgerBtn.addEventListener('click', function() {
+                let selectedAcc = anSel.value;
+                if (!selectedAcc) {
+                    alert("Pehle koi Account Name / Head select karein.");
+                    return;
+                }
+                activeRowForModal = rowDiv;
+                openPartyLedgerModal(selectedAcc);
             });
 
             micBtn.addEventListener('click', function() {
@@ -1275,68 +1321,68 @@
             return rowDiv;
         }
 
+        // Updated to use the exact getVendorLedgerData action from vender_2.html
         function openPartyLedgerModal(partyName) {
-            document.getElementById('modalPartyTitle').textContent = "Ledger History for: " + partyName;
+            document.getElementById('modalPartyTitle').textContent = "Vendor Ledger History for: " + partyName;
             document.getElementById('partyLedgerModal').style.display = 'flex';
             
             const modalTbody = document.getElementById('modalLedgerTableBody');
-            modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">Loading party records...</td></tr>`;
+            modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">Loading vendor records...</td></tr>`;
 
-            if (!globalBackendRecords || globalBackendRecords.length === 0) {
-                if (!SCRIPT_URL) {
-                    modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Script URL is not configured.</td></tr>`;
-                    return;
-                }
-                fetch(SCRIPT_URL + "?action=getVendorLedgerRecords")
-                    .then(res => res.json())
-                    .then(res => {
-                        globalBackendRecords = res && res.data ? res.data : (Array.isArray(res) ? res : []);
-                        processAndRenderModalRecords(partyName, modalTbody);
-                    })
-                    .catch(err => {
-                        console.error("Modal fetch error:", err);
-                        modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Failed to load records.</td></tr>`;
-                    });
-            } else {
-                processAndRenderModalRecords(partyName, modalTbody);
+            if (!SCRIPT_URL) {
+                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Script URL is not configured.</td></tr>`;
+                return;
             }
+
+            fetch(SCRIPT_URL + "?action=getVendorLedgerData")
+                .then(res => res.json())
+                .then(res => {
+                    let vData = res && res.success && res.data ? res.data : (Array.isArray(res) ? res : (res.data || []));
+                    processAndRenderVendorModalRecords(partyName, vData, modalTbody);
+                })
+                .catch(err => {
+                    console.error("Vendor modal fetch error:", err);
+                    modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Failed to load vendor records.</td></tr>`;
+                });
         }
 
-        function processAndRenderModalRecords(partyName, modalTbody) {
-            let cleanTarget = partyName.split('(')[0].trim().toLowerCase();
+        function processAndRenderVendorModalRecords(partyName, vendorLedgerData, modalTbody) {
+            let cleanTarget = partyName.split('(')[0].trim().toUpperCase();
 
-            let filtered = globalBackendRecords.filter(item => {
-                const destAcct = String(item.destination_acct || "").trim().toLowerCase();
-                const accNoCol = String(item.acc_no || "").trim().toLowerCase();
-                const accTitle = String(item.account_title || "").trim().toLowerCase();
-                const targetFull = partyName.trim().toLowerCase();
-
-                return destAcct.includes(cleanTarget) || accNoCol.includes(cleanTarget) || accTitle.includes(cleanTarget) ||
-                       cleanTarget.includes(destAcct) || destAcct === targetFull;
+            let filtered = vendorLedgerData.filter(item => {
+                let vName = String(item.vendor_name || "").trim().toUpperCase();
+                let destAcct = String(item.destination_acct || "").trim().toUpperCase();
+                let accTitle = String(item.account_title || "").trim().toUpperCase();
+                
+                return (vName && (vName === cleanTarget || vName.includes(cleanTarget) || cleanTarget.includes(vName))) ||
+                       (destAcct && (destAcct === cleanTarget || destAcct.includes(cleanTarget) || cleanTarget.includes(destAcct))) ||
+                       (accTitle && (accTitle === cleanTarget || accTitle.includes(cleanTarget) || cleanTarget.includes(accTitle)));
             });
 
             modalTbody.innerHTML = '';
             if (filtered.length === 0) {
-                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">No ledger history found for this party.</td></tr>`;
+                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">No ledger history found for this vendor.</td></tr>`;
                 return;
             }
 
+            let runningBal = 0;
             filtered.forEach(row => {
-                let amtIn = (parseFloat(row.cash_debit) || 0) + (parseFloat(row.bank_debit) || 0);
-                let amtOut = (parseFloat(row.cash_credit) || 0) + (parseFloat(row.bank_credit) || 0);
-                let selAmount = amtIn > 0 ? amtIn : (amtOut > 0 ? amtOut : 0);
-                let vNo = row.voucherNo || '';
+                let debitAmt = parseFloat(row.debit) || 0;   
+                let creditAmt = parseFloat(row.credit) || 0; 
+                let selAmount = debitAmt > 0 ? debitAmt : (creditAmt > 0 ? creditAmt : 0);
+                let vNo = row.bill_no || row.voucherNo || '';
                 let remarksText = row.remarks || row.particulars || '';
+                runningBal = runningBal + creditAmt - debitAmt;
 
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center;"><button type="button" class="btn-select-ledger-row" onclick="selectLedgerEntry('${vNo}', '${selAmount}', '${remarksText.replace(/'/g, "\\'")}')">Select</button></td>
                     <td>${row.date || '-'}</td>
                     <td><b>${vNo || '-'}</b></td>
-                    <td>${row.particulars || '-'}</td>
-                    <td style="text-align:right; color:#16a34a;">${amtIn > 0 ? amtIn.toLocaleString() : '-'}</td>
-                    <td style="text-align:right; color:#dc2626;">${amtOut > 0 ? amtOut.toLocaleString() : '-'}</td>
-                    <td style="font-style:italic; color:#4b5563;">${row.remarks || '-'}</td>
+                    <td>${row.particulars || row.account_title || '-'}</td>
+                    <td style="text-align:right; color:#16a34a;">${debitAmt > 0 ? debitAmt.toLocaleString() : '-'}</td>
+                    <td style="text-align:right; color:#dc2626;">${creditAmt > 0 ? creditAmt.toLocaleString() : '-'}</td>
+                    <td style="text-align:right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
                 `;
                 modalTbody.appendChild(tr);
             });
