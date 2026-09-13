@@ -666,9 +666,9 @@
                                     <th>Date</th>
                                     <th>Voucher No</th>
                                     <th>Particulars</th>
-                                    <th style="text-align:right;">Debit</th>
-                                    <th style="text-align:right;">Credit</th>
-                                    <th>Remarks</th>
+                                    <th style="text-align:right;">Debit (IN)</th>
+                                    <th style="text-align:right;">Credit (OUT)</th>
+                                    <th style="text-align:right;">Balance</th>
                                 </tr>
                             </thead>
                             <tbody id="modalLedgerTableBody">
@@ -801,6 +801,7 @@
     <script>
         let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
         let globalBackendRecords = [];
+        let globalUniversalLedgerRecords = [];
         let appliedOpeningBalance = null;
         let currentSortColumn = 0;
         let currentSortAsc = false;
@@ -1326,63 +1327,56 @@
             document.getElementById('partyLedgerModal').style.display = 'flex';
             
             const modalTbody = document.getElementById('modalLedgerTableBody');
-            modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">Loading party records...</td></tr>`;
+            modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">Loading ledger records...</td></tr>`;
 
-            if (!globalBackendRecords || globalBackendRecords.length === 0) {
-                if (!SCRIPT_URL) {
-                    modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Script URL is not configured.</td></tr>`;
-                    return;
-                }
-                fetch(SCRIPT_URL + "?action=getVendorLedgerRecords")
-                    .then(res => res.json())
-                    .then(res => {
-                        globalBackendRecords = res && res.data ? res.data : (Array.isArray(res) ? res : []);
-                        processAndRenderModalRecords(partyName, modalTbody);
-                    })
-                    .catch(err => {
-                        console.error("Modal fetch error:", err);
-                        modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Failed to load records.</td></tr>`;
-                    });
-            } else {
-                processAndRenderModalRecords(partyName, modalTbody);
+            if (!SCRIPT_URL) {
+                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Script URL is not configured.</td></tr>`;
+                return;
             }
+
+            fetch(SCRIPT_URL + "?action=getUniversalLedgerData")
+                .then(res => res.json())
+                .then(res => {
+                    globalUniversalLedgerRecords = res && res.success && res.data ? res.data : (Array.isArray(res) ? res : (res.data || []));
+                    processAndRenderUniversalModalRecords(partyName, globalUniversalLedgerRecords, modalTbody);
+                })
+                .catch(err => {
+                    console.error("Ledger modal fetch error:", err);
+                    modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Failed to load records.</td></tr>`;
+                });
         }
 
-        function processAndRenderModalRecords(partyName, modalTbody) {
-            let cleanTarget = partyName.split('(')[0].trim().toLowerCase();
+        function processAndRenderUniversalModalRecords(partyName, ledgerData, modalTbody) {
+            let cleanTarget = partyName.split('(')[0].trim().toUpperCase();
 
-            let filtered = globalBackendRecords.filter(item => {
-                const destAcct = String(item.destination_acct || "").trim().toLowerCase();
-                const accNoCol = String(item.acc_no || "").trim().toLowerCase();
-                const accTitle = String(item.account_title || "").trim().toLowerCase();
-                const targetFull = partyName.trim().toLowerCase();
-
-                return destAcct.includes(cleanTarget) || accNoCol.includes(cleanTarget) || accTitle.includes(cleanTarget) ||
-                       cleanTarget.includes(destAcct) || destAcct === targetFull;
+            let filtered = ledgerData.filter(item => {
+                let accName = String(item.account_name || "").trim().toUpperCase();
+                return accName === cleanTarget || accName.includes(cleanTarget) || cleanTarget.includes(accName);
             });
 
             modalTbody.innerHTML = '';
             if (filtered.length === 0) {
-                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">No ledger history found for this party.</td></tr>`;
+                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">No ledger history found for this account.</td></tr>`;
                 return;
             }
 
             filtered.forEach(row => {
-                let amtIn = (parseFloat(row.cash_debit) || 0) + (parseFloat(row.bank_debit) || 0);
-                let amtOut = (parseFloat(row.cash_credit) || 0) + (parseFloat(row.bank_credit) || 0);
-                let selAmount = amtIn > 0 ? amtIn : (amtOut > 0 ? amtOut : 0);
+                let debitAmt = parseFloat(row.debit) || 0;   // IN
+                let creditAmt = parseFloat(row.credit) || 0; // OUT
+                let selAmount = debitAmt > 0 ? debitAmt : (creditAmt > 0 ? creditAmt : 0);
                 let vNo = row.voucherNo || '';
                 let remarksText = row.remarks || row.particulars || '';
+                let runningBal = parseFloat(row.balance) || 0;
 
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center;"><button type="button" class="btn-select-ledger-row" onclick="selectLedgerEntry('${vNo}', '${selAmount}', '${remarksText.replace(/'/g, "\\'")}')">Select</button></td>
                     <td>${row.date || '-'}</td>
                     <td><b>${vNo || '-'}</b></td>
-                    <td>${row.particulars || '-'}</td>
-                    <td style="text-align:right; color:#16a34a;">${amtIn > 0 ? amtIn.toLocaleString() : '-'}</td>
-                    <td style="text-align:right; color:#dc2626;">${amtOut > 0 ? amtOut.toLocaleString() : '-'}</td>
-                    <td style="font-style:italic; color:#4b5563;">${row.remarks || '-'}</td>
+                    <td>${row.particulars || row.category || '-'}</td>
+                    <td style="text-align:right; color:#16a34a;">${debitAmt > 0 ? debitAmt.toLocaleString() : '-'}</td>
+                    <td style="text-align:right; color:#dc2626;">${creditAmt > 0 ? creditAmt.toLocaleString() : '-'}</td>
+                    <td style="text-align:right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
                 `;
                 modalTbody.appendChild(tr);
             });
