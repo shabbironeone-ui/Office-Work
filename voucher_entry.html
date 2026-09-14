@@ -1346,11 +1346,11 @@
                 });
         }
 
-        function processAndRenderUniversalModalRecords(partyName, ledgerData, modalTbody) {
+        function processAndRenderUniversalModalRecords(partyName, ledgerData, modalTbody, showAllFallback = false) {
             let cleanTarget = partyName.split('(')[0].trim().toUpperCase();
             let targetKeywords = cleanTarget.split(' ').filter(Boolean);
 
-            let filtered = ledgerData.filter(item => {
+            let filtered = showAllFallback ? ledgerData : ledgerData.filter(item => {
                 let rowText = Object.values(item)
                     .filter(val => val !== null && val !== undefined)
                     .join(' ')
@@ -1361,7 +1361,15 @@
 
             modalTbody.innerHTML = '';
             if (filtered.length === 0) {
-                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">No ledger history found for this account.</td></tr>`;
+                modalTbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:20px; color:#b45309;">
+                            <b>No ledger history found for "${partyName}".</b><br><br>
+                            <button type="button" class="btn-select-ledger-row" onclick="processAndRenderUniversalModalRecords('${partyName.replace(/'/g, "\\'")}', globalUniversalLedgerRecords, document.getElementById('modalLedgerTableBody'), true)" style="background:#059669;">
+                                View All Ledger Records in Sheet (Debug)
+                            </button>
+                        </td>
+                    </tr>`;
                 return;
             }
 
