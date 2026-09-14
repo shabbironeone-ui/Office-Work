@@ -1351,7 +1351,14 @@
 
             let filtered = ledgerData.filter(item => {
                 let accName = String(item.account_name || "").trim().toUpperCase();
-                return accName === cleanTarget || accName.includes(cleanTarget) || cleanTarget.includes(accName);
+                let destAcct = String(item.destination_acct || "").trim().toUpperCase();
+                let accTitle = String(item.account_title || "").trim().toUpperCase();
+                let vName = String(item.vendor_name || "").trim().toUpperCase();
+                
+                return (accName && (accName === cleanTarget || accName.includes(cleanTarget) || cleanTarget.includes(accName))) ||
+                       (destAcct && (destAcct === cleanTarget || destAcct.includes(cleanTarget) || cleanTarget.includes(destAcct))) ||
+                       (accTitle && (accTitle === cleanTarget || accTitle.includes(cleanTarget) || cleanTarget.includes(accTitle))) ||
+                       (vName && (vName === cleanTarget || vName.includes(cleanTarget) || cleanTarget.includes(vName)));
             });
 
             modalTbody.innerHTML = '';
@@ -1360,20 +1367,26 @@
                 return;
             }
 
+            let runningBal = 0;
             filtered.forEach(row => {
-                let debitAmt = parseFloat(row.debit) || 0;   // IN
-                let creditAmt = parseFloat(row.credit) || 0; // OUT
+                let debitAmt = parseFloat(row.debit) || parseFloat(row.cash_debit) || parseFloat(row.bank_debit) || 0;   // IN
+                let creditAmt = parseFloat(row.credit) || parseFloat(row.cash_credit) || parseFloat(row.bank_credit) || 0; // OUT
                 let selAmount = debitAmt > 0 ? debitAmt : (creditAmt > 0 ? creditAmt : 0);
-                let vNo = row.voucherNo || '';
+                let vNo = row.voucherNo || row.bill_no || '';
                 let remarksText = row.remarks || row.particulars || '';
-                let runningBal = parseFloat(row.balance) || 0;
+                
+                if (row.balance !== undefined && row.balance !== null && !isNaN(row.balance)) {
+                    runningBal = parseFloat(row.balance);
+                } else {
+                    runningBal = runningBal + creditAmt - debitAmt;
+                }
 
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center;"><button type="button" class="btn-select-ledger-row" onclick="selectLedgerEntry('${vNo}', '${selAmount}', '${remarksText.replace(/'/g, "\\'")}')">Select</button></td>
                     <td>${row.date || '-'}</td>
                     <td><b>${vNo || '-'}</b></td>
-                    <td>${row.particulars || row.category || '-'}</td>
+                    <td>${row.particulars || row.category || row.account_title || '-'}</td>
                     <td style="text-align:right; color:#16a34a;">${debitAmt > 0 ? debitAmt.toLocaleString() : '-'}</td>
                     <td style="text-align:right; color:#dc2626;">${creditAmt > 0 ? creditAmt.toLocaleString() : '-'}</td>
                     <td style="text-align:right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
