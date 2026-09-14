@@ -1348,17 +1348,15 @@
 
         function processAndRenderUniversalModalRecords(partyName, ledgerData, modalTbody) {
             let cleanTarget = partyName.split('(')[0].trim().toUpperCase();
+            let targetKeywords = cleanTarget.split(' ').filter(Boolean);
 
             let filtered = ledgerData.filter(item => {
-                let accName = String(item.account_name || "").trim().toUpperCase();
-                let destAcct = String(item.destination_acct || "").trim().toUpperCase();
-                let accTitle = String(item.account_title || "").trim().toUpperCase();
-                let vName = String(item.vendor_name || "").trim().toUpperCase();
-                
-                return (accName && (accName === cleanTarget || accName.includes(cleanTarget) || cleanTarget.includes(accName))) ||
-                       (destAcct && (destAcct === cleanTarget || destAcct.includes(cleanTarget) || cleanTarget.includes(destAcct))) ||
-                       (accTitle && (accTitle === cleanTarget || accTitle.includes(cleanTarget) || cleanTarget.includes(accTitle))) ||
-                       (vName && (vName === cleanTarget || vName.includes(cleanTarget) || cleanTarget.includes(vName)));
+                let rowText = Object.values(item)
+                    .filter(val => val !== null && val !== undefined)
+                    .join(' ')
+                    .toUpperCase();
+
+                return targetKeywords.some(keyword => rowText.includes(keyword)) || rowText.includes(cleanTarget);
             });
 
             modalTbody.innerHTML = '';
