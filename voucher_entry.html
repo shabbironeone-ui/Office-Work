@@ -666,9 +666,9 @@
                                     <th>Date</th>
                                     <th>Voucher No</th>
                                     <th>Particulars</th>
-                                    <th style="text-align:right;">Debit (IN)</th>
-                                    <th style="text-align:right;">Credit (OUT)</th>
-                                    <th style="text-align:right;">Balance</th>
+                                    <th style="text-align:right;">Debit</th>
+                                    <th style="text-align:right;">Credit</th>
+                                    <th>Remarks</th>
                                 </tr>
                             </thead>
                             <tbody id="modalLedgerTableBody">
@@ -801,7 +801,6 @@
     <script>
         let SCRIPT_URL = localStorage.getItem('erp_script_url') || "";
         let globalBackendRecords = [];
-        let globalUniversalLedgerRecords = [];
         let appliedOpeningBalance = null;
         let currentSortColumn = 0;
         let currentSortAsc = false;
@@ -1322,58 +1321,65 @@
             return rowDiv;
         }
 
+        // Updated to use the exact getVendorLedgerData action from vender_2.html
         function openPartyLedgerModal(partyName) {
-            document.getElementById('modalPartyTitle').textContent = "Ledger History for: " + partyName;
+            document.getElementById('modalPartyTitle').textContent = "Vendor Ledger History for: " + partyName;
             document.getElementById('partyLedgerModal').style.display = 'flex';
             
             const modalTbody = document.getElementById('modalLedgerTableBody');
-            modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">Loading ledger records...</td></tr>`;
+            modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">Loading vendor records...</td></tr>`;
 
             if (!SCRIPT_URL) {
                 modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Script URL is not configured.</td></tr>`;
                 return;
             }
 
-            fetch(SCRIPT_URL + "?action=getUniversalLedgerData")
+            fetch(SCRIPT_URL + "?action=getVendorLedgerData")
                 .then(res => res.json())
                 .then(res => {
-                    globalUniversalLedgerRecords = res && res.success && res.data ? res.data : (Array.isArray(res) ? res : (res.data || []));
-                    processAndRenderUniversalModalRecords(partyName, globalUniversalLedgerRecords, modalTbody);
+                    let vData = res && res.success && res.data ? res.data : (Array.isArray(res) ? res : (res.data || []));
+                    processAndRenderVendorModalRecords(partyName, vData, modalTbody);
                 })
                 .catch(err => {
-                    console.error("Ledger modal fetch error:", err);
-                    modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Failed to load records.</td></tr>`;
+                    console.error("Vendor modal fetch error:", err);
+                    modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Failed to load vendor records.</td></tr>`;
                 });
         }
 
-        function processAndRenderUniversalModalRecords(partyName, ledgerData, modalTbody) {
+        function processAndRenderVendorModalRecords(partyName, vendorLedgerData, modalTbody) {
             let cleanTarget = partyName.split('(')[0].trim().toUpperCase();
 
-            let filtered = ledgerData.filter(item => {
-                let accName = String(item.account_name || "").trim().toUpperCase();
-                return accName === cleanTarget || accName.includes(cleanTarget) || cleanTarget.includes(accName);
+            let filtered = vendorLedgerData.filter(item => {
+                let vName = String(item.vendor_name || "").trim().toUpperCase();
+                let destAcct = String(item.destination_acct || "").trim().toUpperCase();
+                let accTitle = String(item.account_title || "").trim().toUpperCase();
+                
+                return (vName && (vName === cleanTarget || vName.includes(cleanTarget) || cleanTarget.includes(vName))) ||
+                       (destAcct && (destAcct === cleanTarget || destAcct.includes(cleanTarget) || cleanTarget.includes(destAcct))) ||
+                       (accTitle && (accTitle === cleanTarget || accTitle.includes(cleanTarget) || cleanTarget.includes(accTitle)));
             });
 
             modalTbody.innerHTML = '';
             if (filtered.length === 0) {
-                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">No ledger history found for this account.</td></tr>`;
+                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">No ledger history found for this vendor.</td></tr>`;
                 return;
             }
 
+            let runningBal = 0;
             filtered.forEach(row => {
-                let debitAmt = parseFloat(row.debit) || 0;   // IN
-                let creditAmt = parseFloat(row.credit) || 0; // OUT
+                let debitAmt = parseFloat(row.debit) || 0;   
+                let creditAmt = parseFloat(row.credit) || 0; 
                 let selAmount = debitAmt > 0 ? debitAmt : (creditAmt > 0 ? creditAmt : 0);
-                let vNo = row.voucherNo || '';
+                let vNo = row.bill_no || row.voucherNo || '';
                 let remarksText = row.remarks || row.particulars || '';
-                let runningBal = parseFloat(row.balance) || 0;
+                runningBal = runningBal + creditAmt - debitAmt;
 
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center;"><button type="button" class="btn-select-ledger-row" onclick="selectLedgerEntry('${vNo}', '${selAmount}', '${remarksText.replace(/'/g, "\\'")}')">Select</button></td>
                     <td>${row.date || '-'}</td>
                     <td><b>${vNo || '-'}</b></td>
-                    <td>${row.particulars || row.category || '-'}</td>
+                    <td>${row.particulars || row.account_title || '-'}</td>
                     <td style="text-align:right; color:#16a34a;">${debitAmt > 0 ? debitAmt.toLocaleString() : '-'}</td>
                     <td style="text-align:right; color:#dc2626;">${creditAmt > 0 ? creditAmt.toLocaleString() : '-'}</td>
                     <td style="text-align:right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
