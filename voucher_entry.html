@@ -46,8 +46,7 @@
             width: 100% !important;
         }
         body.mobile-mode .totals-bar-grid {
-            grid-template-columns: 1fr !important;
-            gap: 8px !important;
+            grid-template-columns: 20% 20% 20% 40% !important;
             font-size: 11px !important;
         }
         body.mobile-mode .table-container {
@@ -548,26 +547,15 @@
 
         .totals-bar-grid {
             display: grid;
-            grid-template-columns: 220px 1fr 70px 105px 70px 105px 70px 105px;
-            align-items: center;
+            grid-template-columns: 10% 9% 15% 25% 10% 10% 11% 10%;
             font-weight: bold;
             font-size: 12px;
-            padding: 6px 10px;
+            padding: 4px 8px;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-bottom: none;
             border-radius: 4px 4px 0 0;
             margin-top: 10px;
-            gap: 8px;
-        }
-        .totals-search-input {
-            padding: 4px 8px;
-            height: 28px;
-            font-size: 11px;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            background: #fff;
-            width: 100%;
         }
 
         #loadingSpinner {
@@ -766,18 +754,13 @@
                 </span>
             </div>
 
-            <!-- Totals & Search Filter Bar -->
             <div class="totals-bar-grid">
-                <div>
-                    <input type="text" id="tableSearchInput" class="totals-search-input" placeholder="🔍 Search table..." oninput="applyLedgerFilter(false)">
-                </div>
+                <div></div><div></div><div></div>
                 <div style="text-align: right; font-size: 11px; color: #555;">TOTALS:</div>
-                <div style="text-align: right; color: #555;">IN:</div>
                 <div style="text-align: right; color: #16a34a;" id="lblTotalIn">0</div>
-                <div style="text-align: right; color: #555;">OUT:</div>
                 <div style="text-align: right; color: #dc2626;" id="lblTotalOut">0</div>
-                <div style="text-align: right; color: #555;">BAL:</div>
                 <div style="text-align: right; color: #2563eb;" id="lblClosingBalance">0</div>
+                <div></div>
             </div>
 
             <div class="table-container" style="border-radius: 0 0 4px 4px;">
@@ -1339,49 +1322,36 @@
             return rowDiv;
         }
 
-        // Updated Modal Function to use globalBackendRecords directly (No Fetch Error)
-       function openPartyLedgerModal(partyName) {
+        function openPartyLedgerModal(partyName) {
             document.getElementById('modalPartyTitle').textContent = "Ledger History for: " + partyName;
             document.getElementById('partyLedgerModal').style.display = 'flex';
             
             const modalTbody = document.getElementById('modalLedgerTableBody');
             modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">Loading ledger records...</td></tr>`;
 
-            try {
-                if (typeof globalBackendRecords !== 'undefined' && globalBackendRecords && globalBackendRecords.length > 0) {
-                    processAndRenderUniversalModalRecords(partyName, globalBackendRecords, modalTbody);
-                } else if (typeof SCRIPT_URL !== 'undefined' && SCRIPT_URL) {
-                    fetch(SCRIPT_URL + "?action=getVendorLedgerRecords")
-                        .then(res => res.json())
-                        .then(res => {
-                            let records = res && res.success && res.data ? res.data : (Array.isArray(res) ? res : (res.data || []));
-                            globalBackendRecords = records;
-                            processAndRenderUniversalModalRecords(partyName, records, modalTbody);
-                        })
-                        .catch(err => {
-                            modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#b45309;">No records found in local memory. Please click 'Refresh' button first.</td></tr>`;
-                        });
-                } else {
-                    modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#b45309;">Please configure Script URL or load table data first.</td></tr>`;
-                }
-            } catch (ex) {
-                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Error loading records.</td></tr>`;
+            if (!SCRIPT_URL) {
+                modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Script URL is not configured.</td></tr>`;
+                return;
             }
+
+            fetch(SCRIPT_URL + "?action=getUniversalLedgerData")
+                .then(res => res.json())
+                .then(res => {
+                    globalUniversalLedgerRecords = res && res.success && res.data ? res.data : (Array.isArray(res) ? res : (res.data || []));
+                    processAndRenderUniversalModalRecords(partyName, globalUniversalLedgerRecords, modalTbody);
+                })
+                .catch(err => {
+                    console.error("Ledger modal fetch error:", err);
+                    modalTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Failed to load records.</td></tr>`;
+                });
         }
 
         function processAndRenderUniversalModalRecords(partyName, ledgerData, modalTbody) {
             let cleanTarget = partyName.split('(')[0].trim().toUpperCase();
 
             let filtered = ledgerData.filter(item => {
-                let accName1 = String(item.account_name || "").trim().toUpperCase();
-                let accName2 = String(item.destination_acct || "").trim().toUpperCase();
-                let accName3 = String(item.account_title || "").trim().toUpperCase();
-                let accName4 = String(item.acc_no || "").trim().toUpperCase();
-
-                return accName1.includes(cleanTarget) || cleanTarget.includes(accName1) ||
-                       accName2.includes(cleanTarget) || cleanTarget.includes(accName2) ||
-                       accName3.includes(cleanTarget) || cleanTarget.includes(accName3) ||
-                       accName4.includes(cleanTarget) || cleanTarget.includes(accName4);
+                let accName = String(item.account_name || "").trim().toUpperCase();
+                return accName === cleanTarget || accName.includes(cleanTarget) || cleanTarget.includes(accName);
             });
 
             modalTbody.innerHTML = '';
@@ -1391,21 +1361,22 @@
             }
 
             filtered.forEach(row => {
-                let debitAmt = parseFloat(row.cash_debit) || parseFloat(row.bank_debit) || parseFloat(row.debit) || 0;
-                let creditAmt = parseFloat(row.cash_credit) || parseFloat(row.bank_credit) || parseFloat(row.credit) || 0;
+                let debitAmt = parseFloat(row.debit) || 0;   // IN
+                let creditAmt = parseFloat(row.credit) || 0; // OUT
                 let selAmount = debitAmt > 0 ? debitAmt : (creditAmt > 0 ? creditAmt : 0);
                 let vNo = row.voucherNo || '';
                 let remarksText = row.remarks || row.particulars || '';
+                let runningBal = parseFloat(row.balance) || 0;
 
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center;"><button type="button" class="btn-select-ledger-row" onclick="selectLedgerEntry('${vNo}', '${selAmount}', '${remarksText.replace(/'/g, "\\'")}')">Select</button></td>
                     <td>${row.date || '-'}</td>
                     <td><b>${vNo || '-'}</b></td>
-                    <td>${row.particulars || row.destination_acct || '-'}</td>
+                    <td>${row.particulars || row.category || '-'}</td>
                     <td style="text-align:right; color:#16a34a;">${debitAmt > 0 ? debitAmt.toLocaleString() : '-'}</td>
                     <td style="text-align:right; color:#dc2626;">${creditAmt > 0 ? creditAmt.toLocaleString() : '-'}</td>
-                    <td style="text-align:right; font-weight: bold; color: #2563eb;">-</td>
+                    <td style="text-align:right; font-weight: bold; color: #2563eb;">${runningBal.toLocaleString()}</td>
                 `;
                 modalTbody.appendChild(tr);
             });
@@ -1661,7 +1632,6 @@
             const isShowAll = showAllCheckbox.checked;
             const fromDateStr = document.getElementById('fromDateFilter').value;
             const toDateStr = document.getElementById('toDateFilter').value;
-            const searchInputVal = (document.getElementById('tableSearchInput').value || "").trim().toLowerCase();
             const tbody = document.getElementById('historyTableBody');
 
             document.getElementById('selectedHeadName').textContent = 
@@ -1730,20 +1700,6 @@
                     if (fromDate && rowDate < fromDate) return false;
                     if (toDate && rowDate > toDate) return false;
                 }
-
-                if (searchInputVal) {
-                    let dateStr = String(item.date || "").toLowerCase();
-                    let vNoStr = String(item.voucherNo || "").toLowerCase();
-                    let accStr = String(item.destination_acct || "").toLowerCase();
-                    let partStr = String(item.particulars || "").toLowerCase();
-                    let remStr = String(item.remarks || "").toLowerCase();
-                    let accNoStr = String(item.acc_no || "").toLowerCase();
-                    let accTitleStr = String(item.account_title || "").toLowerCase();
-
-                    let combined = dateStr + " " + vNoStr + " " + accStr + " " + partStr + " " + remStr + " " + accNoStr + " " + accTitleStr;
-                    if (!combined.includes(searchInputVal)) return false;
-                }
-
                 return true;
             });
 
@@ -2025,7 +1981,6 @@
         function resetLedgerFilters() {
             document.getElementById('fromDateFilter').value = '';
             document.getElementById('toDateFilter').value = '';
-            document.getElementById('tableSearchInput').value = '';
             showAllCheckbox.checked = false;
             ledgerHeadFilter.disabled = false;
             enableOpeningBal.checked = false;
