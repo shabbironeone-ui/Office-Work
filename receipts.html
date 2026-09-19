@@ -26,6 +26,53 @@
       font-size: 13px;
     }
 
+    /* Compact & Beautiful Excel-like Column Filter Dropdown */
+    .excel-filter-dropdown {
+      display: none;
+      position: absolute;
+      background: #ffffff;
+      border: 1px solid #b0bec5;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      border-radius: 6px;
+      padding: 10px;
+      z-index: 1000;
+      min-width: 180px;
+      max-height: 220px;
+      overflow-y: auto;
+      text-align: left;
+      font-size: 11.5px;
+      color: #333;
+    }
+    .excel-filter-dropdown.show { display: block; }
+    .excel-filter-dropdown label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 6px;
+      cursor: pointer;
+      font-weight: normal;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+    .excel-filter-dropdown label:hover {
+      background: #f1f8e9;
+    }
+    .th-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      width: 100%;
+    }
+    .filter-icon {
+      cursor: pointer;
+      font-size: 10px;
+      color: #555;
+      padding: 2px;
+      transition: color 0.2s;
+    }
+    .filter-icon:hover { color: var(--primary); }
+
     /* Global Center Spinner Overlay */
     #globalSpinnerOverlay {
       display: none;
@@ -401,7 +448,6 @@
       position: sticky;
       top: 0;
       z-index: 1;
-      cursor: pointer;
     }
 
     .recent-section {
@@ -607,12 +653,30 @@
           <thead>
             <tr>
               <th style="width:30px;"><input type="checkbox" id="selectAllRecent" onclick="toggleSelectAllRecent(this)"></th>
-              <th onclick="sortRecentTable('dateObj')">Date <i class="fas fa-sort"></i></th>
-              <th onclick="sortRecentTable('receiptNo')">Receipt No <i class="fas fa-sort"></i></th>
-              <th onclick="sortRecentTable('accountNo')">Acc No <i class="fas fa-sort"></i></th>
-              <th onclick="sortRecentTable('accountTitle')">Customer Name <i class="fas fa-sort"></i></th>
-              <th onclick="sortRecentTable('paymentHead')">Pay Mode <i class="fas fa-sort"></i></th>
-              <th onclick="sortRecentTable('amount')">Amount <i class="fas fa-sort"></i></th>
+              <th>
+                <div class="th-content" onclick="sortRecentTable('dateObj')"><span>Date</span> <i class="fas fa-sort"></i></div>
+                <i class="fas fa-filter filter-icon" onclick="openExcelFilter(event, 'dateStr')" title="Filter"></i>
+              </th>
+              <th>
+                <div class="th-content" onclick="sortRecentTable('receiptNo')"><span>Receipt No</span> <i class="fas fa-sort"></i></div>
+                <i class="fas fa-filter filter-icon" onclick="openExcelFilter(event, 'receiptNo')" title="Filter"></i>
+              </th>
+              <th>
+                <div class="th-content" onclick="sortRecentTable('accountNo')"><span>Acc No</span> <i class="fas fa-sort"></i></div>
+                <i class="fas fa-filter filter-icon" onclick="openExcelFilter(event, 'accountNo')" title="Filter"></i>
+              </th>
+              <th>
+                <div class="th-content" onclick="sortRecentTable('accountTitle')"><span>Customer Name</span> <i class="fas fa-sort"></i></div>
+                <i class="fas fa-filter filter-icon" onclick="openExcelFilter(event, 'accountTitle')" title="Filter"></i>
+              </th>
+              <th>
+                <div class="th-content" onclick="sortRecentTable('paymentHead')"><span>Pay Mode</span> <i class="fas fa-sort"></i></div>
+                <i class="fas fa-filter filter-icon" onclick="openExcelFilter(event, 'paymentHead')" title="Filter"></i>
+              </th>
+              <th>
+                <div class="th-content" onclick="sortRecentTable('amount')"><span>Amount</span> <i class="fas fa-sort"></i></div>
+                <i class="fas fa-filter filter-icon" onclick="openExcelFilter(event, 'amount')" title="Filter"></i>
+              </th>
             </tr>
           </thead>
           <tbody id="recentReceiptsBody">
@@ -671,6 +735,8 @@
 
 </div>
 
+<!-- Excel Filter Popup Container -->
+<div id="excelFilterPopup" class="excel-filter-dropdown"></div>
 <div id="printArea"></div>
 
 <script>
@@ -1082,11 +1148,9 @@
 
     if (entries.length === 0) { alert("Kam az kam aik mukammal row enter karein!"); return; }
 
-    // Instant UI Update: Foran form clear karein taake uper wala hissa agli entry ke liye free ho jaye
     addEntriesToLocalRecentList(entries, commonDate, commonSuffix);
     clearBatchForm();
 
-    // Background mein Google Sheet par save karein aur neeche spinning wheel dikhayein
     isSubmitting = true;
     let saveBtn = document.getElementById('saveBatchBtn');
     saveBtn.disabled = true;
@@ -1150,6 +1214,7 @@
   // ================= RECENT SAVED RECEIPTS =================
   let recentReceiptsData = [];
   let recentSortDirection = {};
+  let excelColumnFilters = {};
 
   function loadRecentReceipts() {
     if (!SCRIPT_URL) return;
@@ -1176,7 +1241,7 @@
     return /daybook|cash/i.test(r.paymentHead || '');
   }
 
-  function getFilteredRecentReceipts() {
+  function getFilteredRecentReceipts(excludeColKey = null) {
     const fromVal = document.getElementById('recentFromDate').value;
     const toVal = document.getElementById('recentToDate').value;
     const searchVal = document.getElementById('recentSearchRct').value.trim().toLowerCase();
@@ -1201,6 +1266,14 @@
         if (bankOnly && !isDaybookRow(r)) matched = true;
         if (!matched) return false;
       }
+
+      for (let col in excelColumnFilters) {
+        if (col === excludeColKey) continue;
+        let allowedSet = excelColumnFilters[col];
+        let val = String(r[col] !== undefined ? r[col] : '');
+        if (!allowedSet.has(val)) return false;
+      }
+
       return true;
     });
 
@@ -1241,6 +1314,83 @@
     });
     tbody.innerHTML = html;
   }
+
+  function openExcelFilter(event, columnKey) {
+    event.stopPropagation();
+    let popup = document.getElementById('excelFilterPopup');
+    
+    let preFiltered = getFilteredRecentReceipts(columnKey);
+    let uniqueVals = [...new Set(preFiltered.map(r => String(r[columnKey] !== undefined ? r[columnKey] : '')))].sort();
+    
+    let currentAllowed = excelColumnFilters[columnKey];
+    let isAllChecked = !currentAllowed;
+
+    let html = `
+      <div style="font-weight:bold; border-bottom:1px solid #e0e0e0; margin-bottom:6px; padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:var(--primary);">Filter Column</span>
+        <span style="cursor:pointer; font-size:14px; color:#777;" onclick="document.getElementById('excelFilterPopup').classList.remove('show')">&times;</span>
+      </div>
+      <label style="border-bottom: 1px solid #f0f0f0; margin-bottom: 4px; padding-bottom: 4px;">
+        <input type="checkbox" id="selectAllCol" ${isAllChecked ? 'checked' : ''} onchange="toggleSelectAllCol(this, '${columnKey}')"> <b>(Select All)</b>
+      </label>
+      <div style="max-height:140px; overflow-y:auto; padding-right:2px;">
+    `;
+
+    uniqueVals.forEach(val => {
+      let isChecked = isAllChecked || currentAllowed.has(val);
+      html += `<label><input type="checkbox" class="col-val-chk" value="${val}" ${isChecked ? 'checked' : ''}> ${val || '(Blanks)'}</label>`;
+    });
+
+    html += `</div>
+      <div style="margin-top:8px; display:flex; gap:6px; border-top:1px solid #e0e0e0; padding-top:6px;">
+        <button class="action-btn btn-primary" style="padding:4px 10px; font-size:10.5px; flex:1;" onclick="applyExcelFilter('${columnKey}')">Apply</button>
+        <button class="action-btn btn-secondary" style="padding:4px 10px; font-size:10.5px; flex:1;" onclick="clearExcelFilter('${columnKey}')">Clear</button>
+      </div>
+    `;
+
+    popup.innerHTML = html;
+    let rect = event.target.getBoundingClientRect();
+    popup.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+    popup.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 190) + 'px';
+    popup.classList.add('show');
+  }
+
+  function toggleSelectAllCol(master, colKey) {
+    document.querySelectorAll('.col-val-chk').forEach(chk => chk.checked = master.checked);
+  }
+
+  function applyExcelFilter(colKey) {
+    let checkboxes = document.querySelectorAll('.col-val-chk');
+    let allowed = new Set();
+    let allChecked = true;
+
+    checkboxes.forEach(chk => {
+      if (chk.checked) allowed.add(chk.value);
+      else allChecked = false;
+    });
+
+    if (allChecked) {
+      delete excelColumnFilters[colKey];
+    } else {
+      excelColumnFilters[colKey] = allowed;
+    }
+
+    document.getElementById('excelFilterPopup').classList.remove('show');
+    renderRecentReceipts();
+  }
+
+  function clearExcelFilter(colKey) {
+    delete excelColumnFilters[colKey];
+    document.getElementById('excelFilterPopup').classList.remove('show');
+    renderRecentReceipts();
+  }
+
+  window.addEventListener('click', function(e) {
+    let popup = document.getElementById('excelFilterPopup');
+    if (!popup.contains(e.target) && !e.target.classList.contains('filter-icon')) {
+      popup.classList.remove('show');
+    }
+  });
 
   function toggleSelectAllRecent(master) {
     document.querySelectorAll('.recent-row-chk').forEach(chk => chk.checked = master.checked);
@@ -1306,6 +1456,7 @@
     document.getElementById('recentSearchRct').value = '';
     document.getElementById('recentDaybookOnly').checked = true;
     document.getElementById('recentBankOnly').checked = false;
+    excelColumnFilters = {};
     renderRecentReceipts();
   }
 
