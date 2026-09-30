@@ -68,7 +68,6 @@
       margin-bottom: 15px;
     }
 
-    /* STRICT FIT TO WINDOW TABLES (NO OVERFLOW) */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -188,7 +187,6 @@
       border-radius: 4px;
     }
 
-    /* Modal Styles */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -224,7 +222,8 @@
       align-items: center;
     }
     .modal-header h3 { margin: 0; color: var(--primary); }
-    .close-btn { font-size: 20px; font-weight: bold; cursor: pointer; color: #64748b; }
+    .close-btn { font-size: 24px; font-weight: bold; cursor: pointer; color: #64748b; padding: 0 8px; line-height: 1; }
+    .close-btn:hover { color: #ef4444; }
     
     .modal-table-header-sticky {
       position: sticky;
@@ -286,7 +285,6 @@
     </div>
   </div>
 
-  <!-- POPUP MODAL WITH DATE RANGE FILTER & SMART SYNC -->
   <div class="modal-overlay" id="bankModal">
     <div class="modal-card">
       <div class="modal-header-sticky">
@@ -297,10 +295,9 @@
               <span class="total-label-badge total-green">Total Amount: Rs. <span id="modalLiveTotal">0</span></span>
             </div>
           </div>
-          <span class="close-btn" onclick="closeAddModal()">&times;</span>
+          <span class="close-btn" id="modalCloseBtn" onclick="closeAddModal()">&times;</span>
         </div>
 
-        <!-- Date Range Filter in Popup -->
         <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
           <label style="font-size: 11px; font-weight: 600; color: #475569;">From: <input type="date" id="popupFromDate" onchange="fetchPopupDataByDate()"></label>
           <label style="font-size: 11px; font-weight: 600; color: #475569;">To: <input type="date" id="popupToDate" onchange="fetchPopupDataByDate()"></label>
@@ -338,7 +335,6 @@
     let currentPayMode = "";
     const AUG_2026_CUTOFF = new Date("2026-08-01").getTime();
 
-    // Unified Sorting State
     let currentSortKey = 'date';
     let currentSortAsc = true;
 
@@ -367,6 +363,20 @@
 
     document.addEventListener("DOMContentLoaded", function() {
       loadSummary();
+      
+      const closeBtn = document.getElementById('modalCloseBtn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeAddModal);
+      }
+      
+      const modalOverlay = document.getElementById('bankModal');
+      if (modalOverlay) {
+        modalOverlay.addEventListener('click', function(e) {
+          if (e.target === modalOverlay) {
+            closeAddModal();
+          }
+        });
+      }
     });
 
     function loadSummary() {
@@ -425,16 +435,11 @@
       });
     }
 
-    // POPUP FUNCTIONS WITH DATE RANGE FILTER
     function openAddModal() {
       document.getElementById('bankModal').style.display = 'flex';
       
-      if (!document.getElementById('popupFromDate').value) {
-        document.getElementById('popupFromDate').value = '2026-08-01';
-      }
-      if (!document.getElementById('popupToDate').value) {
-        document.getElementById('popupToDate').value = '2026-08-31';
-      }
+      document.getElementById('popupFromDate').value = '';
+      document.getElementById('popupToDate').value = '';
 
       fetchPopupDataByDate();
     }
@@ -458,6 +463,21 @@
       renderModalRows(filtered);
     }
 
+    // UPDATED FUNCTION: Yeh ab sabse pehle theek upar wali row ki date uthayega
+    function getLatestActiveDate() {
+      let allDateInputs = document.querySelectorAll('#bankModalRows tr input[type="date"]');
+      if (allDateInputs.length > 0) {
+        let lastDateVal = allDateInputs[allDateInputs.length - 1].value;
+        if (lastDateVal) return lastDateVal;
+      }
+
+      let popupFrom = document.getElementById('popupFromDate').value;
+      if (popupFrom) return popupFrom;
+
+      const today = new Date();
+      return today.toISOString().split('T')[0];
+    }
+
     function renderModalRows(dataList) {
       let tbody = document.getElementById('bankModalRows');
       tbody.innerHTML = '';
@@ -465,7 +485,7 @@
       let listToRender = dataList || bankStatementData;
 
       if (listToRender.length === 0) {
-        let defaultDate = document.getElementById('popupFromDate').value || '2026-08-01';
+        let defaultDate = document.getElementById('popupFromDate').value || '';
         listToRender.push({ date: defaultDate, amount: '', remarks: '' });
       }
 
@@ -494,6 +514,14 @@
       calculateModalLiveTotal(listToRender);
     }
 
+    function removeModalRow(idx) {
+      let tr = document.querySelectorAll('#bankModalRows tr')[idx];
+      if (tr) {
+        tr.remove();
+        calculateModalLiveTotalFromDOM();
+      }
+    }
+
     function calculateModalLiveTotal(list) {
       let tot = 0;
       let targetList = list || bankStatementData;
@@ -509,7 +537,7 @@
     }
 
     function addModalRow(focusNew = false) {
-      let defaultDate = document.getElementById('popupFromDate').value || '2026-08-01';
+      let defaultDate = getLatestActiveDate();
       let tbody = document.getElementById('bankModalRows');
       let newIdx = tbody.querySelectorAll('tr').length;
 
@@ -529,7 +557,7 @@
                  onkeydown="handleEnterNavigation(event, ${newIdx}, 'remarks')">
         </td>
         <td>
-          <button class="btn btn-danger" style="padding: 4px 8px;" onclick="tr.remove(); calculateModalLiveTotalFromDOM();">&times;</button>
+          <button class="btn btn-danger" style="padding: 4px 8px;" onclick="this.closest('tr').remove(); calculateModalLiveTotalFromDOM();">&times;</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -571,7 +599,6 @@
     }
 
     function clearPopupFormOnly() {
-      let defaultDate = document.getElementById('popupFromDate').value || '2026-08-01';
       document.getElementById('bankModalRows').innerHTML = '';
       addModalRow(true);
       calculateModalLiveTotalFromDOM();
@@ -631,7 +658,6 @@
         });
     }
 
-    // HEADING SORTING
     function handleHeaderSort(key) {
       if (currentSortKey === key) currentSortAsc = !currentSortAsc;
       else { currentSortKey = key; currentSortAsc = true; }
@@ -647,7 +673,6 @@
 
       let pendingOnly = document.getElementById('showPendingOnlyCheckbox').checked;
 
-      // 1. Filter System Ledger
       let filteredSystem = currentLedgerData.filter(tx => {
         if (!tx.date) return false;
         let txDate = String(tx.date).split('T')[0];
@@ -656,7 +681,6 @@
         return true;
       });
 
-      // 2. Filter Bank Statement
       let filteredBank = bankStatementData.filter(b => {
         if (!b.date) return false;
         let bDate = String(b.date).split('T')[0];
@@ -665,10 +689,8 @@
         return true;
       });
 
-      // Sort system entries chronologically before matching
       filteredSystem.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-      // 3. STRICT CHRONOLOGICAL & DATE-PROXIMITY RECONCILIATION MATCHING
       let matchedBankIndices = new Set();
       let alignedRows = [];
 
@@ -684,7 +706,6 @@
         let bestMatchIdx = -1;
         let minDiff = Infinity;
 
-        // Phase 1: Search Exact Date + Amount Match
         filteredBank.forEach((b, bIdx) => {
           if (!matchedBankIndices.has(bIdx)) {
             let bAmt = Number(b.amount || 0);
@@ -698,7 +719,6 @@
           }
         });
 
-        // Phase 2: Search Nearest Date (+/- 3 days) Amount Match
         if (bestMatchIdx === -1) {
           filteredBank.forEach((b, bIdx) => {
             if (!matchedBankIndices.has(bIdx)) {
@@ -718,12 +738,10 @@
           matchedBankIndices.add(bestMatchIdx);
           alignedRows.push({ sys: sys, bank: filteredBank[bestMatchIdx], isCleared: true, sortTime: sysTime, amount: sysAmt });
         } else {
-          // ERP me hy par Bank me us date ke kareeb nahi hy -> Explicit Pending for THIS date
           alignedRows.push({ sys: sys, bank: null, isCleared: false, sortTime: sysTime, amount: sysAmt });
         }
       });
 
-      // Unmatched Bank Entries -> Missing in ERP
       filteredBank.forEach((b, bIdx) => {
         if (!matchedBankIndices.has(bIdx)) {
           let bTime = b.date ? new Date(b.date).getTime() : 0;
@@ -732,7 +750,6 @@
         }
       });
 
-      // 4. UNIFIED SORTING (PERFORMS PROPER ROW PAIR ALIGNMENT)
       alignedRows.sort((a, b) => {
         let valA, valB;
 
@@ -797,7 +814,6 @@
           </div>
         </div>
         <div class="reconcile-split-container">
-          <!-- LEFT: SYSTEM LEDGER -->
           <div class="split-col">
             <div class="split-col-header">
               <div class="split-col-title" style="color:#2563eb;">
@@ -840,7 +856,6 @@
               </td>
             </tr>`;
           } else {
-            // Khali ERP Row Jab Entry Bank Me Ho Lekin ERP Me Na Ho
             html += `<tr class="row-unmatched">
               <td>-</td><td>-</td><td style="color:#dc2626; font-weight:bold;">[Missing in ERP]</td>
               <td class="text-right">-</td><td class="text-right">-</td>
@@ -854,7 +869,6 @@
         }
         html += `</tbody></table></div>
 
-          <!-- RIGHT: BANK STATEMENT -->
           <div class="split-col">
             <div class="split-col-header">
               <div class="split-col-title" style="color:#059669;">
@@ -897,7 +911,6 @@
               </td>
             </tr>`;
           } else {
-            // Khali Bank Row Jab Entry ERP Me Ho Lekin Bank Stmt Me Na Ho
             html += `<tr class="row-unmatched">
               <td>-</td><td style="color:#dc2626; font-weight:bold;">[Missing in Bank Stmt]</td>
               <td class="text-right">-</td>
@@ -912,7 +925,6 @@
         html += `</tbody></table></div></div>`;
       } 
       else {
-        // SINGLE FULL VIEW
         html += `
         <div style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: #fff;">
           <div style="padding: 12px 15px; color: #2563eb; background: #f8fafc; font-weight: 700; border-bottom: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
