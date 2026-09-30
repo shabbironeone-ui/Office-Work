@@ -620,49 +620,41 @@
         }
       });
 
-      if (currentRows.length === 0) {
-        alert("⚠️ Koi valid entry nahi mili save karne ke liye!");
-        return;
-      }
-
       let btn = document.getElementById('btnSaveCloud');
       if (btn) {
         btn.innerText = "⏳ Syncing...";
         btn.disabled = true;
       }
 
-      let payload = {
-        action: "saveBankEntries",
-        payMode: currentPayMode,
-        entries: currentRows,
-        startDate: fromDate,
-        endDate: toDate
-      };
+      let entriesString = encodeURIComponent(JSON.stringify(currentRows));
+      let modeString = encodeURIComponent(currentPayMode);
+      let saveUrl = SCRIPT_URL + "?action=saveBankEntries&payMode=" + modeString + 
+                    "&entries=" + entriesString + 
+                    "&startDate=" + encodeURIComponent(fromDate) + 
+                    "&endDate=" + encodeURIComponent(toDate);
 
-      fetch(SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      })
-      .then(res => {
-        if (btn) {
-          btn.innerText = "💾 Sync & Save";
-          btn.disabled = false;
-        }
-        alert("✅ Backend Sheet ke sath data successful sync ho gaya hy!");
-        viewLedger(currentPayMode);
-        closeAddModal();
-      })
-      .catch(err => {
-        if (btn) {
-          btn.innerText = "💾 Sync & Save";
-          btn.disabled = false;
-        }
-        alert("⚠️ Network Error saving: " + err);
-      });
+      fetch(saveUrl)
+        .then(res => res.json())
+        .then(response => {
+          if (btn) {
+            btn.innerText = "💾 Sync & Save";
+            btn.disabled = false;
+          }
+          if (response && response.success) {
+            alert("✅ Backend Sheet ke sath data successful sync ho gaya hy!");
+            viewLedger(currentPayMode);
+            closeAddModal();
+          } else {
+            alert("⚠️ Sync Error: " + (response ? response.error : "Unknown Error"));
+          }
+        })
+        .catch(err => {
+          if (btn) {
+            btn.innerText = "💾 Sync & Save";
+            btn.disabled = false;
+          }
+          alert("⚠️ Network Error saving!");
+        });
     }
 
     function handleHeaderSort(key) {
